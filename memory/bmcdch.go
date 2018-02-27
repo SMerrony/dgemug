@@ -33,9 +33,8 @@
 package memory
 
 import (
-	"mvemg/logging"
-
 	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/util"
 )
 

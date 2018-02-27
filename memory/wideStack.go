@@ -22,9 +22,8 @@
 package memory
 
 import (
-	"mvemg/logging"
-
 	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/logging"
 )
 
 // Some Page Zero special locations for the Wide Stack...

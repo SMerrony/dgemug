@@ -23,11 +23,11 @@ package memory
 
 import (
 	"log"
-	"mvemg/logging"
 	"runtime/debug"
 	"sync"
 
 	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/util"
 )
 
