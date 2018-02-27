@@ -34,9 +34,9 @@ package memory
 
 import (
 	"mvemg/logging"
-	"mvemg/util"
 
 	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/util"
 )
 
 // See p.8-44 of PoP for meanings of these...
