@@ -7,8 +7,9 @@ Dginstr generates Go instruction definitions from a CSV source.
 ## devices
 Emulation of various DG peripherals
  * Bus
- * Disk6061 - Moving-head Disk - Type 6061
- * Magtape6026 - Magnetic Tape - Type 6026
+ * Disk6061 - Moving-head Disk, Type 6061 (AOS/VS - DPF)
+ * Disk6239 - Moving-head Disk, Type 6239 (AOS/VS - DPJ)
+ * Magtape6026 - Magnetic Tape, Type 6026
  * TTO - console output
 
 (No console input (TTI) as it is initmately tied to SCP)
