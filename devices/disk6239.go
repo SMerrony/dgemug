@@ -204,6 +204,8 @@ var (
 // disk6239Init is called once by the main routine to initialise this disk6239 emulator
 func Disk6239Init(dev int, statsChann chan Disk6239StatT, logId int, logging bool) {
 
+	disk6239Data.devNum = dev
+
 	go disk6239StatSender(statsChann)
 
 	BusSetResetFunc(disk6239Data.devNum, disk6239Reset)
