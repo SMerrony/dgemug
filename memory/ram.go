@@ -31,33 +31,38 @@ import (
 	"github.com/SMerrony/dgemug/util"
 )
 
-const (
-	// MemSizeWords defines the size of MV/Em's emulated RAM in 16-bit words
-	MemSizeWords = 8388608
-	// MemSizeLCPID is the code returned by the LCPID to indicate the size of RAM
-	MemSizeLCPID = 0x3F
-)
+// const (
+// 	// memSizeWords defines the size of MV/Em's emulated RAM in 16-bit words
+// 	memSizeWords = 8388608
+// 	// MemSizeLCPID is the code returned by the LCPID to indicate the size of RAM
+// 	MemSizeLCPID = 0x3F
+// )
 
 // The memoryT structure holds our representation of system RAM.
 // It is not exported and should not be directly accessed other than within this package.
-type memoryT struct {
-	ram        [MemSizeWords]dg.WordT
-	ramMu      sync.RWMutex
-	atuEnabled bool
-}
+// type memoryT struct {
+// 	ram        [memSizeWords]dg.WordT
+// 	ramMu      sync.RWMutex
+// 	atuEnabled bool
+// }
 
 var (
-	memory memoryT // memory is NOT exported
+	ram          []dg.WordT
+	ramMu        sync.RWMutex
+	atuEnabled   bool
+	memSizeWords dg.PhysAddrT // just for efficiency
 )
 
 // MemInit should be called at machine start
-func MemInit(doLog bool) {
-	memory.atuEnabled = false
+func MemInit(wordSize int, doLog bool) {
+	ram = make([]dg.WordT, wordSize)
+	memSizeWords = dg.PhysAddrT(wordSize)
+	atuEnabled = false
 	bmcdchInit(doLog)
-	for addr := range memory.ram {
-		memory.ram[addr] = 0
+	for addr := range ram {
+		ram[addr] = 0
 	}
-	log.Printf("INFO: Initialised %d words of main memory\n", MemSizeWords)
+	log.Printf("INFO: Initialised %d words of main memory\n", wordSize)
 }
 
 // ReadByte - read a byte from memory using word address and low-byte flag (true => lower (rightmost) byte)
@@ -85,9 +90,9 @@ func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
 
 // WriteByte takes a normal word addr, low-byte flag and datum byte
 func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
-	memory.ramMu.RLock()
-	wd := memory.ram[wordAddr]
-	memory.ramMu.RUnlock()
+	ramMu.RLock()
+	wd := ram[wordAddr]
+	ramMu.RUnlock()
 	if loByte {
 		wd = (wd & 0xff00) | dg.WordT(b)
 	} else {
@@ -99,79 +104,79 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 // ReadWord returns the DG Word at the specified physical address
 func ReadWord(wordAddr dg.PhysAddrT) dg.WordT {
 	var wd dg.WordT
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		logging.DebugLogsDump()
 		debug.PrintStack()
 		log.Fatalf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
 	}
-	memory.ramMu.RLock()
-	wd = memory.ram[wordAddr]
-	memory.ramMu.RUnlock()
+	ramMu.RLock()
+	wd = ram[wordAddr]
+	ramMu.RUnlock()
 	return wd
 }
 
 // ReadWordTrap returns the DG Word at the specified physical address
 func ReadWordTrap(wordAddr dg.PhysAddrT) (dg.WordT, bool) {
 	var wd dg.WordT
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		logging.DebugLogsDump()
 		debug.PrintStack()
 		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
 		return 0, false
 	}
-	memory.ramMu.RLock()
-	wd = memory.ram[wordAddr]
-	memory.ramMu.RUnlock()
+	ramMu.RLock()
+	wd = ram[wordAddr]
+	ramMu.RUnlock()
 	return wd, true
 }
 
 // WriteWord - ALL memory-writing should ultimately go through this function
-// N.B. minor exceptions may be made for memory.NsPush() and memory.NsPop()
+// N.B. minor exceptions may be made for NsPush() and NsPop()
 func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
 	// if wordAddr == 2891 {
 	// 	debugCatcher()
 	// }
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		debug.PrintStack()
 		log.Fatalf("ERROR: Attempt to write word beyond end of physical memory using address: %d", wordAddr)
 	}
-	memory.ramMu.Lock()
-	memory.ram[wordAddr] = datum
-	memory.ramMu.Unlock()
+	ramMu.Lock()
+	ram[wordAddr] = datum
+	ramMu.Unlock()
 }
 
 // ReadDWord returns the doubleword at the given physical address
 func ReadDWord(wordAddr dg.PhysAddrT) dg.DwordT {
 	var hiWd, loWd dg.WordT
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		debug.PrintStack()
 		log.Fatalf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d", wordAddr)
 	}
-	memory.ramMu.RLock()
-	hiWd = memory.ram[wordAddr]
-	loWd = memory.ram[wordAddr+1]
-	memory.ramMu.RUnlock()
+	ramMu.RLock()
+	hiWd = ram[wordAddr]
+	loWd = ram[wordAddr+1]
+	ramMu.RUnlock()
 	return util.DwordFromTwoWords(hiWd, loWd)
 }
 
 // ReadDwordTrap returns the doubleword at the given physical address
 func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	var hiWd, loWd dg.WordT
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		logging.DebugLogsDump()
 		log.Printf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d\n", wordAddr)
 		return 0, false
 	}
-	memory.ramMu.RLock()
-	hiWd = memory.ram[wordAddr]
-	loWd = memory.ram[wordAddr+1]
-	memory.ramMu.RUnlock()
+	ramMu.RLock()
+	hiWd = ram[wordAddr]
+	loWd = ram[wordAddr+1]
+	ramMu.RUnlock()
 	return util.DwordFromTwoWords(hiWd, loWd), true
 }
 
 // WriteDWord writes a doubleword into memory at the given physical address
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
-	if wordAddr >= MemSizeWords {
+	if wordAddr >= memSizeWords {
 		log.Fatalf("ERROR: Attempt to write doubleword beyond end of physical memory using address: %d", wordAddr)
 	}
 	WriteWord(wordAddr, util.DwordGetUpperWord(dwd))
