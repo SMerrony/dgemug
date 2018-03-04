@@ -33,7 +33,7 @@ const (
 	// DebugLog is the general-purpose log
 	DebugLog = 0
 	// MtbLog is for the MTB tape module
-	MtbLog = 1
+	MtLog = 1
 	// DpfLog is for the DPF disk module
 	DpfLog = 2
 	// DskpLog is for the DSKP disk module
@@ -65,9 +65,9 @@ func DebugLogsDump() {
 		if firstLine[l] != lastLine[l] { // ignore unused or empty logs
 			switch l {
 			case DebugLog:
-				debugDumpFile, _ = os.OpenFile("mvem_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case MtbLog:
-				debugDumpFile, _ = os.OpenFile("mtb_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+			case MtLog:
+				debugDumpFile, _ = os.OpenFile("mt_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DpfLog:
 				debugDumpFile, _ = os.OpenFile("dpf_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DskpLog:
