@@ -47,9 +47,10 @@ var (
 	csvFlag     = flag.String("csv", "", "CSV file to source data from")
 	goFlag      = flag.String("go", "", "Go filename for output")
 
-	typesList   [maxTypes]string
-	formatsList [maxFormats]string
-	instrsTable [maxInstrs][]string
+	typesList    [maxTypes]string
+	formatsList  [maxFormats]string
+	formatCounts map[string]int
+	instrsTable  [maxInstrs][]string
 
 	// headers = [...]string{"#", "Mnem", "Bits", "BitMask", "Len", "Instruction Format", "Instruction Type"}
 
@@ -117,6 +118,7 @@ func loadCSV() bool {
 	numTypes = 0
 	numInstrs = 0
 	numInstrs = 0
+	formatCounts = make(map[string]int)
 
 	numTypes = 0
 	for {
@@ -145,6 +147,7 @@ func loadCSV() bool {
 			break
 		}
 		formatsList[numFormats] = line[0]
+		formatCounts[line[0]] = 0
 		//log.Printf("Loading format #%d: %s\n", numFormats, line[0])
 		numFormats++
 	}
@@ -169,6 +172,7 @@ func loadCSV() bool {
 				row[c] = line[c]
 			}
 			instrsTable[numInstrs] = row
+			formatCounts[line[4]]++
 			numInstrs++
 		}
 	}
@@ -222,7 +226,9 @@ package main
 	fmt.Fprintf(goWriter, ")\n\n// Instruction Formats\nconst (\n")
 	fmt.Fprintf(goWriter, "\t%s = iota\n", formatsList[0])
 	for f := 1; f < numFormats; f++ {
-		fmt.Fprintf(goWriter, "\t%s\n", formatsList[f])
+		if formatCounts[formatsList[f]] > 0 {
+			fmt.Fprintf(goWriter, "\t%s\n", formatsList[f])
+		}
 	}
 
 	fmt.Fprintf(goWriter, ")\n\n// Instruction Mnemonic Consts\nconst (\n")
