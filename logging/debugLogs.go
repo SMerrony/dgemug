@@ -28,15 +28,15 @@ import (
 
 const (
 	numDebugLogs     = 5
-	numDebugLogLines = 40000
+	numDebugLogLines = 100000 // each circular buffer contains this many lines
 
 	// DebugLog is the general-purpose log
 	DebugLog = 0
-	// MtbLog is for the MTB tape module
+	// MtLog is for the type 6026 MT tape module
 	MtLog = 1
-	// DpfLog is for the DPF disk module
+	// DpfLog is for the type 6061 DPF disk module
 	DpfLog = 2
-	// DskpLog is for the DSKP disk module
+	// DskpLog is for the type 6239 DSKP disk module
 	DskpLog = 3
 	// MapLog is for BMC/DCH-related logging
 	MapLog = 4
