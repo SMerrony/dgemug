@@ -81,6 +81,8 @@ const (
 	mtSr1OddChar       = 1 << 1
 	mtSr1UnitReady     = 1
 
+	mtSr1Readable = "ELRIHDEFB9TrSWOR"
+
 	mtSr2Error  = 1 << 15
 	mtSr2PEMode = 1
 )
@@ -97,7 +99,7 @@ type mtT struct {
 	simhFile               [maxTapes]*os.File
 	statusReg1, statusReg2 dg.WordT
 	memAddrReg             dg.PhysAddrT
-	negWordCntReg          int
+	negWordCntReg          int16
 	currentCmd             int
 	currentUnit            int
 	// debug                  bool
@@ -187,7 +189,7 @@ func MtReset() {
 		}
 	}
 	// BOT is an error state...
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1UnitReady
+	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
 	mt.statusReg2 = mtSr2PEMode
 	mt.memAddrReg = 0
 	mt.negWordCntReg = 0
@@ -209,7 +211,7 @@ func MtAttach(tNum int, imgName string) bool {
 	mt.fileName[tNum] = imgName
 	mt.simhFile[tNum] = f
 	mt.imageAttached[tNum] = true
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1UnitReady
+	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
 	mt.statusReg2 = mtSr2PEMode
 	mt.mtDataMu.Unlock()
 	BusSetAttached(mt.devNum, imgName)
@@ -224,7 +226,7 @@ func MtDetach(tNum int) bool {
 	mt.fileName[tNum] = ""
 	mt.simhFile[tNum] = nil
 	mt.imageAttached[tNum] = false
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1UnitReady
+	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
 	mt.statusReg2 = mtSr2PEMode
 	mt.mtDataMu.Unlock()
 	BusSetDetached(mt.devNum)
@@ -316,10 +318,13 @@ func mtDataIn(abc byte, flag byte) (data dg.WordT) {
 	switch abc {
 	case 'A': /* Read status register 1 - see p.IV-18 of Peripherals guide */
 		data = mt.statusReg1
+		logging.DebugPrint(logID, "DIA - Read SR1 - returning: %#o = %s\n", data, mtReadableSR1())
 	case 'B': /* Read memory addr register 1 - see p.IV-19 of Peripherals guide */
 		data = dg.WordT(mt.memAddrReg)
+		logging.DebugPrint(logID, "DIB - Read MA - returning: %#o\n", data)
 	case 'C': /* Read status register 2 - see p.IV-18 of Peripherals guide */
 		data = mt.statusReg2
+		logging.DebugPrint(logID, "DIC - Read SR2 - returning: %#o\n", data)
 	}
 	mt.mtDataMu.RUnlock()
 
@@ -342,14 +347,16 @@ func mtDataOut(datum dg.WordT, abc byte, flag byte) {
 		}
 		// which unit?
 		mt.currentUnit = mtExtractUnit(datum)
-		logging.DebugPrint(logID, "DOA - Specify Command and Drive - internal cmd #: %d, unit: %d\n",
+		logging.DebugPrint(logID, "DOA - Specify Command and Drive - internal cmd #: %0o, unit: %0o\n",
 			mt.currentCmd, mt.currentUnit)
 	case 'B':
 		mt.memAddrReg = dg.PhysAddrT(datum)
+		logging.DebugPrint(logID, "DOB - MA set to %0o\n", mt.memAddrReg)
 	case 'C':
-		mt.negWordCntReg = int(int16(datum))
-		logging.DebugPrint(logID, "DOC - Set (neg) Word Count to %d\n",
-			mt.negWordCntReg)
+		mt.negWordCntReg = int16(datum)
+		logging.DebugPrint(logID, "DOC - Set (neg) Word Count to 0%o (%d.)\n", datum, mt.negWordCntReg)
+	case 'N': // special handling for NIOx...
+		logging.DebugPrint(logID, "NIO - Flag is %c\n", flag)
 	}
 	mt.mtDataMu.Unlock()
 
@@ -378,10 +385,10 @@ func mtHandleFlag(f byte) {
 	case 'C':
 		// if we were performing mt operations in a Goroutine, this would interrupt them...
 		logging.DebugPrint(logID, "... C flag set\n")
-		mt.mtDataMu.Lock()
-		mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady // ???
-		mt.statusReg2 = mtSr2PEMode                                   // ???
-		mt.mtDataMu.Unlock()
+		//mt.mtDataMu.Lock()
+		//mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady // ???
+		//mt.statusReg2 = mtSr2PEMode                                   // ???
+		//mt.mtDataMu.Unlock()
 		BusSetBusy(mt.devNum, false)
 		BusSetDone(mt.devNum, false)
 
@@ -427,19 +434,38 @@ func mtDoCommand() {
 			logging.DebugPrint(logID, " ----  %d bytes loaded\n", w)
 			logging.DebugPrint(logID, " ----  Read SimH Trailer: %d\n", trailer)
 			// TODO Need to verify how status should be set here...
-			mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady
+			mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1StatusChanged | mtSr1UnitReady
 		}
 
 	case mtCmdRewind:
 		logging.DebugPrint(logID, "*REWIND* command\n ------ Unit: #%d\n", mt.currentUnit)
 		simhtape.Rewind(mt.simhFile[mt.currentUnit])
-		mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1BOT
+		mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged | mtSr1BOT
 
 	case mtCmdSpaceFwd:
 		logging.DebugPrint(logID, "*SPACE FORWARD* command\n ----- ------- Unit: #%d\n", mt.currentUnit)
-		simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], 0)
-		mt.memAddrReg = 0xffffffff
-		mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
+		if mt.negWordCntReg == 0 { // one whole file
+			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
+			mt.memAddrReg = 0xffffffff //  or 0 ???
+			if stat == simhtape.SimhMtStatOk {
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+			} else {
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOT | mtSr1StatusChanged | mtSr1Error
+			}
+		} else {
+			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
+			switch stat {
+			case simhtape.SimhMtStatOk:
+				mt.memAddrReg = 0
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged
+			case simhtape.SimhMtStatTmk:
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+			case simhtape.SimhMtStatInvRec:
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1DataError | mtSr1StatusChanged | mtSr1Error
+			default:
+				log.Fatalf("ERROR: Unexpected return from simhTape.SpaceFwd %d", stat)
+			}
+		}
 
 	case mtCmdSpaceRev:
 		log.Fatalln("ERROR: mtDoCommand - SPACE REVERSE command Not Yet Implemented")
@@ -448,4 +474,14 @@ func mtDoCommand() {
 	default:
 		log.Fatalf("ERROR: mtDoCommand - Command #%d Not Yet Implemented\n", mt.currentCmd)
 	}
+}
+
+func mtReadableSR1() (res string) {
+	res = mtSr1Readable
+	for b := 0; b < 16; b++ {
+		if (mt.statusReg1 & (1 << (15 - uint8(b)))) == 0 {
+			res = res[:b] + "-" + res[b+1:]
+		}
+	}
+	return res
 }
