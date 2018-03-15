@@ -48,7 +48,7 @@ type (
 type device struct {
 	devMu           sync.RWMutex
 	mnemonic        string
-	priorityMaskBit int
+	priorityMaskBit uint
 	resetFunc       ResetFunc
 	dataOutFunc     DataOutFunc
 	dataInFunc      DataInFunc
@@ -62,7 +62,8 @@ type device struct {
 
 type devices [devMax]device
 
-var d devices
+var d devices        // not exported
+var irqMask dg.WordT // not exported, use setter and getter funcs below
 
 // BusInit must be called before attaching any devices
 func BusInit() {
@@ -81,7 +82,7 @@ func BusInit() {
 	}
 }
 
-func BusAddDevice(devNum int, mnem string, pmb int, att bool, io bool, boot bool) {
+func BusAddDevice(devNum int, mnem string, pmb uint, att bool, io bool, boot bool) {
 	if devNum >= devMax {
 		log.Fatalf("ERROR: Attempt to add device with too-high device number: 0%o", devNum)
 	}
@@ -215,6 +216,26 @@ func BusIsIODevice(devNum int) bool {
 	io := d[devNum].ioDevice
 	d[devNum].devMu.RUnlock()
 	return io
+}
+
+// BusSetIrqMask is a setter for the (whole) IRQ mask
+func BusSetIrqMask(newMask dg.WordT) {
+	irqMask = newMask
+}
+
+// BusIsDevMasked is a getter to see if the device is masked out from sending IRQs
+func BusIsDevMasked(devNum int) (masked bool) {
+	return util.TestWbit(irqMask, int(d[devNum].priorityMaskBit))
+}
+
+// BusSetDevMasked is a setter to make the device masked out from sending IRQs
+func BusSetDevMasked(devNum int) {
+	util.SetWbit(&irqMask, d[devNum].priorityMaskBit)
+}
+
+// BusClearDevMasked is a setter to make the device able to send IRQs
+func BusClearDevMasked(devNum int) {
+	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
 }
 
 func BusGetPrintableDevList() string {
