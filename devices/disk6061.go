@@ -488,6 +488,9 @@ func disk6061DoCommand() {
 		}
 		disk6061.rwStatus = disk6061Rwdone //| disk6061Drive0Done
 
+	case disk6061CmdRelease:
+		// I think this is a NOP on a single-processor machine
+
 	case disk6061CmdWrite:
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... WRITE command invoked %s\n", disk6061PrintableAddr())
