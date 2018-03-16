@@ -88,7 +88,7 @@ func BusInit() {
 
 func BusAddDevice(devNum int, mnem string, pmb uint, att bool, io bool, boot bool) {
 	if devNum >= devMax {
-		log.Fatalf("ERROR: Attempt to add device with too-high device number: 0%o", devNum)
+		log.Fatalf("ERROR: Attempt to add device with too-high device number: %#o", devNum)
 	}
 	d[devNum].devMu.Lock()
 	d[devNum].mnemonic = mnem
@@ -96,21 +96,20 @@ func BusAddDevice(devNum int, mnem string, pmb uint, att bool, io bool, boot boo
 	d[devNum].simAttached = att
 	d[devNum].ioDevice = io
 	d[devNum].bootable = boot
-	logging.DebugPrint(logging.DebugLog, "INFO: Device 0%o added to bus\n", devNum)
+	logging.DebugPrint(logging.DebugLog, "INFO: Device %#o added to bus\n", devNum)
 	d[devNum].devMu.Unlock()
 }
 
 func BusSetDataInFunc(devNum int, fn DataInFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].dataInFunc = fn
-	logging.DebugPrint(logging.DebugLog, "INFO: Bus Data In function set for dev #0%o (%d.)\n",
-		devNum, devNum)
+	logging.DebugPrint(logging.DebugLog, "INFO: Bus Data In function set for dev %#o (%d.)\n", devNum, devNum)
 	d[devNum].devMu.Unlock()
 }
 
 func BusDataIn(devNum int, abc byte, flag byte) (datum dg.WordT) {
 	if d[devNum].dataInFunc == nil {
-		log.Fatalf("ERROR: busDataIn called for device %d with no function set", devNum)
+		log.Fatalf("ERROR: busDataIn called for device %#o with no function set", devNum)
 	}
 	//cpuPtr.ac[iPtr.acd] = dg.DwordT(d[iPtr.devNum].dataInFunc(abc, iPtr.f))
 	return d[devNum].dataInFunc(abc, flag)
@@ -120,15 +119,13 @@ func BusSetDataOutFunc(devNum int, fn DataOutFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].dataOutFunc = fn
 	d[devNum].devMu.Unlock()
-	logging.DebugPrint(logging.DebugLog, "INFO: Bus Data Out function set for dev #0%o (%d.)\n",
-		devNum, devNum)
+	logging.DebugPrint(logging.DebugLog, "INFO: Bus Data Out function set for dev %#o (%d.)\n", devNum, devNum)
 }
 
 func BusDataOut(devNum int, datum dg.WordT, abc byte, flag byte) {
 	if d[devNum].dataOutFunc == nil {
 		logging.DebugLogsDump()
-		log.Fatalf("ERROR: busDataOut called for device %d with no function set",
-			devNum)
+		log.Fatalf("ERROR: busDataOut called for device %#o with no function set", devNum)
 	}
 	d[devNum].dataOutFunc(datum, abc, flag)
 }
@@ -136,7 +133,7 @@ func BusDataOut(devNum int, datum dg.WordT, abc byte, flag byte) {
 func BusSetResetFunc(devNum int, resetFn ResetFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].resetFunc = resetFn
-	logging.DebugPrint(logging.DebugLog, "INFO: Bus reset function set for dev #0%o\n", devNum)
+	logging.DebugPrint(logging.DebugLog, "INFO: Bus reset function set for dev %#o\n", devNum)
 	d[devNum].devMu.Unlock()
 }
 
@@ -147,7 +144,7 @@ func BusResetDevice(devNum int) {
 	if io {
 		d[devNum].resetFunc()
 	} else {
-		log.Fatalf("ERROR: Attempt to reset non-I/O device #0%o\n", devNum)
+		log.Fatalf("ERROR: Attempt to reset non-I/O device %#o\n", devNum)
 	}
 
 }
