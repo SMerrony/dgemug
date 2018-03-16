@@ -1,6 +1,6 @@
 // disk6061.go
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright (C) 2017,2018  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,13 +31,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SMerrony/dgemug/logging"
-
-	"github.com/SMerrony/dgemug/util"
-
-	"github.com/SMerrony/dgemug/memory"
-
 	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/logging"
+	"github.com/SMerrony/dgemug/memory"
+	"github.com/SMerrony/dgemug/util"
 )
 
 // Physical characteristics of the emulated disk
@@ -258,9 +255,17 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 					util.WordToBinStr(disk6061.rwStatus), disk6061.drive)
 			}
 		case disk6061InsModeAlt1:
-			log.Fatal("disk6061 DIA (Alt Mode 1) not yet implemented")
+			data = disk6061.memAddr // ???
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "DIA [Read Memory Addr] (Alt Mode 1) returning %#0o for DRV=%d\n",
+					data, disk6061.drive)
+			}
 		case disk6061InsModeAlt2:
-			log.Fatal("disk6061 DIA (Alt Mode 2) not yet implemented")
+			data = 0
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "DIA [Read 1st ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
+					data, disk6061.drive)
+			}
 		}
 	case 'B':
 		switch disk6061.instructionMode {
@@ -278,7 +283,11 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 					data)
 			}
 		case disk6061InsModeAlt2:
-			log.Fatal("disk6061 DIB (Alt Mode 2) not yet implemented")
+			data = 0
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "DIB [Read 2nd ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
+					data, disk6061.drive)
+			}
 		}
 	case 'C':
 		ssc = 0
@@ -564,7 +573,12 @@ func disk6061HandleFlag(f byte) {
 		BusSetDone(disk6061.devNum, true)
 
 	case 'C':
-		log.Fatal("disk6061 C flag not yet implemented")
+		BusSetBusy(disk6061.devNum, false)
+		BusSetDone(disk6061.devNum, false)
+		disk6061.disk6061Mu.Lock()
+		disk6061.rwStatus = 0
+		disk6061.rwCommand = 0
+		disk6061.disk6061Mu.Unlock()
 
 	case 'P':
 		BusSetBusy(disk6061.devNum, false)
