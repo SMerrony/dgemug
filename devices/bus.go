@@ -62,8 +62,12 @@ type device struct {
 
 type devices [devMax]device
 
-var d devices        // not exported
-var irqMask dg.WordT // not exported, use setter and getter funcs below
+var (
+	d               devices  // not exported
+	irqMask         dg.WordT // not exported, use setter and getter funcs below
+	IRQ             bool
+	InterruptingDev [devMax]bool
+)
 
 // BusInit must be called before attaching any devices
 func BusInit() {
@@ -236,6 +240,17 @@ func BusSetDevMasked(devNum int) {
 // BusClearDevMasked is a setter to make the device able to send IRQs
 func BusClearDevMasked(devNum int) {
 	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
+}
+
+// BusGetHighestPriorityInt returns the device number of the highest priority device
+// that has an outstanding interrupt
+func BusGetHighestPriorityInt() (devNum int) {
+	for devNum = range InterruptingDev {
+		if InterruptingDev[devNum] {
+			return devNum
+		}
+	}
+	return 0 // ?
 }
 
 func BusGetPrintableDevList() string {
