@@ -83,8 +83,9 @@ func ttoDataOut(datum dg.WordT, abc byte, flag byte) {
 		BusSetDone(devNum, true)
 		// send IRQ if not masked out
 		if !BusIsDevMasked(devNum) {
-			InterruptingDev[devNum] = true
-			IRQ = true
+			// InterruptingDev[devNum] = true
+			// IRQ = true
+			BusSendInterrupt(devNum)
 		}
 	case 'N':
 		switch flag {

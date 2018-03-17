@@ -66,8 +66,37 @@ var (
 	d               devices  // not exported
 	irqMask         dg.WordT // not exported, use setter and getter funcs below
 	IRQ             bool
-	InterruptingDev [devMax]bool
+	irqsByPriority  [16]bool
+	devsByPriority  [16][]int
+	interruptingDev [devMax]bool
 )
+
+func BusSendInterrupt(devNum int) {
+	interruptingDev[devNum] = true
+	irqsByPriority[d[devNum].priorityMaskBit] = true
+	IRQ = true
+}
+
+func BusClearInterrupt(devNum int) {
+	interruptingDev[devNum] = false
+	irqsByPriority[d[devNum].priorityMaskBit] = false
+}
+
+// BusGetHighestPriorityInt returns the device number of the highest priority device
+// that has an outstanding interrupt
+func BusGetHighestPriorityInt() (devNum int) {
+	for p, i := range irqsByPriority {
+		if i {
+			for _, d := range devsByPriority[p] {
+				if interruptingDev[d] {
+					return d
+				}
+			}
+		}
+	}
+
+	return 0 // ?
+}
 
 // BusInit must be called before attaching any devices
 func BusInit() {
@@ -96,6 +125,9 @@ func BusAddDevice(devNum int, mnem string, pmb uint, att bool, io bool, boot boo
 	d[devNum].simAttached = att
 	d[devNum].ioDevice = io
 	d[devNum].bootable = boot
+	// N.B. The relative priority of devs with the same PMB is established
+	//      here by the order they are added to the bus
+	devsByPriority[pmb] = append(devsByPriority[pmb], devNum)
 	logging.DebugPrint(logging.DebugLog, "INFO: Device %#o added to bus\n", devNum)
 	d[devNum].devMu.Unlock()
 }
@@ -237,17 +269,6 @@ func BusSetDevMasked(devNum int) {
 // BusClearDevMasked is a setter to make the device able to send IRQs
 func BusClearDevMasked(devNum int) {
 	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
-}
-
-// BusGetHighestPriorityInt returns the device number of the highest priority device
-// that has an outstanding interrupt
-func BusGetHighestPriorityInt() (devNum int) {
-	for devNum = range InterruptingDev {
-		if InterruptingDev[devNum] {
-			return devNum
-		}
-	}
-	return 0 // ?
 }
 
 func BusGetPrintableDevList() string {

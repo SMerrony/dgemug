@@ -574,6 +574,12 @@ func disk6061HandleFlag(f byte) {
 		disk6061DoCommand()
 		BusSetBusy(disk6061.devNum, false)
 		BusSetDone(disk6061.devNum, true)
+		// send IRQ if not masked out
+		if !BusIsDevMasked(disk6061.devNum) {
+			// InterruptingDev[disk6061.devNum] = true
+			// IRQ = true
+			BusSendInterrupt(disk6061.devNum)
+		}
 
 	case 'C':
 		BusSetBusy(disk6061.devNum, false)
@@ -593,6 +599,14 @@ func disk6061HandleFlag(f byte) {
 		disk6061.disk6061Mu.Unlock()
 		disk6061DoCommand()
 		//disk6061.rwStatus = disk6061Drive0Done
+		BusSetBusy(disk6061.devNum, false)
+		BusSetDone(disk6061.devNum, true)
+		// send IRQ if not masked out
+		if !BusIsDevMasked(disk6061.devNum) {
+			// InterruptingDev[disk6061.devNum] = true
+			// IRQ = true
+			BusSendInterrupt(disk6061.devNum)
+		}
 
 	default:
 		// no/empty flag - nothing to do
