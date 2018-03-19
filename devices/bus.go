@@ -261,15 +261,15 @@ func BusIsDevMasked(devNum int) (masked bool) {
 	return util.TestWbit(irqMask, int(d[devNum].priorityMaskBit))
 }
 
-// BusSetDevMasked is a setter to make the device masked out from sending IRQs
-func BusSetDevMasked(devNum int) {
-	util.SetWbit(&irqMask, d[devNum].priorityMaskBit)
-}
+// // BusSetDevMasked is a setter to make the device masked out from sending IRQs
+// func BusSetDevMasked(devNum int) {
+// 	util.SetWbit(&irqMask, d[devNum].priorityMaskBit)
+// }
 
-// BusClearDevMasked is a setter to make the device able to send IRQs
-func BusClearDevMasked(devNum int) {
-	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
-}
+// // BusClearDevMasked is a setter to make the device able to send IRQs
+// func BusClearDevMasked(devNum int) {
+// 	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
+// }
 
 func BusGetPrintableDevList() string {
 	lst := fmt.Sprintf(" #  Mnem   PMB  I/O Busy Done Status\012")

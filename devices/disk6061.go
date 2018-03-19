@@ -412,7 +412,8 @@ func disk6061DoCommand() {
 		disk6061.surface = 0
 		disk6061PositionDiskImage()
 		disk6061.driveStatus = disk6061Ready
-		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		//disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		disk6061.rwStatus = disk6061Drive0Done
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... RECAL done, %s\n", disk6061PrintableAddr())
 		}
@@ -575,11 +576,11 @@ func disk6061HandleFlag(f byte) {
 		BusSetBusy(disk6061.devNum, false)
 		BusSetDone(disk6061.devNum, true)
 		// send IRQ if not masked out
-		if !BusIsDevMasked(disk6061.devNum) {
-			// InterruptingDev[disk6061.devNum] = true
-			// IRQ = true
-			BusSendInterrupt(disk6061.devNum)
-		}
+		//if !BusIsDevMasked(disk6061.devNum) {
+		// InterruptingDev[disk6061.devNum] = true
+		// IRQ = true
+		BusSendInterrupt(disk6061.devNum)
+		//}
 
 	case 'C':
 		BusSetBusy(disk6061.devNum, false)
@@ -588,6 +589,12 @@ func disk6061HandleFlag(f byte) {
 		disk6061.rwStatus = 0
 		disk6061.rwCommand = 0
 		disk6061.disk6061Mu.Unlock()
+		// send IRQ if not masked out
+		//if !BusIsDevMasked(disk6061.devNum) {
+		// InterruptingDev[disk6061.devNum] = true
+		// IRQ = true
+	//	BusSendInterrupt(disk6061.devNum)
+	//}
 
 	case 'P':
 		BusSetBusy(disk6061.devNum, false)
@@ -602,11 +609,11 @@ func disk6061HandleFlag(f byte) {
 		BusSetBusy(disk6061.devNum, false)
 		BusSetDone(disk6061.devNum, true)
 		// send IRQ if not masked out
-		if !BusIsDevMasked(disk6061.devNum) {
-			// InterruptingDev[disk6061.devNum] = true
-			// IRQ = true
-			BusSendInterrupt(disk6061.devNum)
-		}
+		//if !BusIsDevMasked(disk6061.devNum) {
+		// InterruptingDev[disk6061.devNum] = true
+		// IRQ = true
+		BusSendInterrupt(disk6061.devNum)
+		//}
 
 	default:
 		// no/empty flag - nothing to do
