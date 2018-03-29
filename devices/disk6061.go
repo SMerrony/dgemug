@@ -242,6 +242,21 @@ func Disk6061CreateBlank(imgName string) bool {
 	return true
 }
 
+// Disk6061LoadDKBT - This func mimics a system ROM routine to boot from disk.
+// Rather than copying a ROM routine (!) we simply mimic its basic actions...
+// Load 1st two blocks from disk into location 0
+func Disk6061LoadDKBT() {
+	logging.DebugPrint(disk6061.logID, "Disk6961LoadDKBT() called\n")
+	// set posn
+	disk6061.command = disk6061CmdRecal
+	disk6061DoCommand()
+	disk6061.memAddr = 0
+	disk6061.sectCnt = -2
+	disk6061.command = disk6061CmdRead
+	disk6061DoCommand()
+	logging.DebugPrint(disk6061.logID, "Disk6961LoadDKBT() completed\n")
+}
+
 // disk6061In implements the DIA/B/C I/O instructions for this device
 func disk6061In(abc byte, flag byte) (data dg.WordT) {
 	disk6061.disk6061Mu.RLock()
