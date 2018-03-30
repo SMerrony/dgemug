@@ -35,7 +35,6 @@ package memory
 import (
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
-	"github.com/SMerrony/dgemug/util"
 )
 
 // See p.8-44 of PoP for meanings of these...
@@ -116,7 +115,7 @@ func bmcdchReset() {
 func getDchMode() bool {
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "getDchMode returning: %d\n",
-			util.BoolToInt(TestWbit(regs[iochanDefReg], 14)))
+			BoolToInt(TestWbit(regs[iochanDefReg], 14)))
 	}
 	return TestWbit(regs[iochanDefReg], 14)
 }
@@ -154,8 +153,8 @@ func BmcdchWriteSlot(slot int, data dg.DwordT) {
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "bmcdch*Write*Slot: Slot %d, Data: %d\n", slot, data)
 	}
-	regs[slot*2] = util.DwordGetUpperWord(data)
-	regs[(slot*2)+1] = util.DwordGetLowerWord(data)
+	regs[slot*2] = DwordGetUpperWord(data)
+	regs[(slot*2)+1] = DwordGetLowerWord(data)
 }
 
 // BmcdchReadReg returns the single word contents of the requested register
@@ -165,7 +164,7 @@ func BmcdchReadReg(reg int) dg.WordT {
 
 // BmcdchReadSlot returns the doubleword contents of the requested SLOT
 func BmcdchReadSlot(slot int) dg.DwordT {
-	return util.DwordFromTwoWords(regs[slot*2], regs[(slot*2)+1])
+	return DwordFromTwoWords(regs[slot*2], regs[(slot*2)+1])
 }
 
 func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT) {

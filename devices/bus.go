@@ -29,7 +29,6 @@ import (
 	dg "github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/util"
 )
 
 const devMax = 64
@@ -279,7 +278,7 @@ func BusGetPrintableDevList() string {
 		if d[dev].mnemonic != "" {
 			line = fmt.Sprintf("%#3o %-6s %2d. %3d %4d %4d  ",
 				dev, d[dev].mnemonic, d[dev].priorityMaskBit,
-				util.BoolToInt(d[dev].ioDevice), util.BoolToInt(d[dev].busy), util.BoolToInt(d[dev].done))
+				memory.BoolToInt(d[dev].ioDevice), memory.BoolToInt(d[dev].busy), memory.BoolToInt(d[dev].done))
 			if d[dev].simAttached {
 				line += "Attached"
 				if d[dev].simImageName != "" {

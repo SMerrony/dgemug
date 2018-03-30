@@ -34,7 +34,6 @@ import (
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/util"
 )
 
 // Physical characteristics of the emulated disk
@@ -267,7 +266,7 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 			data = disk6061.rwStatus
 			if debugLogging {
 				logging.DebugPrint(disk6061.logID, "DIA [Read Data Txfr Status] (Normal mode returning %s for DRV=%d\n",
-					util.WordToBinStr(disk6061.rwStatus), disk6061.drive)
+					memory.WordToBinStr(disk6061.rwStatus), disk6061.drive)
 			}
 		case disk6061InsModeAlt1:
 			data = disk6061.memAddr // ???
@@ -314,7 +313,7 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 		ssc |= (dg.WordT(disk6061.sectCnt) & 0x1f)
 		data = ssc
 		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "disk6061 DIC returning: %s\n", util.WordToBinStr(ssc))
+			logging.DebugPrint(disk6061.logID, "disk6061 DIC returning: %s\n", memory.WordToBinStr(ssc))
 		}
 	}
 	disk6061.disk6061Mu.RUnlock()
@@ -366,7 +365,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		disk6061.lastDOAwasSeek = (disk6061.command == disk6061CmdSeek)
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
-				disk6061.drive, util.WordToBinStr(datum))
+				disk6061.drive, memory.WordToBinStr(datum))
 			logging.DebugPrint(disk6061.logID, "... CMD: %s, DRV: %d, EMA: %d\n",
 				cmdDecode[disk6061.command], disk6061.drive, disk6061.ema)
 		}
@@ -379,7 +378,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		disk6061.memAddr = datum & 0x7fff
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "DOB [Specify Memory Addr] with data %s\n",
-				util.WordToBinStr(datum))
+				memory.WordToBinStr(datum))
 			logging.DebugPrint(disk6061.logID, "... MEM Addr: %d\n", disk6061.memAddr)
 			logging.DebugPrint(disk6061.logID, "... EMA: %d\n", disk6061.ema)
 		}
@@ -388,7 +387,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 			disk6061.cylinder = datum & 0x03ff // mask off lower 10 bits
 			if debugLogging {
 				logging.DebugPrint(disk6061.logID, "DOC [Specify Cylinder] after SEEK with data %s\n",
-					util.WordToBinStr(datum))
+					memory.WordToBinStr(datum))
 				logging.DebugPrint(disk6061.logID, "... CYL: %d\n", disk6061.cylinder)
 			}
 		} else {
@@ -398,9 +397,9 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 			disk6061.sectCnt = extractSectCnt(datum)
 			if debugLogging {
 				logging.DebugPrint(disk6061.logID, "DOC [Specify Surf,Sect,Cnt] (not after seek) with data %s\n",
-					util.WordToBinStr(datum))
+					memory.WordToBinStr(datum))
 				logging.DebugPrint(disk6061.logID, "... MAP: %d, SURF: %d, SECT: %d, SECCNT: %d\n",
-					util.BoolToInt(disk6061.mapEnabled), disk6061.surface, disk6061.sector, disk6061.sectCnt)
+					memory.BoolToInt(disk6061.mapEnabled), disk6061.surface, disk6061.sector, disk6061.sectCnt)
 			}
 		}
 	case 'N': // dummy value for NIO - we just handle the flag below
