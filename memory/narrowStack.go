@@ -22,7 +22,7 @@
 package memory
 
 import (
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 )
 

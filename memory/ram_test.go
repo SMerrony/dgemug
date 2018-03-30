@@ -24,19 +24,22 @@ package memory
 import (
 	"testing"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 )
+
+const MemSizeWords = 8388608
 
 func TestWriteReadByte(t *testing.T) {
 	var w dg.WordT
 	var b dg.ByteT
+	MemInit(MemSizeWords, false)
 	WriteByte(73, false, 0x58)
-	w = memory.ram[73]
+	w = ram[73]
 	if w != 0x5800 {
 		t.Error("Expected 0x5800, got ", w)
 	}
 	WriteByte(74, true, 0x58)
-	w = memory.ram[74]
+	w = ram[74]
 	if w != 0x58 {
 		t.Error("Expected 0x58, got ", w)
 	}
@@ -54,8 +57,9 @@ func TestWriteReadByte(t *testing.T) {
 
 func TestWriteReadWord(t *testing.T) {
 	var w dg.WordT
+	MemInit(MemSizeWords, false)
 	WriteWord(78, 99)
-	w = memory.ram[78]
+	w = ram[78]
 	if w != 99 {
 		t.Error("Expected 99, got ", w)
 	}
@@ -70,8 +74,9 @@ func TestWriteReadWordTrap(t *testing.T) {
 		w  dg.WordT
 		ok bool
 	)
+	MemInit(MemSizeWords, false)
 	WriteWord(78, 99)
-	w = memory.ram[78]
+	w = ram[78]
 	if w != 99 {
 		t.Error("Expected 99, got ", w)
 	}
@@ -79,7 +84,7 @@ func TestWriteReadWordTrap(t *testing.T) {
 	if w != 99 || !ok {
 		t.Error("Expected 99, got ", w)
 	}
-	_, ok = ReadWordTrap(MemSizeWords + 10)
+	_, ok = ReadWordTrap(memSizeWords + 10)
 	if ok {
 		t.Error("Expected failure, got ", ok)
 	}
@@ -87,12 +92,13 @@ func TestWriteReadWordTrap(t *testing.T) {
 
 func TestWriteReadDWord(t *testing.T) {
 	var dwd dg.DwordT
+	MemInit(MemSizeWords, false)
 	WriteDWord(68, 0x11223344)
-	w := memory.ram[68]
+	w := ram[68]
 	if w != 0x1122 {
 		t.Error("Expected 0x1122, got ", w)
 	}
-	w = memory.ram[69]
+	w = ram[69]
 	if w != 0x3344 {
 		t.Error("Expected 0x3344, got ", w)
 	}
@@ -106,12 +112,13 @@ func TestWriteReadDWordTrap(t *testing.T) {
 		dwd dg.DwordT
 		ok  bool
 	)
+	MemInit(MemSizeWords, false)
 	WriteDWord(68, 0x11223344)
-	w := memory.ram[68]
+	w := ram[68]
 	if w != 0x1122 {
 		t.Errorf("Expected 0x1122, got %x", w)
 	}
-	w = memory.ram[69]
+	w = ram[69]
 	if w != 0x3344 {
 		t.Errorf("Expected 0x3344, got %x", w)
 	}

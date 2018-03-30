@@ -26,7 +26,7 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/util"
 )
@@ -83,7 +83,7 @@ func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
 		hiLo bool
 		addr dg.PhysAddrT
 	)
-	hiLo = util.TestWbit(byteAddr16, 15) // determine which byte to get
+	hiLo = TestWbit(byteAddr16, 15) // determine which byte to get
 	addr = dg.PhysAddrT(byteAddr16) >> 1
 	return ReadByte(addr, hiLo)
 }

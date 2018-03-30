@@ -25,7 +25,7 @@ import (
 	"log"
 	"net"
 
-	dg "github.com/SMerrony/dgemug"
+	dg "github.com/SMerrony/dgemug/dg"
 )
 
 const (

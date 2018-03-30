@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/simhtape/pkg/simhtape"

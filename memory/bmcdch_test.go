@@ -23,7 +23,7 @@ package memory
 import (
 	"testing"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 )
 
 func TestBmcdchReset(t *testing.T) {

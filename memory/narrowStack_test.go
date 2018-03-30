@@ -26,9 +26,10 @@ import (
 )
 
 func TestNsPushAndPop(t *testing.T) {
+	MemInit(MemSizeWords, false)
 	NsPush(0, 1, false)
-	if memory.ram[memory.ram[NspLoc]] != 1 {
-		t.Errorf("Expected NspLoc+1 to contain 1, contains %x", memory.ram[memory.ram[NspLoc]])
+	if ram[ram[NspLoc]] != 1 {
+		t.Errorf("Expected NspLoc+1 to contain 1, contains %x", ram[ram[NspLoc]])
 	}
 	w := NsPop(0, false)
 	if w != 1 {

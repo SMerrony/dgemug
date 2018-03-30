@@ -48,7 +48,7 @@ import (
 
 	"github.com/SMerrony/dgemug/memory"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 )
 
 const (
@@ -348,7 +348,7 @@ func disk6239DoPioCommand() {
 		}
 		// pretend we have succesfully booted ourself
 		disk6239Data.statusRegB = 0
-		disk6239SetPioStatusRegC(statXecStateBegun, statCcsPioCmdOk, disk6239PioBegin, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(statXecStateBegun, statCcsPioCmdOk, disk6239PioBegin, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239GetMapping:
 		if debugLogging {
@@ -360,7 +360,7 @@ func disk6239DoPioCommand() {
 			logging.DebugPrint(disk6239Data.logID, "... ... Status Reg A set to %s\n", util.WordToBinStr(disk6239Data.statusRegA))
 			logging.DebugPrint(disk6239Data.logID, "... ... Status Reg B set to %s\n", util.WordToBinStr(disk6239Data.statusRegB))
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetMapping, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetMapping, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239SetMapping:
 		if debugLogging {
@@ -373,7 +373,7 @@ func disk6239DoPioCommand() {
 			logging.DebugPrint(disk6239Data.logID, "... ... Mapping Reg A set to %s\n", util.WordToBinStr(disk6239Data.commandRegA))
 			logging.DebugPrint(disk6239Data.logID, "... ... Mapping Reg B set to %s\n", util.WordToBinStr(disk6239Data.commandRegB))
 		}
-		disk6239SetPioStatusRegC(statXecStateMapped, statCcsPioCmdOk, disk6239SetMapping, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(statXecStateMapped, statCcsPioCmdOk, disk6239SetMapping, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239GetInterface:
 		addr = dg.PhysAddrT(util.DwordFromTwoWords(disk6239Data.commandRegA, disk6239Data.commandRegB))
@@ -387,7 +387,7 @@ func disk6239DoPioCommand() {
 				logging.DebugPrint(disk6239Data.logID, "... ... Word %d: %s\n", w, util.WordToBinStr(disk6239Data.intInfBlock[w]))
 			}
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetInterface, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetInterface, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239SetInterface:
 		addr = dg.PhysAddrT(util.DwordFromTwoWords(disk6239Data.commandRegA, disk6239Data.commandRegB))
@@ -406,7 +406,7 @@ func disk6239DoPioCommand() {
 			logging.DebugPrint(disk6239Data.logID, "... ... Word 6: %s\n", util.WordToBinStr(disk6239Data.intInfBlock[6]))
 			logging.DebugPrint(disk6239Data.logID, "... ... Word 7: %s\n", util.WordToBinStr(disk6239Data.intInfBlock[7]))
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetInterface, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetInterface, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239GetUnit:
 		addr = dg.PhysAddrT(util.DwordFromTwoWords(disk6239Data.commandRegA, disk6239Data.commandRegB))
@@ -420,7 +420,7 @@ func disk6239DoPioCommand() {
 				logging.DebugPrint(disk6239Data.logID, "... ... Word %d: %s\n", w, util.WordToBinStr(disk6239Data.unitInfBlock[w]))
 			}
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetUnit, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239GetUnit, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239SetUnit:
 		addr = dg.PhysAddrT(util.DwordFromTwoWords(disk6239Data.commandRegA, disk6239Data.commandRegB))
@@ -434,7 +434,7 @@ func disk6239DoPioCommand() {
 		if debugLogging {
 			logging.DebugPrint(disk6239Data.logID, "... ... Overwrote word 0 of UIB with: %s\n", util.WordToBinStr(disk6239Data.unitInfBlock[0]))
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetUnit, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetUnit, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239PioReset:
 		// disk6239Reset() has to do its own locking...
@@ -454,7 +454,7 @@ func disk6239DoPioCommand() {
 			logging.DebugPrint(disk6239Data.logID, "... ... Word 0: %s\n", util.WordToBinStr(disk6239Data.ctrlInfBlock[0]))
 			logging.DebugPrint(disk6239Data.logID, "... ... Word 1: %s\n", util.WordToBinStr(disk6239Data.ctrlInfBlock[1]))
 		}
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetController, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239SetController, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case disk6239StartList:
 		addr = dg.PhysAddrT(util.DwordFromTwoWords(disk6239Data.commandRegA, disk6239Data.commandRegB))
@@ -468,7 +468,7 @@ func disk6239DoPioCommand() {
 		cbChan <- addr
 		disk6239Data.statusRegA = util.DwordGetUpperWord(dg.DwordT(addr)) // return address of 1st CB processed
 		disk6239Data.statusRegB = util.DwordGetLowerWord(dg.DwordT(addr))
-		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239StartList, util.TestWbit(disk6239Data.commandRegC, 15))
+		disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239StartList, memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	default:
 		log.Panicf("disk6239 command %d not yet implemented\n", pioCmd)
@@ -502,7 +502,7 @@ func disk6239HandleFlag(f byte) {
 		BusSetBusy(disk6239Data.devNum, false)
 		// set the DONE flag if the return bit was set
 		disk6239Data.disk6239DataMu.RLock()
-		if util.TestWbit(disk6239Data.commandRegC, 15) {
+		if memory.TestWbit(disk6239Data.commandRegC, 15) {
 			BusSetDone(disk6239Data.devNum, true)
 		}
 		disk6239Data.disk6239DataMu.RUnlock()
@@ -517,7 +517,7 @@ func disk6239HandleFlag(f byte) {
 		disk6239SetPioStatusRegC(statXecStateMapped,
 			statCcsPioCmdOk,
 			dg.WordT(disk6239ExtractPioCommand(disk6239Data.commandRegC)),
-			util.TestWbit(disk6239Data.commandRegC, 15))
+			memory.TestWbit(disk6239Data.commandRegC, 15))
 
 	case 'P':
 		if debugLogging {
@@ -600,7 +600,7 @@ func disk6239CBprocessor(dataPtr *disk6239DataT) {
 		case disk6239CbOpRead:
 			dataPtr.disk6239DataMu.Lock()
 			dataPtr.sectorNo = util.DwordFromTwoWords(cb[disk6239CbDEV_ADDR_HIGH], cb[disk6239CbDEV_ADDR_LOW])
-			if util.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
+			if memory.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB READ from premapped logical addresses  Not Yet Implemented")
@@ -644,7 +644,7 @@ func disk6239CBprocessor(dataPtr *disk6239DataT) {
 		case disk6239CbOpWrite:
 			dataPtr.disk6239DataMu.Lock()
 			dataPtr.sectorNo = util.DwordFromTwoWords(cb[disk6239CbDEV_ADDR_HIGH], cb[disk6239CbDEV_ADDR_LOW])
-			if util.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
+			if memory.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB WRITE from premapped logical addresses  Not Yet Implemented")
@@ -729,7 +729,7 @@ func disk6239Reset() {
 	disk6239ResetCtrlrInfBlock()
 	disk6239ResetUnitInfBlock()
 	disk6239Data.statusRegB = 0
-	disk6239SetPioStatusRegC(statXecStateResetDone, 0, disk6239PioReset, util.TestWbit(disk6239Data.commandRegC, 15))
+	disk6239SetPioStatusRegC(statXecStateResetDone, 0, disk6239PioReset, memory.TestWbit(disk6239Data.commandRegC, 15))
 	disk6239Data.disk6239DataMu.Unlock()
 	if debugLogging {
 		logging.DebugPrint(disk6239Data.logID, "disk6239 ***Reset*** via call to disk6239Reset()\n")

@@ -26,9 +26,9 @@ import (
 	"log"
 	"sync"
 
-	"github.com/SMerrony/dgemug"
-
+	dg "github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
+	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/dgemug/util"
 )
 
@@ -258,17 +258,17 @@ func BusSetIrqMask(newMask dg.WordT) {
 
 // BusIsDevMasked is a getter to see if the device is masked out from sending IRQs
 func BusIsDevMasked(devNum int) (masked bool) {
-	return util.TestWbit(irqMask, int(d[devNum].priorityMaskBit))
+	return memory.TestWbit(irqMask, int(d[devNum].priorityMaskBit))
 }
 
 // // BusSetDevMasked is a setter to make the device masked out from sending IRQs
 // func BusSetDevMasked(devNum int) {
-// 	util.SetWbit(&irqMask, d[devNum].priorityMaskBit)
+// 	memory.SetWbit(&irqMask, d[devNum].priorityMaskBit)
 // }
 
 // // BusClearDevMasked is a setter to make the device able to send IRQs
 // func BusClearDevMasked(devNum int) {
-// 	util.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
+// 	memory.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
 // }
 
 func BusGetPrintableDevList() string {

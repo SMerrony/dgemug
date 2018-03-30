@@ -1,6 +1,6 @@
-// mvemg project util_test.go
+// bitHandling_test.go
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright (C) 2018  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,94 +19,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package util
+package memory
 
 import (
 	"testing"
 
 	"github.com/SMerrony/dgemug/dg"
-	"github.com/SMerrony/dgemug/memory"
 )
 
-func TestBoolToInt(t *testing.T) {
-	tbool, fbool := true, false
-	tres := BoolToInt(tbool)
-	if tres != 1 {
-		t.Error("Expected 1 got ", tres)
-	}
-	fres := BoolToInt(fbool)
-	if fres != 0 {
-		t.Error("Expected 0 got ", fres)
-	}
-}
-func TestBoolToYN(t *testing.T) {
-	tbool, fbool := true, false
-	tres := BoolToYN(tbool)
-	if tres != 'Y' {
-		t.Error("Expected Y got ", tres)
-	}
-	fres := BoolToYN(fbool)
-	if fres != 'N' {
-		t.Error("Expected N got ", fres)
-	}
-}
-func TestBoolToOnOff(t *testing.T) {
-	tbool, fbool := true, false
-	tres := BoolToOnOff(tbool)
-	if tres != "On" {
-		t.Error("Expected On got ", tres)
-	}
-	fres := BoolToOnOff(fbool)
-	if fres != "Off" {
-		t.Error("Expected Off got ", fres)
-	}
-}
-func TestBoolToOZ(t *testing.T) {
-	tbool, fbool := true, false
-	tres := BoolToOZ(tbool)
-	if tres != 'O' {
-		t.Error("Expected O got ", tres)
-	}
-	fres := BoolToOZ(fbool)
-	if fres != 'Z' {
-		t.Error("Expected Z got ", fres)
-	}
-}
-func TestDWordFromTwoWords(t *testing.T) {
-	var hi dg.WordT = 0x1122
-	var lo dg.WordT = 0x3344
-	r := DwordFromTwoWords(hi, lo)
-	if r != 0x11223344 {
-		t.Error("Expected 287454020, got ", r)
-	}
-}
-
-func TestQWordFromTwoDwords(t *testing.T) {
-	var hi dg.DwordT = 0x11223344
-	var lo dg.DwordT = 0x55667788
-	r := QwordFromTwoDwords(hi, lo)
-	if r != 0x1122334455667788 {
-		t.Error("Expected 0x1122334455667788, got ", r)
-	}
-}
-
-func TestDWordGetLowerWord(t *testing.T) {
-	var dwd dg.DwordT = 0x11223344
-	r := DwordGetLowerWord(dwd)
-	if r != 0x3344 {
-		t.Error("Expected 0x3344, got ", r)
-	}
-}
-func TestDWordGetUpperWord(t *testing.T) {
-	var dwd dg.DwordT = 0x11223344
-	r := DwordGetUpperWord(dwd)
-	if r != 0x1122 {
-		t.Error("Expected 0x1122, got ", r)
-	}
-}
 func TestGetWbits(t *testing.T) {
 	var w dg.WordT = 0xb38f
-	r := memory.GetWbits(w, 5, 3)
+	r := GetWbits(w, 5, 3)
 	if r != 3 {
 		t.Error("Expected 3, got ", r)
 	}
@@ -185,39 +108,6 @@ func TestGetQWbits(t *testing.T) {
 	r := GetQwbits(q, 12, 8)
 	if r != 0x12 {
 		t.Errorf("Expected 0x12, got %x", r)
-	}
-}
-
-func TestSexWordToDWord(t *testing.T) {
-	var wd dg.WordT
-	var dwd dg.DwordT
-
-	wd = 79
-	dwd = SexWordToDword(wd)
-	if dwd != 79 {
-		t.Error("Expected 79, got ", dwd)
-	}
-
-	wd = 0xfff4
-	dwd = SexWordToDword(wd)
-	if dwd != 0xfffffff4 {
-		t.Error("Expected -12, got ", dwd)
-	}
-
-}
-
-func TestSwapBytes(t *testing.T) {
-	var wd, s dg.WordT
-
-	wd = 0x1234
-	s = SwapBytes(wd)
-	if s != 0x3412 {
-		t.Error("Expected 13330., got ", s)
-	}
-
-	wd = SwapBytes(s)
-	if wd != 0x1234 {
-		t.Error("Expected 4660., got ", wd)
 	}
 }
 

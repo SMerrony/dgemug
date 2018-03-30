@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/dgemug/util"
@@ -333,19 +333,19 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		disk6061.command = extractdisk6061Command(datum)
 		disk6061.drive = extractdisk6061DriveNo(datum)
 		disk6061.ema = extractdisk6061EMA(datum)
-		if util.TestWbit(datum, 0) {
+		if memory.TestWbit(datum, 0) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Rwdone)
 		}
-		if util.TestWbit(datum, 1) {
+		if memory.TestWbit(datum, 1) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Drive0Done)
 		}
-		if util.TestWbit(datum, 2) {
+		if memory.TestWbit(datum, 2) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Drive1Done)
 		}
-		if util.TestWbit(datum, 3) {
+		if memory.TestWbit(datum, 3) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Drive2Done)
 		}
-		if util.TestWbit(datum, 4) {
+		if memory.TestWbit(datum, 4) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Drive3Done)
 		}
 		disk6061.instructionMode = disk6061InsModeNormal
@@ -371,7 +371,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 				cmdDecode[disk6061.command], disk6061.drive, disk6061.ema)
 		}
 	case 'B':
-		if util.TestWbit(datum, 0) {
+		if memory.TestWbit(datum, 0) {
 			disk6061.ema |= 0x01
 		} else {
 			disk6061.ema &= 0xfe
@@ -392,7 +392,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 				logging.DebugPrint(disk6061.logID, "... CYL: %d\n", disk6061.cylinder)
 			}
 		} else {
-			disk6061.mapEnabled = util.TestWbit(datum, 0)
+			disk6061.mapEnabled = memory.TestWbit(datum, 0)
 			disk6061.surface = extractsurface(datum)
 			disk6061.sector = extractSector(datum)
 			disk6061.sectCnt = extractSectCnt(datum)

@@ -33,7 +33,7 @@
 package memory
 
 import (
-	"github.com/SMerrony/dgemug"
+	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/util"
 )
@@ -116,9 +116,9 @@ func bmcdchReset() {
 func getDchMode() bool {
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "getDchMode returning: %d\n",
-			util.BoolToInt(util.TestWbit(regs[iochanDefReg], 14)))
+			util.BoolToInt(TestWbit(regs[iochanDefReg], 14)))
 	}
-	return util.TestWbit(regs[iochanDefReg], 14)
+	return TestWbit(regs[iochanDefReg], 14)
 }
 
 // BmcdchWriteReg populates a given 16-bit register with the supplied data
@@ -132,14 +132,14 @@ func BmcdchWriteReg(reg int, data dg.WordT) {
 		for b := 0; b < 16; b++ {
 			switch b {
 			case 3, 4, 7, 8, 14:
-				if util.TestWbit(data, b) {
-					util.FlipWbit(&regs[iochanDefReg], uint(b))
+				if TestWbit(data, b) {
+					FlipWbit(&regs[iochanDefReg], uint(b))
 				}
 			default:
-				if util.TestWbit(data, b) {
-					util.SetWbit(&regs[iochanDefReg], uint(b))
+				if TestWbit(data, b) {
+					SetWbit(&regs[iochanDefReg], uint(b))
 				} else {
-					util.ClearWbit(&regs[iochanDefReg], uint(b))
+					ClearWbit(&regs[iochanDefReg], uint(b))
 				}
 			}
 		}
@@ -203,16 +203,16 @@ func decodeBmcAddr(bmcAddr dg.PhysAddrT) bmcAddrT {
 	)
 
 	inAddr = dg.DwordT(bmcAddr << 10) // shift left so we can use documented 21-bit numbering
-	res.isLogical = util.TestDwbit(inAddr, 0)
+	res.isLogical = TestDwbit(inAddr, 0)
 	if res.isLogical {
 		// Logical, or Mapped address...
-		res.tt = byte(util.GetDwbits(inAddr, 2, 5))
-		res.ttr = byte(util.GetDwbits(inAddr, 7, 5))
+		res.tt = byte(GetDwbits(inAddr, 2, 5))
+		res.ttr = byte(GetDwbits(inAddr, 7, 5))
 		res.plow = bmcAddr & 0x3ff // mask off 10 bits
 	} else {
 		// Physical, or unmapped address..
-		res.bk = byte(util.GetDwbits(inAddr, 1, 3))
-		res.xca = byte(util.GetDwbits(inAddr, 4, 3))
+		res.bk = byte(GetDwbits(inAddr, 1, 3))
+		res.xca = byte(GetDwbits(inAddr, 4, 3))
 		res.ca = bmcAddr & 0x7fff // mask off 15 bits
 	}
 
