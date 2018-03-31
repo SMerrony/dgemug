@@ -14,5 +14,6 @@
 .glide/
 
 *.log
+*.tmp
 
 cmd/dginstr
