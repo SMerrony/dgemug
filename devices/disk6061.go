@@ -285,6 +285,9 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 		switch disk6061.instructionMode {
 		case disk6061InsModeNormal:
 			data = disk6061.driveStatus & 0xfeff
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "DIB [Read Drive Status] (Normal mode) returning %s for DRV=%d\n", memory.WordToBinStr(data), disk6061.drive)
+			}
 		case disk6061InsModeAlt1:
 			data = dg.WordT(0x8000) | dg.WordT(disk6061.ema)&0x01f
 			//			if disk6061.mapEnabled {
@@ -293,8 +296,7 @@ func disk6061In(abc byte, flag byte) (data dg.WordT) {
 			//				data = dg_dword(disk6061.ema & 0x1f)
 			//			}
 			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIB [Read EMA] (Alt Mode 1) returning: %d\n",
-					data)
+				logging.DebugPrint(disk6061.logID, "DIB [Read EMA] (Alt Mode 1) returning: %#0o\n", data)
 			}
 		case disk6061InsModeAlt2:
 			data = 0
