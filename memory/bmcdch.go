@@ -124,7 +124,7 @@ func getDchMode() bool {
 // N.B. Addressed by REGISTER not slot
 func BmcdchWriteReg(reg int, data dg.WordT) {
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "bmcdchWriteReg: Reg %d, Data: %d\n", reg, data)
+		logging.DebugPrint(logging.MapLog, "bmcdchWriteReg: Reg %#o, Data: %#o\n", reg, data)
 	}
 	if reg == iochanDefReg {
 		// certain bits in the new data cause IOCDR bits to be flipped rather than set
@@ -151,7 +151,7 @@ func BmcdchWriteReg(reg int, data dg.WordT) {
 // N.B. Addressed by SLOT not register
 func BmcdchWriteSlot(slot int, data dg.DwordT) {
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "bmcdch*Write*Slot: Slot %d, Data: %d\n", slot, data)
+		logging.DebugPrint(logging.MapLog, "bmcdch*Write*Slot: Slot %#o, Data: %#o\n", slot, data)
 	}
 	regs[slot*2] = DwordGetUpperWord(data)
 	regs[(slot*2)+1] = DwordGetLowerWord(data)
@@ -175,7 +175,7 @@ func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 	//page = dg.PhysAddrT(regs[(slot*2)+1]) << 10
 	physAddr = (mAddr & 0x3ff) | page
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "getBmcMapAddr got: %d, slot: %d, regs[slot*2+1]: %d, page: %d, returning: %d\n",
+		logging.DebugPrint(logging.MapLog, "getBmcMapAddr got: %#o, slot: %#o, regs[slot*2+1]: %#o, page: %#o, returning: %#o\n",
 			mAddr, slot, regs[(slot*2)+1], page, physAddr)
 	}
 	return physAddr, page // TODO page return is just for debugging
@@ -189,7 +189,7 @@ func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 	//page = dg.PhysAddrT(regs[(slot*2)+1]) << 10
 	physAddr = (mAddr & 0x3ff) | page
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "getDchMapAddr got: %d, slot: %d, regs[slot*2+1]: %d, page: %d, returning: %d\n",
+		logging.DebugPrint(logging.MapLog, "getDchMapAddr got: %#o, slot: %#o, regs[slot*2+1]: %#o, page: %#o, returning: %#o\n",
 			mAddr, slot, regs[(slot*2)+1], page, physAddr)
 	}
 	return physAddr, page // TODO page return is just for debugging
@@ -227,7 +227,7 @@ func ReadWordDchChan(addr dg.PhysAddrT) dg.WordT {
 		physAddr = addr
 	}
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "ReadWordDchChan got addr: %d, read from addr: %d\n", addr, physAddr)
+		logging.DebugPrint(logging.MapLog, "ReadWordDchChan got addr: %#o, read from addr: %#o\n", addr, physAddr)
 	}
 	return ReadWord(physAddr)
 }
@@ -245,7 +245,7 @@ func ReadWordBmcChan(addr *dg.PhysAddrT) dg.WordT {
 	wd := ReadWord(pAddr)
 	*addr = *addr + 1
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan got addr: %d, wrote to addr: %d\n", addr, pAddr)
+		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
 	return wd
 }
@@ -262,7 +262,7 @@ func ReadWordBmcChan16bit(addr *dg.WordT) dg.WordT {
 	wd := ReadWord(pAddr)
 	*addr = *addr + 1
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan16bit got addr: %d, wrote to addr: %d\n", addr, pAddr)
+		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan16bit got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
 	return wd
 }
@@ -279,7 +279,7 @@ func WriteWordDchChan(unmappedAddr *dg.PhysAddrT, data dg.WordT) (physAddr dg.Ph
 	// auto-increment the supplied address
 	*unmappedAddr++
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %d, wrote to addr: %d\n", unmappedAddr, physAddr)
+		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o, wrote to addr: %#o\n", unmappedAddr, physAddr)
 	}
 	return physAddr
 }
@@ -296,7 +296,7 @@ func WriteWordBmcChan(addr *dg.PhysAddrT, data dg.WordT) {
 	WriteWord(pAddr, data)
 	*addr = *addr + 1
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan got addr: %d, wrote to addr: %d\n", addr, pAddr)
+		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
 }
 
@@ -312,6 +312,6 @@ func WriteWordBmcChan16bit(addr *dg.WordT, data dg.WordT) {
 	WriteWord(pAddr, data)
 	*addr = *addr + 1
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan16bit got addr: %d, wrote to addr: %d\n", addr, pAddr)
+		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan16bit got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
 }

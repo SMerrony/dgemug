@@ -21,6 +21,7 @@
 
 // Here we are emulating the disk6061 device, specifically model 6061
 // controller/drive combination which provides c.190MB of formatted capacity.
+
 package devices
 
 import (
@@ -158,12 +159,12 @@ var (
 	debugLogging                 bool
 )
 
-// disk6061Init must be called to initialise the emulated disk6061 controller
-func Disk6061Init(dev int, statsChann chan Disk6061StatT, logId int, logging bool) {
+// Disk6061Init must be called to initialise the emulated disk6061 controller
+func Disk6061Init(dev int, statsChann chan Disk6061StatT, logID int, logging bool) {
 	disk6061.disk6061Mu.Lock()
 	defer disk6061.disk6061Mu.Unlock()
 	disk6061.devNum = dev
-	disk6061.logID = logId
+	disk6061.logID = logID
 	debugLogging = logging
 
 	cmdDecode = [...]string{"READ", "RECAL", "SEEK", "STOP", "OFFSET FWD", "OFFSET REV",
@@ -183,7 +184,7 @@ func Disk6061Init(dev int, statsChann chan Disk6061StatT, logId int, logging boo
 	disk6061.writeBuff = make([]byte, disk6061BytesPerSect)
 }
 
-// attempt to attach an extant MV/Em disk image to the running emulator
+// Disk6061Attach attempts to attach an extant 6061 disk image to the running emulator
 func Disk6061Attach(dNum int, imgName string) bool {
 	// TODO Disk Number not currently used
 	logging.DebugPrint(disk6061.logID, "disk6061Attach called for disk #%d with image <%s>\n", dNum, imgName)
@@ -225,7 +226,7 @@ func disk6061StatsSender(sChan chan Disk6061StatT) {
 	}
 }
 
-// Create an empty disk file of the correct size for the disk6061 emulator to use
+// Disk6061CreateBlank creates an empty disk file of the correct size for the disk6061 emulator to use
 func Disk6061CreateBlank(imgName string) bool {
 	newFile, err := os.Create(imgName)
 	if err != nil {
@@ -368,7 +369,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
 				disk6061.drive, memory.WordToBinStr(datum))
-			logging.DebugPrint(disk6061.logID, "... CMD: %s, DRV: %d, EMA: %d\n",
+			logging.DebugPrint(disk6061.logID, "... CMD: %s, DRV: %d, EMA: %#o\n",
 				cmdDecode[disk6061.command], disk6061.drive, disk6061.ema)
 		}
 	case 'B':
@@ -381,8 +382,8 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "DOB [Specify Memory Addr] with data %s\n",
 				memory.WordToBinStr(datum))
-			logging.DebugPrint(disk6061.logID, "... MEM Addr: %d\n", disk6061.memAddr)
-			logging.DebugPrint(disk6061.logID, "... EMA: %d\n", disk6061.ema)
+			logging.DebugPrint(disk6061.logID, "... MEM Addr: %#o\n", disk6061.memAddr)
+			logging.DebugPrint(disk6061.logID, "... EMA: %#o\n", disk6061.ema)
 		}
 	case 'C':
 		if disk6061.lastDOAwasSeek {
@@ -400,7 +401,7 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 			if debugLogging {
 				logging.DebugPrint(disk6061.logID, "DOC [Specify Surf,Sect,Cnt] (not after seek) with data %s\n",
 					memory.WordToBinStr(datum))
-				logging.DebugPrint(disk6061.logID, "... MAP: %d, SURF: %d, SECT: %d, SECCNT: %d\n",
+				logging.DebugPrint(disk6061.logID, "... MAP: %d., SURF: %d., SECT: %d., SECCNT: %d.\n",
 					memory.BoolToInt(disk6061.mapEnabled), disk6061.surface, disk6061.sector, disk6061.sectCnt)
 			}
 		}
@@ -448,7 +449,7 @@ func disk6061DoCommand() {
 	case disk6061CmdRead:
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... READ command invoked %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... .... Start Address: %d\n", disk6061.memAddr)
+			logging.DebugPrint(disk6061.logID, "... .... Start Address: %#o\n", disk6061.memAddr)
 		}
 		disk6061.rwStatus = 0
 
@@ -465,8 +466,7 @@ func disk6061DoCommand() {
 				disk6061.sector = 0
 				disk6061.surface++
 				if debugLogging {
-					logging.DebugPrint(disk6061.logID, "Sector read overflow, advancing to surface %d",
-						disk6061.surface)
+					logging.DebugPrint(disk6061.logID, "Sector read overflow, advancing to surface %d.", disk6061.surface)
 				}
 				// disk6061.driveStatus = disk6061Ready
 				// disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
@@ -501,7 +501,7 @@ func disk6061DoCommand() {
 		}
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... .... READ command finished %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "\n... .... Last Address: %d\n", disk6061.memAddr)
+			logging.DebugPrint(disk6061.logID, "\n... .... Last Address: %#o\n", disk6061.memAddr)
 		}
 		disk6061.rwStatus = disk6061Rwdone //| disk6061Drive0Done
 
@@ -511,7 +511,7 @@ func disk6061DoCommand() {
 	case disk6061CmdWrite:
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... WRITE command invoked %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... .....  Start Address: %d\n", disk6061.memAddr)
+			logging.DebugPrint(disk6061.logID, "... .....  Start Address: %#o\n", disk6061.memAddr)
 		}
 		disk6061.rwStatus = 0
 
@@ -528,8 +528,7 @@ func disk6061DoCommand() {
 				disk6061.sector = 0
 				disk6061.surface++
 				if debugLogging {
-					logging.DebugPrint(disk6061.logID, "Sector write overflow, advancing to surface %d",
-						disk6061.surface)
+					logging.DebugPrint(disk6061.logID, "Sector write overflow, advancing to surface %d.", disk6061.surface)
 				}
 				// disk6061.driveStatus = disk6061Ready
 				// disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
@@ -563,7 +562,7 @@ func disk6061DoCommand() {
 		}
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... ..... WRITE command finished %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... ..... Last Address: %d\n", disk6061.memAddr)
+			logging.DebugPrint(disk6061.logID, "... ..... Last Address: %#o\n", disk6061.memAddr)
 		}
 		disk6061.driveStatus = disk6061Ready
 		disk6061.rwStatus = disk6061Rwdone //| disk6061Drive0Done
