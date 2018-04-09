@@ -446,9 +446,13 @@ func mtDoCommand() {
 		logging.DebugPrint(logID, "*SPACE FORWARD* command\n ----- ------- Unit: #%d\n", mt.currentUnit)
 		if mt.negWordCntReg == 0 { // one whole file
 			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
-			mt.memAddrReg = 0xffffffff //  or 0 ???
+			// according to the simH source, MA should be set to # files/recs skipped
+			// can't find any reference to this in the Periph Pgmrs Guide but it lets INSTL
+			// progress further...
+			mt.memAddrReg = 1
 			if stat == simhtape.SimhMtStatOk {
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+				//mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
 			} else {
 				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOT | mtSr1StatusChanged | mtSr1Error
 			}
@@ -456,7 +460,7 @@ func mtDoCommand() {
 			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
 			switch stat {
 			case simhtape.SimhMtStatOk:
-				mt.memAddrReg = 0
+				//mt.memAddrReg = 0
 				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged
 			case simhtape.SimhMtStatTmk:
 				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
@@ -465,6 +469,7 @@ func mtDoCommand() {
 			default:
 				log.Fatalf("ERROR: Unexpected return from simhTape.SpaceFwd %d", stat)
 			}
+			mt.memAddrReg = dg.PhysAddrT(mt.negWordCntReg * -1)
 		}
 
 	case mtCmdSpaceRev:
