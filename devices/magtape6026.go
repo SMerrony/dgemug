@@ -449,7 +449,8 @@ func mtDoCommand() {
 			// according to the simH source, MA should be set to # files/recs skipped
 			// can't find any reference to this in the Periph Pgmrs Guide but it lets INSTL
 			// progress further...
-			mt.memAddrReg = 1
+			// It seems to need the two's complement of the number...
+			mt.memAddrReg = 0xffffffff
 			if stat == simhtape.SimhMtStatOk {
 				//mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
 				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
@@ -469,7 +470,7 @@ func mtDoCommand() {
 			default:
 				log.Fatalf("ERROR: Unexpected return from simhTape.SpaceFwd %d", stat)
 			}
-			mt.memAddrReg = dg.PhysAddrT(mt.negWordCntReg * -1)
+			mt.memAddrReg = dg.PhysAddrT(mt.negWordCntReg)
 		}
 
 	case mtCmdSpaceRev:
