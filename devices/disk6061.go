@@ -123,9 +123,8 @@ type disk6061T struct {
 	reads, writes       uint64
 	readBuff, writeBuff []byte
 	// DG data...
-	cmdDrvAddr      byte // 6-bit?
-	command         int8 // 4-bit
-	rwCommand       int8
+	cmdDrvAddr      byte     // 6-bit?
+	command         int8     // 4-bit
 	drive           uint8    // 2-bit
 	mapEnabled      bool     // is the BMC addressing physical (0) or Mapped (1)
 	memAddr         dg.WordT // self-incrementing on DG
@@ -335,8 +334,24 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		disk6061.command = extractdisk6061Command(datum)
 		disk6061.drive = extractdisk6061DriveNo(datum)
 		disk6061.ema = extractdisk6061EMA(datum)
+		if debugLogging {
+			logging.DebugPrint(disk6061.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
+				disk6061.drive, memory.WordToBinStr(datum))
+		}
 		if memory.TestWbit(datum, 0) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Rwdone)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Rwfault)
+			disk6061.rwStatus &= ^dg.WordT(disk6061late)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Verify)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Surfsect)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Cylinder)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Badsector)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Ecc)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Illegalsector)
+			disk6061.rwStatus &= ^dg.WordT(disk6061Parity)
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "... Clear R/W Done et al.\n")
+			}
 		}
 		if memory.TestWbit(datum, 1) {
 			disk6061.rwStatus &= ^dg.WordT(disk6061Drive0Done)
@@ -353,9 +368,15 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		disk6061.instructionMode = disk6061InsModeNormal
 		if disk6061.command == disk6061CmdSetAltMode1 {
 			disk6061.instructionMode = disk6061InsModeAlt1
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "... Alt Mode 1 set\n")
+			}
 		}
 		if disk6061.command == disk6061CmdSetAltMode2 {
 			disk6061.instructionMode = disk6061InsModeAlt2
+			if debugLogging {
+				logging.DebugPrint(disk6061.logID, "... Alt Mode 2 set\n")
+			}
 		}
 		if disk6061.command == disk6061CmdNoOp {
 			disk6061.instructionMode = disk6061InsModeNormal
@@ -367,8 +388,6 @@ func disk6061Out(datum dg.WordT, abc byte, flag byte) {
 		}
 		disk6061.lastDOAwasSeek = (disk6061.command == disk6061CmdSeek)
 		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
-				disk6061.drive, memory.WordToBinStr(datum))
 			logging.DebugPrint(disk6061.logID, "... CMD: %s, DRV: %d, EMA: %#o\n",
 				cmdDecode[disk6061.command], disk6061.drive, disk6061.ema)
 		}
@@ -582,7 +601,6 @@ func disk6061HandleFlag(f byte) {
 		disk6061.disk6061Mu.Lock()
 		disk6061.rwStatus = 0
 		// TODO start I/O timeout
-		disk6061.rwCommand = disk6061.command
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... S flag set\n")
 		}
@@ -602,7 +620,6 @@ func disk6061HandleFlag(f byte) {
 		BusSetDone(disk6061.devNum, false)
 		disk6061.disk6061Mu.Lock()
 		disk6061.rwStatus = 0
-		disk6061.rwCommand = 0
 		disk6061.disk6061Mu.Unlock()
 		// send IRQ if not masked out
 		//if !BusIsDevMasked(disk6061.devNum) {
@@ -659,6 +676,11 @@ func disk6061Reset() {
 	disk6061.disk6061Mu.Lock()
 	disk6061.instructionMode = disk6061InsModeNormal
 	disk6061.rwStatus = 0
+	disk6061.command = disk6061CmdRead
+	disk6061.cylinder = 0
+	disk6061.surface = 0
+	disk6061.sector = 0
+	disk6061.sectCnt = 0
 	disk6061.driveStatus = disk6061Ready
 	if debugLogging {
 		logging.DebugPrint(disk6061.logID, "disk6061 Reset\n")
