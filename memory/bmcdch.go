@@ -110,6 +110,9 @@ func bmcdchReset() {
 	regs[iochanDefReg] = ioccdr1
 	regs[iochanStatusReg] = iocsr1A | iocsr1B
 	regs[iochanMaskReg] = iocmrMK1 | iocmrMK2 | iocmrMK3 | iocmrMK4 | iocmrMK5 | iocmrMK6
+	if isLogging {
+		logging.DebugPrint(logging.MapLog, "BMC/DCH Map Registers Reset\n")
+	}
 }
 
 func getDchMode() bool {
@@ -189,7 +192,7 @@ func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 	//page = dg.PhysAddrT(regs[(slot*2)+1]) << 10
 	physAddr = (mAddr & 0x3ff) | page
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "getDchMapAddr got: %#o, slot: %#o, regs[slot*2+1]: %#o, page: %#o, returning: %#o\n",
+		logging.DebugPrint(logging.MapLog, "getDchMapAddr Got: %#o, Derived: slot: %#o, regs[slot*2+1]: %#o, page: %#o, Result: %#o\n",
 			mAddr, slot, regs[(slot*2)+1], page, physAddr)
 	}
 	return physAddr, page // TODO page return is just for debugging
@@ -260,10 +263,10 @@ func ReadWordBmcChan16bit(addr *dg.WordT) dg.WordT {
 		pAddr = decodedAddr.ca
 	}
 	wd := ReadWord(pAddr)
-	*addr = *addr + 1
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan16bit got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
+	*addr++
 	return wd
 }
 
@@ -276,11 +279,11 @@ func WriteWordDchChan(unmappedAddr *dg.PhysAddrT, data dg.WordT) (physAddr dg.Ph
 		physAddr = *unmappedAddr
 	}
 	WriteWord(physAddr, data)
-	// auto-increment the supplied address
-	*unmappedAddr++
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o, wrote to addr: %#o\n", unmappedAddr, physAddr)
 	}
+	// auto-increment the supplied address
+	*unmappedAddr++
 	return physAddr
 }
 
@@ -294,10 +297,10 @@ func WriteWordBmcChan(addr *dg.PhysAddrT, data dg.WordT) {
 		pAddr = decodedAddr.ca
 	}
 	WriteWord(pAddr, data)
-	*addr = *addr + 1
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
+	*addr++
 }
 
 // WriteWordBmcChan16bit writes a word over the virtual Burst Multiplex Channel for 16-bit devices
@@ -310,8 +313,8 @@ func WriteWordBmcChan16bit(addr *dg.WordT, data dg.WordT) {
 		pAddr = decodedAddr.ca
 	}
 	WriteWord(pAddr, data)
-	*addr = *addr + 1
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "WriteWordBmcChan16bit got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
+	*addr++
 }

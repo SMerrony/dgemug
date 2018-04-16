@@ -347,14 +347,14 @@ func mtDataOut(datum dg.WordT, abc byte, flag byte) {
 		}
 		// which unit?
 		mt.currentUnit = mtExtractUnit(datum)
-		logging.DebugPrint(logID, "DOA - Specify Command and Drive - internal cmd #: %0o, unit: %0o\n",
+		logging.DebugPrint(logID, "DOA - Specify Command and Drive - internal cmd #: %#o, unit: %#o\n",
 			mt.currentCmd, mt.currentUnit)
 	case 'B':
 		mt.memAddrReg = dg.PhysAddrT(datum)
-		logging.DebugPrint(logID, "DOB - MA set to %0o\n", mt.memAddrReg)
+		logging.DebugPrint(logID, "DOB - MA set to %#o\n", mt.memAddrReg)
 	case 'C':
 		mt.negWordCntReg = int16(datum)
-		logging.DebugPrint(logID, "DOC - Set (neg) Word Count to 0%o (%d.)\n", datum, mt.negWordCntReg)
+		logging.DebugPrint(logID, "DOC - Set (neg) Word Count to #%o (%d.)\n", datum, mt.negWordCntReg)
 	case 'N': // special handling for NIOx...
 		logging.DebugPrint(logID, "NIO - Flag is %c\n", flag)
 	}
@@ -422,7 +422,7 @@ func mtDoCommand() {
 			for w = 0; w < hdrLen; w += 2 {
 				wd = (dg.WordT(rec[w]) << 8) | dg.WordT(rec[w+1])
 				pAddr = memory.WriteWordDchChan(&mt.memAddrReg, wd)
-				logging.DebugPrint(logID, " ----  Written word (%02X | %02X := %04X) to logical address: %d, physical: %d\n", rec[w], rec[w+1], wd, mt.memAddrReg, pAddr)
+				logging.DebugPrint(logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, mt.memAddrReg, pAddr)
 				// memAddrReg is auto-incremented for every word written  *******
 				// auto-incremement the (two's complement) word count
 				mt.negWordCntReg++
