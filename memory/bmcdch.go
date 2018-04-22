@@ -41,6 +41,7 @@ import (
 const (
 	bmcRegs         = 2048
 	firstDchSlotReg = bmcRegs
+	firstDchSlot    = bmcRegs / 2
 	dchRegs         = 1024
 	totalRegs       = 4096  // 010000(8)
 	iochanDefReg    = 06000 // 3072.
@@ -116,10 +117,10 @@ func bmcdchReset() {
 }
 
 func getDchMode() bool {
-	if isLogging {
-		logging.DebugPrint(logging.MapLog, "getDchMode returning: %d\n",
-			BoolToInt(TestWbit(regs[iochanDefReg], 14)))
-	}
+	// if isLogging {
+	// 	logging.DebugPrint(logging.MapLog, "getDchMode returning: %d\n",
+	// 		BoolToInt(TestWbit(regs[iochanDefReg], 14)))
+	// }
 	return TestWbit(regs[iochanDefReg], 14)
 }
 
@@ -185,14 +186,14 @@ func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 }
 
 func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT) {
-	slot := mAddr >> 10
+	slot := (mAddr >> 10) + firstDchSlot
 	/*** N.B. at some point between 1980 and 1987 the lower 5 bits of the odd word were
 	  prepended to the even word to extend the mappable space */
 	page = dg.PhysAddrT((regs[slot*2]&0x1f))<<16 + dg.PhysAddrT(regs[(slot*2)+1])<<10
 	//page = dg.PhysAddrT(regs[(slot*2)+1]) << 10
 	physAddr = (mAddr & 0x3ff) | page
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "getDchMapAddr Got: %#o, Derived: slot: %#o, regs[slot*2+1]: %#o, page: %#o, Result: %#o\n",
+		logging.DebugPrint(logging.MapLog, "... getDchMapAddr Got: %#o, Derived: slot: %#o, regs[slot*2+1]: %#o, page: %#o, Result: %#o\n",
 			mAddr, slot, regs[(slot*2)+1], page, physAddr)
 	}
 	return physAddr, page // TODO page return is just for debugging
@@ -273,15 +274,15 @@ func ReadWordBmcChan16bit(addr *dg.WordT) dg.WordT {
 // WriteWordDchChan writes a word to memory over the virtual DCH
 // physAddr is returned for debugging purposes only
 func WriteWordDchChan(unmappedAddr *dg.PhysAddrT, data dg.WordT) (physAddr dg.PhysAddrT) {
+	if isLogging {
+		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o\n", unmappedAddr)
+	}
 	if getDchMode() {
 		physAddr, _ = getDchMapAddr(*unmappedAddr)
 	} else {
 		physAddr = *unmappedAddr
 	}
 	WriteWord(physAddr, data)
-	if isLogging {
-		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o, wrote to addr: %#o\n", unmappedAddr, physAddr)
-	}
 	// auto-increment the supplied address
 	*unmappedAddr++
 	return physAddr
