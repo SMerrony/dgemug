@@ -42,7 +42,7 @@ func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 	addr := dg.PhysAddrT(ram[NspLoc])
 	WriteWord(addr, data)
 	if debugging {
-		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %8d onto the Narrow Stack at location: %d\n", data, addr)
+		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %#o onto the Narrow Stack at location: %#o\n", data, addr)
 	}
 }
 
@@ -53,7 +53,7 @@ func NsPop(seg dg.PhysAddrT, debugging bool) dg.WordT {
 	addr := dg.PhysAddrT(ram[NspLoc])
 	data := ReadWord(addr)
 	if debugging {
-		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %8d off  the Narrow Stack at location: %d\n", data, addr)
+		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %#o off  the Narrow Stack at location: %#o\n", data, addr)
 	}
 	ram[NspLoc]-- // we allow this direct write to a fixed location for performance
 	return data
