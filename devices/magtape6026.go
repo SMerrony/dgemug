@@ -422,7 +422,7 @@ func mtDoCommand() {
 			for w = 0; w < hdrLen; w += 2 {
 				wd = (dg.WordT(rec[w]) << 8) | dg.WordT(rec[w+1])
 				pAddr = memory.WriteWordDchChan(&mt.memAddrReg, wd)
-				logging.DebugPrint(logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, mt.memAddrReg, pAddr)
+				logging.DebugPrint(logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, mt.memAddrReg-1, pAddr)
 				// memAddrReg is auto-incremented for every word written  *******
 				// auto-incremement the (two's complement) word count
 				mt.negWordCntReg++

@@ -33,6 +33,8 @@
 package memory
 
 import (
+	"log"
+
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
 )
@@ -43,6 +45,7 @@ const (
 	firstDchSlotReg = bmcRegs
 	firstDchSlot    = bmcRegs / 2
 	dchRegs         = 1024
+	dchSlots        = dchRegs / 2
 	totalRegs       = 4096  // 010000(8)
 	iochanDefReg    = 06000 // 3072.
 	// 06001-07677 are reserved
@@ -99,20 +102,27 @@ var (
 
 // bmcdchInit is only called by MemInit()...
 func bmcdchInit(log bool) {
-	bmcdchReset()
 	isLogging = log
-	logging.DebugPrint(logging.MapLog, "BMC/DCH Map Registers Initialised\n")
-}
-
-func bmcdchReset() {
 	for r := range regs {
 		regs[r] = 0
 	}
 	regs[iochanDefReg] = ioccdr1
 	regs[iochanStatusReg] = iocsr1A | iocsr1B
 	regs[iochanMaskReg] = iocmrMK1 | iocmrMK2 | iocmrMK3 | iocmrMK4 | iocmrMK5 | iocmrMK6
+	//BusSetResetFunc(bmcDevNum, BmcdchReset) - N.B. This is done in main()
+	logging.DebugPrint(logging.MapLog, "BMC/DCH Map Registers Initialised\n")
+}
+
+// BmcdchReset clears bits 3,4,7,8 & 14 of the IOCDR
+func BmcdchReset() {
+	// for r := range regs {
+	// 	regs[r] = 0
+	// }
+	regs[iochanDefReg] = ioccdr1
+	regs[iochanStatusReg] = iocsr1A | iocsr1B
+	regs[iochanMaskReg] = iocmrMK1 | iocmrMK2 | iocmrMK3 | iocmrMK4 | iocmrMK5 | iocmrMK6
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "BMC/DCH Map Registers Reset\n")
+		logging.DebugPrint(logging.MapLog, "BMC/DCH Reset\n")
 	}
 }
 
@@ -185,18 +195,26 @@ func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 	return physAddr, page // TODO page return is just for debugging
 }
 
-func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT) {
-	slot := (mAddr >> 10) + firstDchSlot
+// getDchMapAddr returns a physical address mapped from the supplied DCH address
+func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, physPage dg.PhysAddrT) {
+	// the slot is up to 9 bits long
+	slot := int((mAddr>>10)&0x1f + firstDchSlot)
+	if slot < firstDchSlot || slot >= dchSlots+firstDchSlot {
+		logging.DebugLogsDump()
+		log.Fatalf("ERROR: Invalid DCH slot requested in getDchMapAddr - logical addr: %#o, derived slot: %#o", mAddr, slot)
+	}
+	offset := mAddr & 0x3ff
 	/*** N.B. at some point between 1980 and 1987 the lower 5 bits of the odd word were
 	  prepended to the even word to extend the mappable space */
-	page = dg.PhysAddrT((regs[slot*2]&0x1f))<<16 + dg.PhysAddrT(regs[(slot*2)+1])<<10
+	//page = dg.PhysAddrT((regs[slot*2]&0x1f))<<16 + dg.PhysAddrT(regs[(slot*2)+1])<<10
 	//page = dg.PhysAddrT(regs[(slot*2)+1]) << 10
-	physAddr = (mAddr & 0x3ff) | page
+	physPage = dg.PhysAddrT((regs[slot*2]&0x1f))<<16 | dg.PhysAddrT(regs[(slot*2)+1])
+	physAddr = physPage<<10 | offset
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "... getDchMapAddr Got: %#o, Derived: slot: %#o, regs[slot*2+1]: %#o, page: %#o, Result: %#o\n",
-			mAddr, slot, regs[(slot*2)+1], page, physAddr)
+		logging.DebugPrint(logging.MapLog, "... getDchMapAddr Got: %#o, Derived Slot: %#o (%#o), Page: %#o, Offset: %#o, Result: %#o\n",
+			mAddr, slot, BmcdchReadSlot(slot), physPage, offset, physAddr)
 	}
-	return physAddr, page // TODO page return is just for debugging
+	return physAddr, physPage // TODO page return is just for debugging
 }
 
 func decodeBmcAddr(bmcAddr dg.PhysAddrT) bmcAddrT {
@@ -223,16 +241,18 @@ func decodeBmcAddr(bmcAddr dg.PhysAddrT) bmcAddrT {
 }
 
 // ReadWordDchChan - reads a 16-bit word over the virtual DCH channel
-func ReadWordDchChan(addr dg.PhysAddrT) dg.WordT {
+// addr is incremented after use
+func ReadWordDchChan(addr *dg.PhysAddrT) dg.WordT {
 	var physAddr dg.PhysAddrT
 	if getDchMode() {
-		physAddr, _ = getDchMapAddr(addr)
+		physAddr, _ = getDchMapAddr(*addr)
 	} else {
-		physAddr = addr
+		physAddr = *addr
 	}
 	if isLogging {
-		logging.DebugPrint(logging.MapLog, "ReadWordDchChan got addr: %#o, read from addr: %#o\n", addr, physAddr)
+		logging.DebugPrint(logging.MapLog, "ReadWordDchChan got addr: %#o, read from addr: %#o\n", *addr, physAddr)
 	}
+	*addr = *addr + 1
 	return ReadWord(physAddr)
 }
 
@@ -247,10 +267,10 @@ func ReadWordBmcChan(addr *dg.PhysAddrT) dg.WordT {
 		pAddr = decodedAddr.ca
 	}
 	wd := ReadWord(pAddr)
-	*addr = *addr + 1
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
+	*addr = *addr + 1
 	return wd
 }
 
@@ -274,15 +294,15 @@ func ReadWordBmcChan16bit(addr *dg.WordT) dg.WordT {
 // WriteWordDchChan writes a word to memory over the virtual DCH
 // physAddr is returned for debugging purposes only
 func WriteWordDchChan(unmappedAddr *dg.PhysAddrT, data dg.WordT) (physAddr dg.PhysAddrT) {
-	if isLogging {
-		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o\n", unmappedAddr)
-	}
 	if getDchMode() {
 		physAddr, _ = getDchMapAddr(*unmappedAddr)
 	} else {
 		physAddr = *unmappedAddr
 	}
 	WriteWord(physAddr, data)
+	if isLogging {
+		logging.DebugPrint(logging.MapLog, "WriteWordDchChan got addr: %#o, wrote to addr: %#o\n", *unmappedAddr, physAddr)
+	}
 	// auto-increment the supplied address
 	*unmappedAddr++
 	return physAddr
