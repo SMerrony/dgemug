@@ -4,6 +4,8 @@ Go (Golang) packages of routines used in emulating historical Data General minic
 ## cmd/dginstr
 Dginstr generates Go instruction definitions from a CSV source.
 
+This command can be installed by performing a `go install` from its directory.  This is required prior to building any of the related emulators.
+
 ## devices
 Emulation of various DG peripherals
  * Bus
