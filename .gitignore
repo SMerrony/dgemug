@@ -16,4 +16,4 @@
 *.log
 *.tmp
 
-cmd/dginstr
+cmd/dginstr/dginstr
