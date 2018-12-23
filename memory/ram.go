@@ -136,6 +136,21 @@ func ReadWordTrap(wordAddr dg.PhysAddrT) (dg.WordT, bool) {
 	return wd, true
 }
 
+// ReadEclipseWordTrap returns the DG Word at the specified 16-bit physical address
+func ReadEclipseWordTrap(wordAddr dg.WordT) (dg.WordT, bool) {
+	var wd dg.WordT
+	if dg.PhysAddrT(wordAddr) >= memSizeWords {
+		logging.DebugLogsDump()
+		debug.PrintStack()
+		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
+		return 0, false
+	}
+	ramMu.RLock()
+	wd = ram[wordAddr]
+	ramMu.RUnlock()
+	return wd, true
+}
+
 // WriteWord - ALL memory-writing should ultimately go through this function
 // N.B. minor exceptions may be made for NsPush() and NsPop()
 func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
