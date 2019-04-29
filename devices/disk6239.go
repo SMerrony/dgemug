@@ -197,7 +197,7 @@ var (
 	cbChan       chan dg.PhysAddrT
 )
 
-// disk6239Init is called once by the main routine to initialise this disk6239 emulator
+// Disk6239Init is called once by the main routine to initialise this disk6239 emulator
 func Disk6239Init(dev int, statsChann chan Disk6239StatT, logId int, logging bool) {
 
 	disk6239Data.devNum = dev
@@ -219,7 +219,7 @@ func Disk6239Init(dev int, statsChann chan Disk6239StatT, logId int, logging boo
 	disk6239Reset()
 }
 
-// attempt to attach an extant MV/Em disk image to the running emulator
+// Disk6239Attach attempts to attach an extant MV/Em disk image to the running emulator
 func Disk6239Attach(dNum int, imgName string) bool {
 	// TODO Disk Number not currently used
 	logging.DebugPrint(disk6239Data.logID, "disk6239Attach called for disk #%d with image <%s>\n", dNum, imgName)
@@ -287,6 +287,14 @@ func Disk6239CreateBlank(imgName string) bool {
 	return true
 }
 
+// Disk6239LoadDKBT fakes a system ROM routine to boot from this disk.
+func Disk6239LoadDKBT() {
+	logging.DebugPrint(disk6239Data.logID, "Disk6239LoadDKBT() called\n")
+	disk6239Reset()
+	disk6239DoPioCommand() // In a reset state this will cause disk6239PioProgLoad to happen
+	logging.DebugPrint(disk6239Data.logID, "Disk6239LoadDKBT() completed\n")
+}
+
 // Handle the DIA/B/C PIO commands
 func disk6239DataIn(abc byte, flag byte) (datum dg.WordT) {
 	disk6239Data.disk6239DataMu.Lock()
@@ -336,7 +344,19 @@ func disk6239DoPioCommand() {
 	pioCmd := disk6239ExtractPioCommand(disk6239Data.commandRegC)
 	switch pioCmd {
 	case disk6239PioProgLoad:
-		log.Panicln("disk6239ProgLoad command not yet implemented")
+		if debugLogging {
+			logging.DebugPrint(disk6239Data.logID, "PROGRAM LOAD initiated\n")
+		}
+		readBuff := make([]byte, disk6239BytesPerSector)
+		disk6239Data.imageFile.Read(readBuff)
+		addr := dg.PhysAddrT(0)
+		for w = 0; w < disk6239WordsPerSector; w++ {
+			tmpWd := (dg.WordT(readBuff[w*2]) << 8) | dg.WordT(readBuff[(w*2)+1])
+			memory.WriteWordBmcChan(&addr, tmpWd)
+		}
+		if debugLogging {
+			logging.DebugPrint(disk6239Data.logID, "PROGRAM LOAD completed\n")
+		}
 
 	case disk6239PioBegin:
 		if debugLogging {
