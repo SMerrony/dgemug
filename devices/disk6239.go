@@ -488,6 +488,16 @@ func (disk *Disk6239DataT) disk6239DoPioCommand() {
 		disk.statusRegB = memory.DwordGetLowerWord(dg.DwordT(addr))
 		disk.disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239StartList, memory.TestWbit(disk.commandRegC, 15))
 
+	case disk6239UnitStatus:
+		if debugLogging {
+			logging.DebugPrint(disk.logID, "... GET UNIT STATUS command\n")
+			logging.DebugPrint(disk.logID, "... ... Unit: %d\n", disk.commandRegA)
+		}
+		disk.statusRegB = 0
+		memory.SetWbit(&disk.statusRegB, 2) // Ready
+		// TODO may need to handle bit 3 'Busy' in the future
+		disk.disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239UnitStatus, memory.TestWbit(disk.commandRegC, 15))
+
 	default:
 		log.Panicf("disk6239 command %d not yet implemented\n", pioCmd)
 	}
