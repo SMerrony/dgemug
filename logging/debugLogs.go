@@ -53,11 +53,11 @@ var (
 )
 
 // DebugLogsDump can be called to dump out each of the non-empty debug logs to text files
-func DebugLogsDump() {
+// @dir should be empty, or a /-terminated subdirectory to receive the logs
+func DebugLogsDump(dir string) {
 
 	var (
 		debugDumpFile *os.File
-		//err           error
 	)
 
 	for l := range logArr {
@@ -65,15 +65,15 @@ func DebugLogsDump() {
 		if firstLine[l] != lastLine[l] { // ignore unused or empty logs
 			switch l {
 			case DebugLog:
-				debugDumpFile, _ = os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile(dir+"debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case MtLog:
-				debugDumpFile, _ = os.OpenFile("mt_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile(dir+"mt_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DpfLog:
-				debugDumpFile, _ = os.OpenFile("dpf_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile(dir+"dpf_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DskpLog:
-				debugDumpFile, _ = os.OpenFile("dskp_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile(dir+"dskp_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case MapLog:
-				debugDumpFile, _ = os.OpenFile("bmcdch_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+				debugDumpFile, _ = os.OpenFile("dir+bmcdch_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			}
 			debugDumpFile.WriteString(">>> Dumping Debug Log\n\n")
 			thisLine := firstLine[l]

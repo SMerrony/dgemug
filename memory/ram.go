@@ -111,7 +111,7 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 func ReadWord(wordAddr dg.PhysAddrT) dg.WordT {
 	var wd dg.WordT
 	if wordAddr >= memSizeWords {
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
 		log.Fatalf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
 	}
@@ -125,7 +125,7 @@ func ReadWord(wordAddr dg.PhysAddrT) dg.WordT {
 func ReadWordTrap(wordAddr dg.PhysAddrT) (dg.WordT, bool) {
 	var wd dg.WordT
 	if wordAddr >= memSizeWords {
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
 		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
 		return 0, false
@@ -140,7 +140,7 @@ func ReadWordTrap(wordAddr dg.PhysAddrT) (dg.WordT, bool) {
 func ReadEclipseWordTrap(wordAddr dg.WordT) (dg.WordT, bool) {
 	var wd dg.WordT
 	if dg.PhysAddrT(wordAddr) >= memSizeWords {
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
 		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
 		return 0, false
@@ -159,7 +159,7 @@ func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
 	// }
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		log.Fatalf("ERROR: Attempt to write word beyond end of physical memory using address: %d", wordAddr)
 	}
 	ramMu.Lock()
@@ -172,7 +172,7 @@ func ReadDWord(wordAddr dg.PhysAddrT) dg.DwordT {
 	var hiWd, loWd dg.WordT
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		log.Fatalf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d", wordAddr)
 	}
 	ramMu.RLock()
@@ -187,7 +187,7 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	var hiWd, loWd dg.WordT
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		log.Printf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d\n", wordAddr)
 		return 0, false
 	}

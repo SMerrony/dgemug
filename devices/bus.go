@@ -155,7 +155,7 @@ func BusSetDataOutFunc(devNum int, fn DataOutFunc) {
 
 func BusDataOut(devNum int, datum dg.WordT, abc byte, flag byte) {
 	if d[devNum].dataOutFunc == nil {
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		log.Fatalf("ERROR: busDataOut called for device %#o with no function set", devNum)
 	}
 	d[devNum].dataOutFunc(datum, abc, flag)

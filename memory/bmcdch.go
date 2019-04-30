@@ -200,7 +200,7 @@ func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, physPage dg.PhysA
 	// the slot is up to 9 bits long
 	slot := int((mAddr>>10)&0x1f + firstDchSlot)
 	if slot < firstDchSlot || slot >= dchSlots+firstDchSlot {
-		logging.DebugLogsDump()
+		logging.DebugLogsDump("logs/")
 		log.Fatalf("ERROR: Invalid DCH slot requested in getDchMapAddr - logical addr: %#o, derived slot: %#o", mAddr, slot)
 	}
 	offset := mAddr & 0x3ff
