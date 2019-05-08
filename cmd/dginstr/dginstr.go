@@ -164,7 +164,8 @@ func loadCSV() bool {
 		if line[0] == ";" {
 			break
 		}
-		if (genNova && strings.Contains(line[5], "NOVA")) ||
+		if *actionFlag == "checkbits" ||
+			(genNova && strings.Contains(line[5], "NOVA")) ||
 			(genEclipse && strings.Contains(line[5], "ECLIPSE")) ||
 			(genMV && strings.Contains(line[5], "EAGLE")) {
 			row := make([]string, 6)
@@ -178,6 +179,7 @@ func loadCSV() bool {
 	}
 
 	csvFile.Close()
+	fmt.Printf("%d instruction definitions read from CSV\n", numInstrs)
 	return true
 }
 
@@ -253,26 +255,32 @@ package main
 }
 
 // checkBits tests every instruction to ensure that (at least) all set bits are covered by the
-// associated bit mask
+// associated bit mask and that patterns are unique
 func checkBits() {
 	errors := 0
 	for i := 0; i < numInstrs; i++ {
 		bitsUint, _ := strconv.ParseUint(instrsTable[i][1], 0, 16)
 		maskUint, _ := strconv.ParseUint(instrsTable[i][2], 0, 16)
 		diff := bitsUint ^ maskUint // XOR
-		and := diff & bitsUint
-		// fmt.Printf("%d %s %s ", instrsTable[i][0], instrsTable[i][1], instrsTable[i][2])
-		// if and == 0 {
-		// 	fmt.Printf("OK\n")
-		// } else {
-		// 	fmt.Println("*** Error ***\n")
-		// }
-		if and != 0 {
+		if (diff & bitsUint) != 0 {
 			errors++
 			fmt.Printf("Bitmasking error in  %s\n", instrsTable[i][0])
 		}
 	}
 	if errors == 0 {
-		fmt.Println("No bitmasking errors detected")
+		fmt.Printf("No bitmasking errors detected in %d instructions\n", numInstrs)
+	}
+	errors = 0
+	insMap := make(map[string]string)
+	for i := 0; i < numInstrs; i++ {
+		if _, already := insMap[instrsTable[i][1]]; already {
+			errors++
+			fmt.Printf("Bit pattern for %s is a duplicate for %s\n", instrsTable[i][0], insMap[instrsTable[i][1]])
+		} else {
+			insMap[instrsTable[i][1]] = instrsTable[i][0]
+		}
+	}
+	if errors == 0 {
+		fmt.Printf("No duplication errors detected in %d instructions\n", len(insMap))
 	}
 }
