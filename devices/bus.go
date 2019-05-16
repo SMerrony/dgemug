@@ -44,6 +44,18 @@ type (
 	DataInFunc func(abc byte, flag byte) (datum dg.WordT)
 )
 
+// DeviceDesc holds basic config info for a device, a VM will have a map of these to
+// describe its known devices
+type DeviceDesc struct {
+	DgMnemonic string
+	PMB        uint // Priority Mask Bit number
+	IsIO       bool
+	IsBootable bool
+}
+
+// DeviceMapT describes the Device Map used by each VM
+type DeviceMapT map[int]DeviceDesc
+
 type device struct {
 	devMu           sync.RWMutex
 	mnemonic        string
@@ -62,20 +74,23 @@ type device struct {
 type devices [devMax]device
 
 var (
-	d               devices  // not exported
-	irqMask         dg.WordT // not exported, use setter and getter funcs below
+	d       devices  // not exported
+	irqMask dg.WordT // not exported, use setter and getter funcs below
+	// IRQ indicates if we are currently being interrupted
 	IRQ             bool
 	irqsByPriority  [16]bool
 	devsByPriority  [16][]int
 	interruptingDev [devMax]bool
 )
 
+// BusSendInterrupt triggers an IRQ for the given device
 func BusSendInterrupt(devNum int) {
 	interruptingDev[devNum] = true
 	irqsByPriority[d[devNum].priorityMaskBit] = true
 	IRQ = true
 }
 
+// BusClearInterrupt clears the IRQ for the given device
 func BusClearInterrupt(devNum int) {
 	interruptingDev[devNum] = false
 	irqsByPriority[d[devNum].priorityMaskBit] = false
@@ -114,23 +129,27 @@ func BusInit() {
 	}
 }
 
-func BusAddDevice(devNum int, mnem string, pmb uint, att bool, io bool, boot bool) {
+// BusAddDevice adds a new device to the system bus
+func BusAddDevice(devMap DeviceMapT, devNum int, att bool) {
 	if devNum >= devMax {
 		log.Fatalf("ERROR: Attempt to add device with too-high device number: %#o", devNum)
 	}
 	d[devNum].devMu.Lock()
-	d[devNum].mnemonic = mnem
-	d[devNum].priorityMaskBit = pmb
+	d[devNum].mnemonic = devMap[devNum].DgMnemonic
+	d[devNum].priorityMaskBit = devMap[devNum].PMB
 	d[devNum].simAttached = att
-	d[devNum].ioDevice = io
-	d[devNum].bootable = boot
+	d[devNum].ioDevice = devMap[devNum].IsIO
+	d[devNum].bootable = devMap[devNum].IsBootable
 	// N.B. The relative priority of devs with the same PMB is established
 	//      here by the order they are added to the bus
-	devsByPriority[pmb] = append(devsByPriority[pmb], devNum)
+	if devMap[devNum].PMB <= 32 {
+		devsByPriority[devMap[devNum].PMB] = append(devsByPriority[devMap[devNum].PMB], devNum)
+	}
 	logging.DebugPrint(logging.DebugLog, "INFO: Device %#o added to bus\n", devNum)
 	d[devNum].devMu.Unlock()
 }
 
+// BusSetDataInFunc sets the Data In callback fror the given device
 func BusSetDataInFunc(devNum int, fn DataInFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].dataInFunc = fn
@@ -138,6 +157,7 @@ func BusSetDataInFunc(devNum int, fn DataInFunc) {
 	d[devNum].devMu.Unlock()
 }
 
+// BusDataIn forwards a Data In command to the given device
 func BusDataIn(devNum int, abc byte, flag byte) (datum dg.WordT) {
 	if d[devNum].dataInFunc == nil {
 		log.Fatalf("ERROR: busDataIn called for device %#o with no function set", devNum)
@@ -146,6 +166,7 @@ func BusDataIn(devNum int, abc byte, flag byte) (datum dg.WordT) {
 	return d[devNum].dataInFunc(abc, flag)
 }
 
+// BusSetDataOutFunc sets the Data Out callback fror the given device
 func BusSetDataOutFunc(devNum int, fn DataOutFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].dataOutFunc = fn
@@ -153,6 +174,7 @@ func BusSetDataOutFunc(devNum int, fn DataOutFunc) {
 	logging.DebugPrint(logging.DebugLog, "INFO: Bus Data Out function set for dev %#o (%d.)\n", devNum, devNum)
 }
 
+// BusDataOut forwards a Data Out command to the given device
 func BusDataOut(devNum int, datum dg.WordT, abc byte, flag byte) {
 	if d[devNum].dataOutFunc == nil {
 		logging.DebugLogsDump("logs/")
@@ -161,6 +183,7 @@ func BusDataOut(devNum int, datum dg.WordT, abc byte, flag byte) {
 	d[devNum].dataOutFunc(datum, abc, flag)
 }
 
+// BusSetResetFunc sets the device reset callback for the given device
 func BusSetResetFunc(devNum int, resetFn ResetFunc) {
 	d[devNum].devMu.Lock()
 	d[devNum].resetFunc = resetFn
@@ -168,6 +191,7 @@ func BusSetResetFunc(devNum int, resetFn ResetFunc) {
 	d[devNum].devMu.Unlock()
 }
 
+// BusResetDevice forwards a Reset to the given device
 func BusResetDevice(devNum int) {
 	d[devNum].devMu.Lock()
 	io := d[devNum].ioDevice
@@ -180,6 +204,7 @@ func BusResetDevice(devNum int) {
 
 }
 
+// BusResetAllIODevices calls the Reset func for each I/O device
 func BusResetAllIODevices() {
 	for dev := range d {
 		d[dev].devMu.Lock()
@@ -191,18 +216,23 @@ func BusResetAllIODevices() {
 	}
 }
 
+// BusSetAttached sets the MV/Em Attached flag for a device indicating the virtual
+// device is attached to a host image file
 func BusSetAttached(devNum int, imgName string) {
 	d[devNum].devMu.Lock()
 	d[devNum].simAttached = true
 	d[devNum].simImageName = imgName
 	d[devNum].devMu.Unlock()
 }
+
+// BusSetDetached clears the MV/Em Attached flag for a device
 func BusSetDetached(devNum int) {
 	d[devNum].devMu.Lock()
 	d[devNum].simAttached = false
 	d[devNum].simImageName = ""
 	d[devNum].devMu.Unlock()
 }
+
 func BusIsAttached(devNum int) bool {
 	d[devNum].devMu.RLock()
 	att := d[devNum].simAttached
