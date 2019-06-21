@@ -45,6 +45,12 @@ func TestGetWbits(t *testing.T) {
 	}
 }
 
+func BenchmarkGetWbits(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		GetWbits(dg.WordT(i), 4, 6)
+	}
+}
+
 func TestFlipWbit(t *testing.T) {
 	var w dg.WordT = 0x0010
 	FlipWbit(&w, 0)

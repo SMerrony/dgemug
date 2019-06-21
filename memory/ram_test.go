@@ -107,6 +107,14 @@ func TestWriteReadDWord(t *testing.T) {
 		t.Error("Expected 0x11223344, got", dwd)
 	}
 }
+func BenchmarkReadDWord(b *testing.B) {
+	MemInit(MemSizeWords, false)
+	max := MemSizeWords - 2
+	for i := 0; i < b.N; i++ {
+		ReadDWord(dg.PhysAddrT(i % max))
+	}
+}
+
 func TestWriteReadDWordTrap(t *testing.T) {
 	var (
 		dwd dg.DwordT
@@ -125,6 +133,14 @@ func TestWriteReadDWordTrap(t *testing.T) {
 	dwd, ok = ReadDwordTrap(68)
 	if dwd != 0x11223344 || !ok {
 		t.Errorf("Expected 0x11223344, got %x", dwd)
+	}
+}
+
+func BenchmarkReadDWordTrap(b *testing.B) {
+	MemInit(MemSizeWords, false)
+	max := MemSizeWords - 2
+	for i := 0; i < b.N; i++ {
+		ReadDwordTrap(dg.PhysAddrT(i % max))
 	}
 }
 
