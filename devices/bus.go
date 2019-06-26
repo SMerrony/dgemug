@@ -193,13 +193,13 @@ func BusSetResetFunc(devNum int, resetFn ResetFunc) {
 
 // BusResetDevice forwards a Reset to the given device
 func BusResetDevice(devNum int) {
-	d[devNum].devMu.Lock()
-	io := d[devNum].ioDevice
-	d[devNum].devMu.Unlock()
-	if io {
+	d[devNum].devMu.RLock()
+	doIt := d[devNum].ioDevice && (d[devNum].resetFunc != nil)
+	d[devNum].devMu.RUnlock()
+	if doIt {
 		d[devNum].resetFunc()
 	} else {
-		log.Fatalf("ERROR: Attempt to reset non-I/O device %#o\n", devNum)
+		log.Printf("INFO: Ignoring attempt to reset non-I/O/resetable device %#o\n", devNum)
 	}
 
 }
@@ -207,9 +207,9 @@ func BusResetDevice(devNum int) {
 // BusResetAllIODevices calls the Reset func for each I/O device
 func BusResetAllIODevices() {
 	for dev := range d {
-		d[dev].devMu.Lock()
+		d[dev].devMu.RLock()
 		io := d[dev].ioDevice
-		d[dev].devMu.Unlock()
+		d[dev].devMu.RUnlock()
 		if io {
 			BusResetDevice(dev)
 		}
