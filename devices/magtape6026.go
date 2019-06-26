@@ -121,9 +121,9 @@ var (
 )
 
 // MtInit sets the initial state of the (unmounted) tape drive(s)
-func MtInit(dev int, statsChan chan MtStatT, logId int) bool {
+func MtInit(dev int, statsChan chan MtStatT, logIdent int) bool {
 	mt.devNum = dev
-	logID = logId
+	logID = logIdent
 	commandSet[mtCmdRead] = mtCmdReadBits
 	commandSet[mtCmdRewind] = mtCmdRewindBits
 	commandSet[mtCmdCtrlMode] = mtCmdCtrlModeBits
@@ -199,7 +199,7 @@ func MtReset() {
 	logging.DebugPrint(logID, "mt Reset via call to mtReset()\n")
 }
 
-// MTAttach attaches a SimH tape image file to the emulated tape drive
+// MtAttach attaches a SimH tape image file to the emulated tape drive
 func MtAttach(tNum int, imgName string) bool {
 	logging.DebugPrint(logID, "mtAttach called on unit #%d with image file: %s\n", tNum, imgName)
 	f, err := os.Open(imgName)
@@ -219,7 +219,7 @@ func MtAttach(tNum int, imgName string) bool {
 
 }
 
-// MTDetach disassociates a tape file image from the drive
+// MtDetach disassociates a tape file image from the drive
 func MtDetach(tNum int) bool {
 	logging.DebugPrint(logID, "mtDetach called on unit #%d\n", tNum)
 	mt.mtDataMu.Lock()

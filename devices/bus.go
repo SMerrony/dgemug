@@ -233,6 +233,7 @@ func BusSetDetached(devNum int) {
 	d[devNum].devMu.Unlock()
 }
 
+// BusIsAttached returns the attached state of the given device
 func BusIsAttached(devNum int) bool {
 	d[devNum].devMu.RLock()
 	att := d[devNum].simAttached
@@ -240,18 +241,21 @@ func BusIsAttached(devNum int) bool {
 	return att
 }
 
+// BusSetBusy sets/clears the given device's BUSY flag
 func BusSetBusy(devNum int, f bool) {
 	d[devNum].devMu.Lock()
 	d[devNum].busy = f
 	d[devNum].devMu.Unlock()
 }
 
+// BusSetDone sets/clears the given device#s DONE flag
 func BusSetDone(devNum int, f bool) {
 	d[devNum].devMu.Lock()
 	d[devNum].done = f
 	d[devNum].devMu.Unlock()
 }
 
+// BusGetBusy returns a device's BUSY flag
 func BusGetBusy(devNum int) bool {
 	d[devNum].devMu.RLock()
 	bz := d[devNum].busy
@@ -259,6 +263,7 @@ func BusGetBusy(devNum int) bool {
 	return bz
 }
 
+// BusGetDone returns a device's DONE flag
 func BusGetDone(devNum int) bool {
 	d[devNum].devMu.RLock()
 	dn := d[devNum].done
@@ -266,6 +271,8 @@ func BusGetDone(devNum int) bool {
 	return dn
 }
 
+// BusIsBootable returns true if the device can be booted from
+// this is not a guarantee that it WILL boot!
 func BusIsBootable(devNum int) bool {
 	d[devNum].devMu.RLock()
 	bt := d[devNum].bootable
@@ -273,6 +280,7 @@ func BusIsBootable(devNum int) bool {
 	return bt
 }
 
+// BusIsIODevice returns true if this is an IO device
 func BusIsIODevice(devNum int) bool {
 	d[devNum].devMu.RLock()
 	io := d[devNum].ioDevice
@@ -300,6 +308,8 @@ func BusIsDevMasked(devNum int) (masked bool) {
 // 	memory.ClearWbit(&irqMask, d[devNum].priorityMaskBit)
 // }
 
+// BusGetPrintableDevList is used by the console SHOW DEV command to display
+// device statuses
 func BusGetPrintableDevList() string {
 	lst := fmt.Sprintf(" #  Mnem   PMB  I/O Busy Done Status\012")
 	var line string

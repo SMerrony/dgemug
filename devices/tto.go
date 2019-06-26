@@ -38,6 +38,7 @@ var (
 	devNum int
 )
 
+// TtoInit performs iniial setup of the TTO device
 func TtoInit(dev int, c net.Conn) {
 	devNum = dev
 	tto = c
@@ -45,19 +46,23 @@ func TtoInit(dev int, c net.Conn) {
 	BusSetDataOutFunc(devNum, ttoDataOut)
 }
 
+// TtoPutChar outputs a single byte to TTO
 func TtoPutChar(c byte) {
 	tto.Write([]byte{c})
 }
 
+// TtoPutString outputs a string to TTO (no NL appended)
 func TtoPutString(s string) {
 	tto.Write([]byte(s))
 }
 
+// TtoPutStringNL outputs a string followed by a NL to TTO
 func TtoPutStringNL(s string) {
 	tto.Write([]byte(s))
 	tto.Write([]byte{asciiNL})
 }
 
+// TtoPutNLString outputs a NL followed by a string to TTO
 func TtoPutNLString(s string) {
 	tto.Write([]byte{asciiNL})
 	tto.Write([]byte(s))

@@ -126,27 +126,27 @@ const (
 	disk6239CbOpRecalibrateDisk  = 0400
 
 	// disk6239 CB FIELDS
-	disk6239CbLINK_ADDR_HIGH        = 0
-	disk6239CbLINK_ADDR_LOW         = 1
-	disk6239CbINA_FLAGS_OPCODE      = 2
-	disk6239CbPAGENO_LIST_ADDR_HIGH = 3
-	disk6239CbPAGENO_LIST_ADDR_LOW  = 4
-	disk6239CbTXFER_ADDR_HIGH       = 5
-	disk6239CbTXFER_ADDR_LOW        = 6
-	disk6239CbDEV_ADDR_HIGH         = 7
-	disk6239CbDEV_ADDR_LOW          = 8
-	disk6239CbUNIT_NO               = 9
-	disk6239CbTXFER_COUNT           = 10
-	disk6239CbCB_STATUS             = 11
-	disk6239CbRES1                  = 12
-	disk6239CbRES2                  = 13
-	disk6239CbERR_STATUS            = 14
-	disk6239CbUNIT_STATUS           = 15
-	disk6239CbRETRIES_DONE          = 16
-	disk6239CbSOFT_RTN_TXFER_COUNT  = 17
-	disk6239CbPHYS_CYL              = 18
-	disk6239CbPHYS_HEAD_SECT        = 19
-	disk6239CbDISK_ERR_CODE         = 20
+	disk6239CbLinkAddrHigh       = 0
+	disk6239CbLinkAddrLow        = 1
+	disk6239CbInaFlagsOpcode     = 2
+	disk6239CbPagenoListAddrHigh = 3
+	disk6239CbPagenoListAddrLow  = 4
+	disk6239CbTxferAddrHigh      = 5
+	disk6239CbTxferAddrLow       = 6
+	disk6239CbDevAddrHigh        = 7
+	disk6239CbDevAddrLow         = 8
+	disk6239CbUnitNo             = 9
+	disk6239CbTxferCount         = 10
+	disk6239CbCbStatus           = 11
+	disk6239CbRes1               = 12
+	disk6239CbRes2               = 13
+	disk6239CbErrStatus          = 14
+	disk6239CbUnitStatus         = 15
+	disk6239CbRetriesDone        = 16
+	disk6239CbSoftRtnTxferCount  = 17
+	disk6239CbPhysCyl            = 18
+	disk6239CbPhysHeadSect       = 19
+	disk6239CbDiskErrCode        = 20
 
 	// Mapping bits
 	disk6239MapSlotLoadInts = 1 << 15
@@ -596,8 +596,8 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			}
 		}
 
-		opCode := cb[disk6239CbINA_FLAGS_OPCODE] & 0x03ff
-		nextCB = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbLINK_ADDR_HIGH], cb[disk6239CbLINK_ADDR_LOW]))
+		opCode := cb[disk6239CbInaFlagsOpcode] & 0x03ff
+		nextCB = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbLinkAddrHigh], cb[disk6239CbLinkAddrLow]))
 		if debugLogging {
 			logging.DebugPrint(disk.logID, "... CB OpCode: %d\n", opCode)
 			logging.DebugPrint(disk.logID, "... .. Next CB Addr: %d\n", nextCB)
@@ -615,34 +615,34 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			disk.sectorNo = 0
 			disk.disk6239PositionDiskImage()
 			disk.disk6239DataMu.Unlock()
-			if cbLength >= disk6239CbERR_STATUS+1 {
-				cb[disk6239CbERR_STATUS] = 0
+			if cbLength >= disk6239CbErrStatus+1 {
+				cb[disk6239CbErrStatus] = 0
 			}
-			if cbLength >= disk6239CbUNIT_STATUS+1 {
-				cb[disk6239CbUNIT_STATUS] = 1 << 13 // b0010000000000000; // Ready
+			if cbLength >= disk6239CbUnitStatus+1 {
+				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
-			if cbLength >= disk6239CbCB_STATUS+1 {
-				cb[disk6239CbCB_STATUS] = 1 // finally, set Done bit
+			if cbLength >= disk6239CbCbStatus+1 {
+				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
 		case disk6239CbOpRead:
 			disk.disk6239DataMu.Lock()
-			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDEV_ADDR_HIGH], cb[disk6239CbDEV_ADDR_LOW])
-			if memory.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
+			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDevAddrHigh], cb[disk6239CbDevAddrLow])
+			if memory.TestWbit(cb[disk6239CbPagenoListAddrHigh], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB READ from premapped logical addresses  Not Yet Implemented")
 			} else {
 				physTransfers = true
-				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTXFER_ADDR_HIGH], cb[disk6239CbTXFER_ADDR_LOW]))
+				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTxferAddrHigh], cb[disk6239CbTxferAddrLow]))
 			}
 			if debugLogging {
-				logging.DebugPrint(disk.logID, "... .. CB READ command, SECCNT: %d\n", cb[disk6239CbTXFER_COUNT])
+				logging.DebugPrint(disk.logID, "... .. CB READ command, SECCNT: %d\n", cb[disk6239CbTxferCount])
 				logging.DebugPrint(disk.logID, "... .. .. .... from sector:     %d\n", disk.sectorNo)
 				logging.DebugPrint(disk.logID, "... .. .. .... from phys addr:  %d\n", physAddr)
 				logging.DebugPrint(disk.logID, "... .. .. .... physical txfer?: %d\n", memory.BoolToInt(physTransfers))
 			}
-			for sect = 0; sect < dg.DwordT(cb[disk6239CbTXFER_COUNT]); sect++ {
+			for sect = 0; sect < dg.DwordT(cb[disk6239CbTxferCount]); sect++ {
 				disk.sectorNo += sect
 				disk.disk6239PositionDiskImage()
 				disk.imageFile.Read(readBuff)
@@ -653,14 +653,14 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				}
 				disk.reads++
 			}
-			if cbLength >= disk6239CbERR_STATUS+1 {
-				cb[disk6239CbERR_STATUS] = 0
+			if cbLength >= disk6239CbErrStatus+1 {
+				cb[disk6239CbErrStatus] = 0
 			}
-			if cbLength >= disk6239CbUNIT_STATUS+1 {
-				cb[disk6239CbUNIT_STATUS] = 1 << 13 // b0010000000000000; // Ready
+			if cbLength >= disk6239CbUnitStatus+1 {
+				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
-			if cbLength >= disk6239CbCB_STATUS+1 {
-				cb[disk6239CbCB_STATUS] = 1 // finally, set Done bit
+			if cbLength >= disk6239CbCbStatus+1 {
+				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
 			if debugLogging {
@@ -671,22 +671,22 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 
 		case disk6239CbOpWrite:
 			disk.disk6239DataMu.Lock()
-			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDEV_ADDR_HIGH], cb[disk6239CbDEV_ADDR_LOW])
-			if memory.TestWbit(cb[disk6239CbPAGENO_LIST_ADDR_HIGH], 0) {
+			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDevAddrHigh], cb[disk6239CbDevAddrLow])
+			if memory.TestWbit(cb[disk6239CbPagenoListAddrHigh], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB WRITE from premapped logical addresses  Not Yet Implemented")
 			} else {
 				physTransfers = true
-				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTXFER_ADDR_HIGH], cb[disk6239CbTXFER_ADDR_LOW]))
+				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTxferAddrHigh], cb[disk6239CbTxferAddrLow]))
 			}
 			if debugLogging {
-				logging.DebugPrint(disk.logID, "... .. CB WRITE command, SECCNT: %d\n", cb[disk6239CbTXFER_COUNT])
+				logging.DebugPrint(disk.logID, "... .. CB WRITE command, SECCNT: %d\n", cb[disk6239CbTxferCount])
 				logging.DebugPrint(disk.logID, "... .. .. ..... to sector:       %d\n", disk.sectorNo)
 				logging.DebugPrint(disk.logID, "... .. .. ..... from phys addr:  %d\n", physAddr)
 				logging.DebugPrint(disk.logID, "... .. .. ..... physical txfer?: %d\n", memory.BoolToInt(physTransfers))
 			}
-			for sect = 0; sect < dg.DwordT(cb[disk6239CbTXFER_COUNT]); sect++ {
+			for sect = 0; sect < dg.DwordT(cb[disk6239CbTxferCount]); sect++ {
 				disk.sectorNo += sect
 				disk.disk6239PositionDiskImage()
 				memAddr := physAddr + (dg.PhysAddrT(sect) * disk6239WordsPerSector)
@@ -701,14 +701,14 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				}
 				disk.writes++
 			}
-			if cbLength >= disk6239CbERR_STATUS+1 {
-				cb[disk6239CbERR_STATUS] = 0
+			if cbLength >= disk6239CbErrStatus+1 {
+				cb[disk6239CbErrStatus] = 0
 			}
-			if cbLength >= disk6239CbUNIT_STATUS+1 {
-				cb[disk6239CbUNIT_STATUS] = 1 << 13 // b0010000000000000; // Ready
+			if cbLength >= disk6239CbUnitStatus+1 {
+				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
-			if cbLength >= disk6239CbCB_STATUS+1 {
-				cb[disk6239CbCB_STATUS] = 1 // finally, set Done bit
+			if cbLength >= disk6239CbCbStatus+1 {
+				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 			disk.disk6239DataMu.Unlock()
 
