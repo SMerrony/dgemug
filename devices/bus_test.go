@@ -21,26 +21,34 @@
 
 package devices
 
-// import (
-// 	"testing"
-// )
+import (
+	"fmt"
+	"testing"
+)
 
-// func TestIRQmasking(t *testing.T) {
-// 	BusInit()
-// 	BusAddDevice(1, "TEST", 2, true, true, false)   // PMB 01000000000000
-// 	BusAddDevice(2, "TEST2", 15, true, true, false) // PMB 00000000000001
-// 	if BusIsDevMasked(1) {
-// 		t.Error("Device 1 should not be masked")
-// 	}
-// 	BusSetIrqMask(1)
-// 	if BusIsDevMasked(1) {
-// 		t.Error("Device 1 should not be masked")
-// 	}
-// 	if !BusIsDevMasked(2) {
-// 		t.Error("Device 2 should be masked")
-// 	}
-// 	BusSetIrqMask(0x7000)
-// 	if !BusIsDevMasked(1) {
-// 		t.Error("Device 1 should be masked")
-// 	}
-// }
+func TestIRQmasking(t *testing.T) {
+	BusInit()
+	var testDevMap = DeviceMapT{
+		1: {"TEST", 2, true, false},
+		2: {"TEST2", 15, true, false},
+	}
+	BusAddDevice(testDevMap, 1, true)
+	BusAddDevice(testDevMap, 2, true)
+
+	fmt.Printf("Device Map:\n%s\n", BusGetPrintableDevList())
+
+	if BusIsDevMasked(1) {
+		t.Error("Device 1 should not be masked")
+	}
+	BusSetIrqMask(1)
+	if BusIsDevMasked(1) {
+		t.Error("Device 1 should not be masked")
+	}
+	if !BusIsDevMasked(2) {
+		t.Error("Device 2 should be masked")
+	}
+	BusSetIrqMask(0x7000)
+	if !BusIsDevMasked(1) {
+		t.Error("Device 1 should be masked")
+	}
+}
