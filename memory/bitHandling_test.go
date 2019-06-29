@@ -77,7 +77,7 @@ func TestSetWbit(t *testing.T) {
 }
 
 func TestSetQWbit(t *testing.T) {
-	var w dg.QwordT = 0
+	var w dg.QwordT
 	SetQwbit(&w, 63)
 	if w != 1 {
 		t.Errorf("Expected 0x01, got %x", w)
