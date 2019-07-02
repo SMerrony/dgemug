@@ -38,8 +38,10 @@ const (
 func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
+	ramMu.Lock()
 	ram[NspLoc]++ // we allow this direct write to a fixed location for performance
 	addr := dg.PhysAddrT(ram[NspLoc])
+	ramMu.Unlock()
 	WriteWord(addr, data)
 	if debugging {
 		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %#o onto the Narrow Stack at location: %#o\n", data, addr)
@@ -50,11 +52,15 @@ func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 func NsPop(seg dg.PhysAddrT, debugging bool) dg.WordT {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
+	ramMu.RLock()
 	addr := dg.PhysAddrT(ram[NspLoc])
+	ramMu.RUnlock()
 	data := ReadWord(addr)
+	ramMu.Lock()
+	ram[NspLoc]-- // we allow this direct write to a fixed location for performance
+	ramMu.Unlock()
 	if debugging {
 		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %#o off  the Narrow Stack at location: %#o\n", data, addr)
 	}
-	ram[NspLoc]-- // we allow this direct write to a fixed location for performance
 	return data
 }
