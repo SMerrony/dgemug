@@ -1,6 +1,6 @@
 // ram.go
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright (C) 2017,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -162,6 +162,9 @@ func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
 		logging.DebugLogsDump("logs/")
 		log.Fatalf("ERROR: Attempt to write word beyond end of physical memory using address: %d", wordAddr)
 	}
+	// if wordAddr < 4 {
+	// 	runtime.Breakpoint()
+	// }
 	ramMu.Lock()
 	ram[wordAddr] = datum
 	ramMu.Unlock()
