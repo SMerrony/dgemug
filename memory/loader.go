@@ -44,7 +44,7 @@ func LoadFromASCIIFile(asciiOctalFilename string) string {
 	csvReader.Comment = ';'
 	csvReader.FieldsPerRecord = 2
 
-	var address dg.PhysAddrT
+	var count int
 	var contents dg.WordT
 
 	for {
@@ -61,22 +61,16 @@ func LoadFromASCIIFile(asciiOctalFilename string) string {
 		if err != nil {
 			return "*** ERROR: Could not parse Address - " + csvRec[0] + " ***"
 		}
+		thisAddr := dg.PhysAddrT(thisAddr64)
+
 		contents64, err := strconv.ParseUint(csvRec[1], 8, 16)
 		if err != nil {
 			return "*** ERROR: Could not parse Contents - " + csvRec[1] + " ***"
 		}
 		contents = dg.WordT(contents64)
 
-		thisAddr := dg.PhysAddrT(thisAddr64)
-		// do we need to pad with zeroes?
-		if thisAddr > address {
-			for address < thisAddr {
-				WriteWord(address, 0)
-				address++
-			}
-		}
-		WriteWord(address, contents)
-		address++
+		WriteWord(thisAddr, contents)
+		count++
 	}
-	return "Words loaded: " + strconv.Itoa(int(address)-1)
+	return "Words loaded: " + strconv.Itoa(count)
 }
