@@ -163,6 +163,7 @@ func BusDataIn(devNum int, abc byte, flag byte) (datum dg.WordT) {
 		log.Fatalf("ERROR: busDataIn called for device %#o with no function set", devNum)
 	}
 	//cpuPtr.ac[iPtr.acd] = dg.DwordT(d[iPtr.devNum].dataInFunc(abc, iPtr.f))
+	logging.DebugPrint(logging.DebugLog, "Data In Command: DI-%c to device %#o\n", abc, devNum)
 	return d[devNum].dataInFunc(abc, flag)
 }
 
