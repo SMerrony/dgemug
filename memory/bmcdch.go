@@ -1,6 +1,6 @@
 // bmcdch.go
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright (C) 2017,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ package memory
 
 import (
 	"log"
+	"sync"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
@@ -96,12 +97,14 @@ type bmcAddrT struct {
 }
 
 var (
+	bmcdchMu  sync.RWMutex
 	regs      [totalRegs]dg.WordT
 	isLogging bool
 )
 
 // bmcdchInit is only called by MemInit()...
 func bmcdchInit(log bool) {
+	bmcdchMu.Lock()
 	isLogging = log
 	for r := range regs {
 		regs[r] = 0
@@ -109,6 +112,7 @@ func bmcdchInit(log bool) {
 	regs[iochanDefReg] = ioccdr1
 	regs[iochanStatusReg] = iocsr1A | iocsr1B
 	regs[iochanMaskReg] = iocmrMK1 | iocmrMK2 | iocmrMK3 | iocmrMK4 | iocmrMK5 | iocmrMK6
+	bmcdchMu.Unlock()
 	//BusSetResetFunc(bmcDevNum, BmcdchReset) - N.B. This is done in main()
 	logging.DebugPrint(logging.MapLog, "BMC/DCH Map Registers Initialised\n")
 }
@@ -118,25 +122,27 @@ func BmcdchReset() {
 	// for r := range regs {
 	// 	regs[r] = 0
 	// }
+	bmcdchMu.Lock()
 	regs[iochanDefReg] = ioccdr1
 	regs[iochanStatusReg] = iocsr1A | iocsr1B
 	regs[iochanMaskReg] = iocmrMK1 | iocmrMK2 | iocmrMK3 | iocmrMK4 | iocmrMK5 | iocmrMK6
+	bmcdchMu.Unlock()
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "BMC/DCH Reset\n")
 	}
 }
 
 func getDchMode() bool {
-	// if isLogging {
-	// 	logging.DebugPrint(logging.MapLog, "getDchMode returning: %d\n",
-	// 		BoolToInt(TestWbit(regs[iochanDefReg], 14)))
-	// }
-	return TestWbit(regs[iochanDefReg], 14)
+	bmcdchMu.RLock()
+	mode := TestWbit(regs[iochanDefReg], 14)
+	bmcdchMu.RUnlock()
+	return mode
 }
 
 // BmcdchWriteReg populates a given 16-bit register with the supplied data
 // N.B. Addressed by REGISTER not slot
 func BmcdchWriteReg(reg int, data dg.WordT) {
+	bmcdchMu.Lock()
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "bmcdchWriteReg: Reg %#o, Data: %#o\n", reg, data)
 	}
@@ -159,30 +165,40 @@ func BmcdchWriteReg(reg int, data dg.WordT) {
 	} else {
 		regs[reg] = data
 	}
+	bmcdchMu.Unlock()
 }
 
 // BmcdchWriteSlot populates a whole SLOT (pair of registers) with the supplied doubleword
 // N.B. Addressed by SLOT not register
 func BmcdchWriteSlot(slot int, data dg.DwordT) {
+	bmcdchMu.Lock()
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "bmcdch*Write*Slot: Slot %#o, Data: %#o\n", slot, data)
 	}
 	regs[slot*2] = DwordGetUpperWord(data)
 	regs[(slot*2)+1] = DwordGetLowerWord(data)
+	bmcdchMu.Unlock()
 }
 
 // BmcdchReadReg returns the single word contents of the requested register
 func BmcdchReadReg(reg int) dg.WordT {
-	return regs[reg]
+	bmcdchMu.RLock()
+	r := regs[reg]
+	bmcdchMu.RUnlock()
+	return r
 }
 
 // BmcdchReadSlot returns the doubleword contents of the requested SLOT
 func BmcdchReadSlot(slot int) dg.DwordT {
-	return DwordFromTwoWords(regs[slot*2], regs[(slot*2)+1])
+	bmcdchMu.RLock()
+	dwd := DwordFromTwoWords(regs[slot*2], regs[(slot*2)+1])
+	bmcdchMu.RUnlock()
+	return dwd
 }
 
 func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT) {
 	slot := mAddr >> 10
+	bmcdchMu.RLock()
 	/*** N.B. at some point between 1980 and 1987 the lower 5 bits of the odd word were
 	  prepended to the even word to extend the mappable space */
 	page = dg.PhysAddrT((regs[slot*2]&0x1f))<<16 + dg.PhysAddrT(regs[(slot*2)+1])<<10
@@ -192,11 +208,13 @@ func getBmcMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, page dg.PhysAddrT
 		logging.DebugPrint(logging.MapLog, "getBmcMapAddr got: %#o, slot: %#o, regs[slot*2+1]: %#o, page: %#o, returning: %#o\n",
 			mAddr, slot, regs[(slot*2)+1], page, physAddr)
 	}
+	bmcdchMu.RUnlock()
 	return physAddr, page // TODO page return is just for debugging
 }
 
 // getDchMapAddr returns a physical address mapped from the supplied DCH address
 func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, physPage dg.PhysAddrT) {
+	bmcdchMu.RLock()
 	// the slot is up to 9 bits long
 	slot := int((mAddr>>10)&0x1f + firstDchSlot)
 	if slot < firstDchSlot || slot >= dchSlots+firstDchSlot {
@@ -214,6 +232,7 @@ func getDchMapAddr(mAddr dg.PhysAddrT) (physAddr dg.PhysAddrT, physPage dg.PhysA
 		logging.DebugPrint(logging.MapLog, "... getDchMapAddr Got: %#o, Derived Slot: %#o (%#o), Page: %#o, Offset: %#o, Result: %#o\n",
 			mAddr, slot, BmcdchReadSlot(slot), physPage, offset, physAddr)
 	}
+	bmcdchMu.RUnlock()
 	return physAddr, physPage // TODO page return is just for debugging
 }
 
@@ -222,7 +241,7 @@ func decodeBmcAddr(bmcAddr dg.PhysAddrT) bmcAddrT {
 		inAddr dg.DwordT
 		res    bmcAddrT
 	)
-
+	bmcdchMu.RLock()
 	inAddr = dg.DwordT(bmcAddr << 10) // shift left so we can use documented 21-bit numbering
 	res.isLogical = TestDwbit(inAddr, 0)
 	if res.isLogical {
@@ -236,7 +255,7 @@ func decodeBmcAddr(bmcAddr dg.PhysAddrT) bmcAddrT {
 		res.xca = byte(GetDwbits(inAddr, 4, 3))
 		res.ca = bmcAddr & 0x7fff // mask off 15 bits
 	}
-
+	bmcdchMu.RUnlock()
 	return res
 }
 
