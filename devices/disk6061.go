@@ -448,8 +448,8 @@ func disk6061DoCommand() {
 		disk6061.surface = 0
 		disk6061PositionDiskImage()
 		disk6061.driveStatus = disk6061Ready
-		//disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
-		disk6061.rwStatus = disk6061Drive0Done
+		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		//disk6061.rwStatus = disk6061Drive0Done
 		if debugLogging {
 			logging.DebugPrint(disk6061.logID, "... RECAL done, %s\n", disk6061PrintableAddr())
 		}
@@ -522,7 +522,7 @@ func disk6061DoCommand() {
 			logging.DebugPrint(disk6061.logID, "... .... READ command finished %s\n", disk6061PrintableAddr())
 			logging.DebugPrint(disk6061.logID, "\n... .... Last Address: %#o\n", disk6061.memAddr)
 		}
-		disk6061.rwStatus = disk6061Rwdone //| disk6061Drive0Done
+		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
 
 	case disk6061CmdRelease:
 		// I think this is a NOP on a single-processor machine

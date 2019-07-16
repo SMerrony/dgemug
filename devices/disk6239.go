@@ -591,8 +591,14 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		addr := cbAddr
 		for w = 0; w < cbLength; w++ {
 			cb[w] = memory.ReadWordBmcChan(&addr)
-			if debugLogging {
-				logging.DebugPrint(disk.logID, "... CB[%d]: %d\n", w, cb[w])
+			// if debugLogging {
+			// 	logging.DebugPrint(disk.logID, "... CB[%d]: %d\n", w, cb[w])
+			// }
+		}
+		if debugLogging {
+			logging.DebugPrint(disk.logID, "... CB: ")
+			for cbwd := 0; cbwd < cbLength; cbwd++ {
+				logging.DebugPrint(disk.logID, "%d: %d, ", cbwd, cb[cbwd])
 			}
 		}
 
@@ -603,6 +609,20 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			logging.DebugPrint(disk.logID, "... .. Next CB Addr: %d\n", nextCB)
 		}
 		switch opCode {
+
+		case disk6239CbOpNoOp:
+			if debugLogging {
+				logging.DebugPrint(disk.logID, "... .. NO OP\n")
+			}
+			if cbLength >= disk6239CbErrStatus+1 {
+				cb[disk6239CbErrStatus] = 0
+			}
+			if cbLength >= disk6239CbUnitStatus+1 {
+				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
+			}
+			if cbLength >= disk6239CbCbStatus+1 {
+				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
+			}
 
 		case disk6239CbOpRecalibrateDisk:
 			disk.disk6239DataMu.Lock()
@@ -756,7 +776,9 @@ func (disk *Disk6239DataT) disk6239Reset() {
 	disk.disk6239ResetIntInfBlk()
 	disk.disk6239ResetCtrlrInfBlock()
 	disk.disk6239ResetUnitInfBlock()
+	//disk.statusRegA = 0
 	disk.statusRegB = 0
+	//disk.statusRegC = 0
 	disk.disk6239SetPioStatusRegC(statXecStateResetDone, 0, disk6239PioReset, memory.TestWbit(disk.commandRegC, 15))
 	disk.disk6239DataMu.Unlock()
 	if debugLogging {
