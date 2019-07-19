@@ -506,7 +506,7 @@ func disk6061DoCommand() {
 				log.Fatalf("ERROR: unexpected return from disk6061 Image File Read: %s", err)
 			}
 			for wIx = 0; wIx < disk6061WordsPerSect; wIx++ {
-				wd = (dg.WordT(disk6061.readBuff[wIx*2]) << 8) | dg.WordT(disk6061.readBuff[(wIx*2)+1])
+				wd = (dg.WordT(disk6061.readBuff[(wIx*2)+1]) << 8) | dg.WordT(disk6061.readBuff[wIx*2])
 				memory.WriteWordBmcChan16bit(&disk6061.memAddr, wd)
 			}
 			disk6061.sector++
@@ -564,8 +564,8 @@ func disk6061DoCommand() {
 			disk6061PositionDiskImage()
 			for wIx = 0; wIx < disk6061WordsPerSect; wIx++ {
 				wd = memory.ReadWordBmcChan16bit(&disk6061.memAddr)
-				disk6061.writeBuff[wIx*2] = byte((wd & 0xff00) >> 8)
-				disk6061.writeBuff[(wIx*2)+1] = byte(wd & 0x00ff)
+				disk6061.writeBuff[(wIx*2)+1] = byte(wd >> 8)
+				disk6061.writeBuff[wIx*2] = byte(wd)
 			}
 			bytesWritten, err = disk6061.imageFile.Write(disk6061.writeBuff)
 			if bytesWritten != disk6061BytesPerSect || err != nil {

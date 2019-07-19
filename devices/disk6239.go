@@ -353,7 +353,7 @@ func (disk *Disk6239DataT) disk6239DoPioCommand() {
 		disk.imageFile.Read(readBuff)
 		addr := dg.PhysAddrT(0)
 		for w = 0; w < disk6239WordsPerSector; w++ {
-			tmpWd := (dg.WordT(readBuff[w*2]) << 8) | dg.WordT(readBuff[(w*2)+1])
+			tmpWd := dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
 			memory.WriteWordBmcChan(&addr, tmpWd)
 		}
 		if debugLogging {
@@ -668,7 +668,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				disk.imageFile.Read(readBuff)
 				addr = physAddr + (dg.PhysAddrT(sect) * disk6239WordsPerSector)
 				for w = 0; w < disk6239WordsPerSector; w++ {
-					tmpWd = (dg.WordT(readBuff[w*2]) << 8) | dg.WordT(readBuff[(w*2)+1])
+					tmpWd = dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
 					memory.WriteWordBmcChan(&addr, tmpWd)
 				}
 				disk.reads++
@@ -712,8 +712,8 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				memAddr := physAddr + (dg.PhysAddrT(sect) * disk6239WordsPerSector)
 				for w = 0; w < disk6239WordsPerSector; w++ {
 					tmpWd = memory.ReadWordBmcChan(&memAddr)
-					writeBuff[w*2] = byte(tmpWd >> 8)
-					writeBuff[(w*2)+1] = byte(tmpWd & 0x00ff)
+					writeBuff[(w*2)+1] = byte(tmpWd >> 8)
+					writeBuff[w*2] = byte(tmpWd & 0x00ff)
 				}
 				disk.imageFile.Write(writeBuff)
 				if debugLogging {
