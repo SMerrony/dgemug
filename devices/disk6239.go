@@ -1,6 +1,6 @@
 // disk6239.go
 
-// Copyright (C) 2018  Steve Merrony
+// Copyright (C) 2018,2019 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -171,6 +171,7 @@ type Disk6239DataT struct {
 	imageFile      *os.File
 	reads, writes  uint64
 	logID          int
+	cbChan         chan dg.PhysAddrT
 	// DG data...
 	commandRegA, commandRegB, commandRegC dg.WordT
 	statusRegA, statusRegB, statusRegC    dg.WordT
@@ -194,11 +195,6 @@ type Disk6239StatT struct {
 	Reads, Writes uint64
 }
 
-var (
-	disk6239Data Disk6239DataT
-	cbChan       chan dg.PhysAddrT
-)
-
 // Disk6239Init is called once by the main routine to initialise this disk6239 emulator
 func (disk *Disk6239DataT) Disk6239Init(dev int, statsChann chan Disk6239StatT, logID int, logging bool) {
 
@@ -215,7 +211,7 @@ func (disk *Disk6239DataT) Disk6239Init(dev int, statsChann chan Disk6239StatT, 
 
 	disk.imageAttached = false
 	disk.disk6239DataMu.Unlock()
-	cbChan = make(chan dg.PhysAddrT, disk6239MaxQueuedCBs)
+	disk.cbChan = make(chan dg.PhysAddrT, disk6239MaxQueuedCBs)
 	go disk.disk6239CBprocessor()
 
 	disk.disk6239Reset()
@@ -479,11 +475,11 @@ func (disk *Disk6239DataT) disk6239DoPioCommand() {
 		if debugLogging {
 			logging.DebugPrint(disk.logID, "... START LIST command\n")
 			logging.DebugPrint(disk.logID, "... ..... First CB Address: %d\n", addr)
-			logging.DebugPrint(disk.logID, "... ..... CB Channel Q length: %d\n", len(cbChan))
+			logging.DebugPrint(disk.logID, "... ..... CB Channel Q length: %d\n", len(disk.cbChan))
 		}
 		// TODO should check addr validity before starting processing
 		//disk6239ProcessCB(addr)
-		cbChan <- addr
+		disk.cbChan <- addr
 		disk.statusRegA = memory.DwordGetUpperWord(dg.DwordT(addr)) // return address of 1st CB processed
 		disk.statusRegB = memory.DwordGetLowerWord(dg.DwordT(addr))
 		disk.disk6239SetPioStatusRegC(0, statCcsPioCmdOk, disk6239StartList, memory.TestWbit(disk.commandRegC, 15))
@@ -582,7 +578,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		tmpWd         dg.WordT
 	)
 	for {
-		cbAddr := <-cbChan
+		cbAddr := <-disk.cbChan
 		cbLength = disk6239CbMinSize + disk.disk6239GetCBextendedStatusSize()
 		if debugLogging {
 			logging.DebugPrint(disk.logID, "... Processing CB, extended status size is: %d\n", disk.disk6239GetCBextendedStatusSize())
@@ -765,7 +761,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		} else {
 			// chain to next CB
 			//disk6239ProcessCB(nextCB)
-			cbChan <- nextCB
+			disk.cbChan <- nextCB
 		}
 	}
 }
