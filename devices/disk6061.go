@@ -1,6 +1,6 @@
-// disk6061.go
+// disk.go
 
-// Copyright (C) 2017,2018  Steve Merrony
+// Copyright (C) 2017,2018,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,7 +85,7 @@ const (
 	disk6061Offset
 	disk6061Busy
 	disk6061Ready
-	disk6061Trespassed
+	Disk6061Trespassed
 	disk6061Reserved
 	disk6061Invalid
 )
@@ -112,7 +112,8 @@ const (
 // disk6061StatsPeriodMs is the number of milliseconds between sending status updates
 const disk6061StatsPeriodMs = 500
 
-type disk6061T struct {
+// Disk6061T holds the current state of a Type 6061 Moving-Head Disk
+type Disk6061T struct {
 	// MV/Em internals...
 	ImageAttached       bool
 	disk6061Mu          sync.RWMutex
@@ -122,6 +123,8 @@ type disk6061T struct {
 	imageFile           *os.File
 	reads, writes       uint64
 	readBuff, writeBuff []byte
+	cmdDecode           [disk6061CmdFormat + 1]string
+	debugLogging        bool
 	// DG data...
 	cmdDrvAddr      byte     // 6-bit?
 	command         int8     // 4-bit
@@ -148,75 +151,66 @@ type Disk6061StatT struct {
 	Reads, Writes uint64
 }
 
-var (
-	disk6061                     disk6061T
-	wd                           dg.WordT
-	ssc                          dg.WordT
-	bytesRead, bytesWritten, wIx int
-	err                          error
-	cmdDecode                    [disk6061CmdFormat + 1]string
-	debugLogging                 bool
-)
-
 // Disk6061Init must be called to initialise the emulated disk6061 controller
-func Disk6061Init(dev int, statsChann chan Disk6061StatT, logID int, logging bool) {
-	disk6061.disk6061Mu.Lock()
-	defer disk6061.disk6061Mu.Unlock()
-	disk6061.devNum = dev
-	disk6061.logID = logID
-	debugLogging = logging
+func (disk *Disk6061T) Disk6061Init(dev int, statsChann chan Disk6061StatT, logID int, logging bool) {
+	disk.disk6061Mu.Lock()
+	defer disk.disk6061Mu.Unlock()
+	disk.devNum = dev
+	disk.logID = logID
+	disk.debugLogging = logging
 
-	cmdDecode = [...]string{"READ", "RECAL", "SEEK", "STOP", "OFFSET FWD", "OFFSET REV",
+	disk.cmdDecode = [...]string{"READ", "RECAL", "SEEK", "STOP", "OFFSET FWD", "OFFSET REV",
 		"WRITE DISABLE", "RELEASE", "TRESPASS", "SET ALT MODE 1", "SET ALT MODE 2",
 		"NO OP", "VERIFY", "READ BUFFERS", "WRITE", "FORMAT"}
 
-	go disk6061StatsSender(statsChann)
+	go disk.disk6061StatsSender(statsChann)
 
-	BusSetResetFunc(disk6061.devNum, disk6061Reset)
-	BusSetDataInFunc(disk6061.devNum, disk6061In)
-	BusSetDataOutFunc(disk6061.devNum, disk6061Out)
-	disk6061.ImageAttached = false
-	disk6061.instructionMode = disk6061InsModeNormal
-	disk6061.driveStatus = disk6061Ready
-	disk6061.mapEnabled = false
-	disk6061.readBuff = make([]byte, disk6061BytesPerSect)
-	disk6061.writeBuff = make([]byte, disk6061BytesPerSect)
+	BusSetResetFunc(disk.devNum, disk.disk6061Reset)
+	BusSetDataInFunc(disk.devNum, disk.disk6061In)
+	BusSetDataOutFunc(disk.devNum, disk.disk6061Out)
+	disk.ImageAttached = false
+	disk.instructionMode = disk6061InsModeNormal
+	disk.driveStatus = disk6061Ready
+	disk.mapEnabled = false
+	disk.readBuff = make([]byte, disk6061BytesPerSect)
+	disk.writeBuff = make([]byte, disk6061BytesPerSect)
 }
 
 // Disk6061Attach attempts to attach an extant 6061 disk image to the running emulator
-func Disk6061Attach(dNum int, imgName string) bool {
+func (disk *Disk6061T) Disk6061Attach(dNum int, imgName string) bool {
 	// TODO Disk Number not currently used
-	logging.DebugPrint(disk6061.logID, "disk6061Attach called for disk #%d with image <%s>\n", dNum, imgName)
-	disk6061.disk6061Mu.Lock()
-	disk6061.imageFile, err = os.OpenFile(imgName, os.O_RDWR, 0755)
+	logging.DebugPrint(disk.logID, "disk6061Attach called for disk #%d with image <%s>\n", dNum, imgName)
+	disk.disk6061Mu.Lock()
+	var err error
+	disk.imageFile, err = os.OpenFile(imgName, os.O_RDWR, 0755)
 	if err != nil {
-		logging.DebugPrint(disk6061.logID, "Failed to open image for attaching\n")
+		logging.DebugPrint(disk.logID, "Failed to open image for attaching\n")
 		logging.DebugPrint(logging.DebugLog, "WARN: Failed to open disk6061 image <%s> for ATTach\n", imgName)
-		disk6061.disk6061Mu.Unlock()
+		disk.disk6061Mu.Unlock()
 		return false
 	}
-	disk6061.imageFileName = imgName
-	disk6061.ImageAttached = true
-	disk6061.disk6061Mu.Unlock()
-	BusSetAttached(disk6061.devNum, imgName)
+	disk.imageFileName = imgName
+	disk.ImageAttached = true
+	disk.disk6061Mu.Unlock()
+	BusSetAttached(disk.devNum, imgName)
 	return true
 }
 
-func disk6061StatsSender(sChan chan Disk6061StatT) {
+func (disk *Disk6061T) disk6061StatsSender(sChan chan Disk6061StatT) {
 	var stats Disk6061StatT
 	for {
-		disk6061.disk6061Mu.RLock()
-		if disk6061.ImageAttached {
+		disk.disk6061Mu.RLock()
+		if disk.ImageAttached {
 			stats.ImageAttached = true
-			stats.Cylinder = disk6061.cylinder
-			stats.Head = disk6061.surface
-			stats.Sector = disk6061.sector
-			stats.Reads = disk6061.reads
-			stats.Writes = disk6061.writes
+			stats.Cylinder = disk.cylinder
+			stats.Head = disk.surface
+			stats.Sector = disk.sector
+			stats.Reads = disk.reads
+			stats.Writes = disk.writes
 		} else {
 			stats = Disk6061StatT{}
 		}
-		disk6061.disk6061Mu.RUnlock()
+		disk.disk6061Mu.RUnlock()
 		select {
 		case sChan <- stats:
 		default:
@@ -226,13 +220,13 @@ func disk6061StatsSender(sChan chan Disk6061StatT) {
 }
 
 // Disk6061CreateBlank creates an empty disk file of the correct size for the disk6061 emulator to use
-func Disk6061CreateBlank(imgName string) bool {
+func (disk *Disk6061T) Disk6061CreateBlank(imgName string) bool {
 	newFile, err := os.Create(imgName)
 	if err != nil {
 		return false
 	}
 	defer newFile.Close()
-	logging.DebugPrint(disk6061.logID, "disk6061CreateBlank attempting to write %d bytes\n", disk6061PhysByteSize)
+	logging.DebugPrint(disk.logID, "disk6061CreateBlank attempting to write %d bytes\n", disk6061PhysByteSize)
 	w := bufio.NewWriter(newFile)
 	for b := 0; b < disk6061PhysByteSize; b++ {
 		w.WriteByte(0)
@@ -244,407 +238,413 @@ func Disk6061CreateBlank(imgName string) bool {
 // Disk6061LoadDKBT - This func mimics a system ROM routine to boot from disk.
 // Rather than copying a ROM routine (!) we simply mimic its basic actions...
 // Load 1st two blocks from disk into location 0
-func Disk6061LoadDKBT() {
-	logging.DebugPrint(disk6061.logID, "Disk6961LoadDKBT() called\n")
+func (disk *Disk6061T) Disk6061LoadDKBT() {
+	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() called\n")
 	// set posn
-	disk6061.command = disk6061CmdRecal
-	disk6061DoCommand()
-	disk6061.memAddr = 0
-	disk6061.sectCnt = -2
-	disk6061.command = disk6061CmdRead
-	disk6061DoCommand()
-	logging.DebugPrint(disk6061.logID, "Disk6961LoadDKBT() completed\n")
+	disk.command = disk6061CmdRecal
+	disk.disk6061DoCommand()
+	disk.memAddr = 0
+	disk.sectCnt = -2
+	disk.command = disk6061CmdRead
+	disk.disk6061DoCommand()
+	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() completed\n")
 }
 
 // disk6061In implements the DIA/B/C I/O instructions for this device
-func disk6061In(abc byte, flag byte) (data dg.WordT) {
-	disk6061.disk6061Mu.RLock()
+func (disk *Disk6061T) disk6061In(abc byte, flag byte) (data dg.WordT) {
+	disk.disk6061Mu.RLock()
 	switch abc {
 	case 'A':
-		switch disk6061.instructionMode {
+		switch disk.instructionMode {
 		case disk6061InsModeNormal:
-			data = disk6061.rwStatus
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIA [Read Data Txfr Status] (Normal mode returning %s for DRV=%d\n",
-					memory.WordToBinStr(disk6061.rwStatus), disk6061.drive)
+			data = disk.rwStatus
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIA [Read Data Txfr Status] (Normal mode returning %s for DRV=%d\n",
+					memory.WordToBinStr(disk.rwStatus), disk.drive)
 			}
 		case disk6061InsModeAlt1:
-			data = disk6061.memAddr // ???
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIA [Read Memory Addr] (Alt Mode 1) returning %#0o for DRV=%d\n",
-					data, disk6061.drive)
+			data = disk.memAddr // ???
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIA [Read Memory Addr] (Alt Mode 1) returning %#0o for DRV=%d\n",
+					data, disk.drive)
 			}
 		case disk6061InsModeAlt2:
 			data = 0
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIA [Read 1st ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
-					data, disk6061.drive)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIA [Read 1st ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
+					data, disk.drive)
 			}
 		}
 	case 'B':
-		switch disk6061.instructionMode {
+		switch disk.instructionMode {
 		case disk6061InsModeNormal:
-			data = disk6061.driveStatus & 0xfeff
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIB [Read Drive Status] (Normal mode) returning %s for DRV=%d\n", memory.WordToBinStr(data), disk6061.drive)
+			data = disk.driveStatus & 0xfeff
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIB [Read Drive Status] (Normal mode) returning %s for DRV=%d\n", memory.WordToBinStr(data), disk.drive)
 			}
 		case disk6061InsModeAlt1:
-			data = dg.WordT(0x8000) | dg.WordT(disk6061.ema)&0x01f
-			//			if disk6061.mapEnabled {
-			//				data = dg_dword(disk6061.ema&0x1f) | 0x8000
+			data = dg.WordT(0x8000) | dg.WordT(disk.ema)&0x01f
+			//			if disk.mapEnabled {
+			//				data = dg_dword(disk.ema&0x1f) | 0x8000
 			//			} else {
-			//				data = dg_dword(disk6061.ema & 0x1f)
+			//				data = dg_dword(disk.ema & 0x1f)
 			//			}
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIB [Read EMA] (Alt Mode 1) returning: %#0o\n", data)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIB [Read EMA] (Alt Mode 1) returning: %#0o\n", data)
 			}
 		case disk6061InsModeAlt2:
 			data = 0
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DIB [Read 2nd ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
-					data, disk6061.drive)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DIB [Read 2nd ECC Word] (Alt Mode 2) returning %#0o for DRV=%d\n",
+					data, disk.drive)
 			}
 		}
 	case 'C':
-		ssc = 0
-		if disk6061.mapEnabled {
+		var ssc dg.WordT
+		if disk.mapEnabled {
 			ssc = 1 << 15
 		}
-		ssc |= (dg.WordT(disk6061.surface) & 0x1f) << 10
-		ssc |= (dg.WordT(disk6061.sector) & 0x1f) << 5
-		ssc |= (dg.WordT(disk6061.sectCnt) & 0x1f)
+		ssc |= (dg.WordT(disk.surface) & 0x1f) << 10
+		ssc |= (dg.WordT(disk.sector) & 0x1f) << 5
+		ssc |= (dg.WordT(disk.sectCnt) & 0x1f)
 		data = ssc
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "disk6061 DIC returning: %s\n", memory.WordToBinStr(ssc))
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "disk6061 DIC returning: %s\n", memory.WordToBinStr(ssc))
 		}
 	}
-	disk6061.disk6061Mu.RUnlock()
+	disk.disk6061Mu.RUnlock()
 
-	disk6061HandleFlag(flag)
+	disk.disk6061HandleFlag(flag)
 
 	return data
 }
 
 // disk6061Out implements the DOA/B/C instructions for this device
 // NIO is also routed here with a dummy abc flag value of N
-func disk6061Out(datum dg.WordT, abc byte, flag byte) {
-	disk6061.disk6061Mu.Lock()
+func (disk *Disk6061T) disk6061Out(datum dg.WordT, abc byte, flag byte) {
+	disk.disk6061Mu.Lock()
 	switch abc {
 	case 'A':
-		disk6061.command = extractdisk6061Command(datum)
-		disk6061.drive = extractdisk6061DriveNo(datum)
-		disk6061.ema = extractdisk6061EMA(datum)
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
-				disk6061.drive, memory.WordToBinStr(datum))
+		disk.command = extractdisk6061Command(datum)
+		disk.drive = extractdisk6061DriveNo(datum)
+		disk.ema = extractdisk6061EMA(datum)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "DOA [Specify Cmd,Drv,EMA] to DRV=%d with data %s\n",
+				disk.drive, memory.WordToBinStr(datum))
 		}
 		if memory.TestWbit(datum, 0) {
-			disk6061.rwStatus &= ^dg.WordT(disk6061Rwdone)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Rwfault)
-			disk6061.rwStatus &= ^dg.WordT(disk6061late)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Verify)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Surfsect)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Cylinder)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Badsector)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Ecc)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Illegalsector)
-			disk6061.rwStatus &= ^dg.WordT(disk6061Parity)
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "... Clear R/W Done et al.\n")
+			disk.rwStatus &= ^dg.WordT(disk6061Rwdone)
+			disk.rwStatus &= ^dg.WordT(disk6061Rwfault)
+			disk.rwStatus &= ^dg.WordT(disk6061late)
+			disk.rwStatus &= ^dg.WordT(disk6061Verify)
+			disk.rwStatus &= ^dg.WordT(disk6061Surfsect)
+			disk.rwStatus &= ^dg.WordT(disk6061Cylinder)
+			disk.rwStatus &= ^dg.WordT(disk6061Badsector)
+			disk.rwStatus &= ^dg.WordT(disk6061Ecc)
+			disk.rwStatus &= ^dg.WordT(disk6061Illegalsector)
+			disk.rwStatus &= ^dg.WordT(disk6061Parity)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "... Clear R/W Done et al.\n")
 			}
 		}
 		if memory.TestWbit(datum, 1) {
-			disk6061.rwStatus &= ^dg.WordT(disk6061Drive0Done)
+			disk.rwStatus &= ^dg.WordT(disk6061Drive0Done)
 		}
 		if memory.TestWbit(datum, 2) {
-			disk6061.rwStatus &= ^dg.WordT(disk6061Drive1Done)
+			disk.rwStatus &= ^dg.WordT(disk6061Drive1Done)
 		}
 		if memory.TestWbit(datum, 3) {
-			disk6061.rwStatus &= ^dg.WordT(disk6061Drive2Done)
+			disk.rwStatus &= ^dg.WordT(disk6061Drive2Done)
 		}
 		if memory.TestWbit(datum, 4) {
-			disk6061.rwStatus &= ^dg.WordT(disk6061Drive3Done)
+			disk.rwStatus &= ^dg.WordT(disk6061Drive3Done)
 		}
-		disk6061.instructionMode = disk6061InsModeNormal
-		if disk6061.command == disk6061CmdSetAltMode1 {
-			disk6061.instructionMode = disk6061InsModeAlt1
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "... Alt Mode 1 set\n")
+		disk.instructionMode = disk6061InsModeNormal
+		if disk.command == disk6061CmdSetAltMode1 {
+			disk.instructionMode = disk6061InsModeAlt1
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "... Alt Mode 1 set\n")
 			}
 		}
-		if disk6061.command == disk6061CmdSetAltMode2 {
-			disk6061.instructionMode = disk6061InsModeAlt2
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "... Alt Mode 2 set\n")
+		if disk.command == disk6061CmdSetAltMode2 {
+			disk.instructionMode = disk6061InsModeAlt2
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "... Alt Mode 2 set\n")
 			}
 		}
-		if disk6061.command == disk6061CmdNoOp {
-			disk6061.instructionMode = disk6061InsModeNormal
-			disk6061.rwStatus = 0
-			disk6061.driveStatus = disk6061Ready
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "... NO OP command done\n")
+		if disk.command == disk6061CmdNoOp {
+			disk.instructionMode = disk6061InsModeNormal
+			disk.rwStatus = 0
+			disk.driveStatus = disk6061Ready
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "... NO OP command done\n")
 			}
 		}
-		disk6061.lastDOAwasSeek = (disk6061.command == disk6061CmdSeek)
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... CMD: %s, DRV: %d, EMA: %#o\n",
-				cmdDecode[disk6061.command], disk6061.drive, disk6061.ema)
+		disk.lastDOAwasSeek = (disk.command == disk6061CmdSeek)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... CMD: %s, DRV: %d, EMA: %#o\n",
+				disk.cmdDecode[disk.command], disk.drive, disk.ema)
 		}
 	case 'B':
 		if memory.TestWbit(datum, 0) {
-			disk6061.ema |= 0x01
+			disk.ema |= 0x01
 		} else {
-			disk6061.ema &= 0xfe
+			disk.ema &= 0xfe
 		}
-		disk6061.memAddr = datum & 0x7fff
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "DOB [Specify Memory Addr] with data %s\n",
+		disk.memAddr = datum & 0x7fff
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "DOB [Specify Memory Addr] with data %s\n",
 				memory.WordToBinStr(datum))
-			logging.DebugPrint(disk6061.logID, "... MEM Addr: %#o\n", disk6061.memAddr)
-			logging.DebugPrint(disk6061.logID, "... EMA: %#o\n", disk6061.ema)
+			logging.DebugPrint(disk.logID, "... MEM Addr: %#o\n", disk.memAddr)
+			logging.DebugPrint(disk.logID, "... EMA: %#o\n", disk.ema)
 		}
 	case 'C':
-		if disk6061.lastDOAwasSeek {
-			disk6061.cylinder = datum & 0x03ff // mask off lower 10 bits
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DOC [Specify Cylinder] after SEEK with data %s\n",
+		if disk.lastDOAwasSeek {
+			disk.cylinder = datum & 0x03ff // mask off lower 10 bits
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DOC [Specify Cylinder] after SEEK with data %s\n",
 					memory.WordToBinStr(datum))
-				logging.DebugPrint(disk6061.logID, "... CYL: %d\n", disk6061.cylinder)
+				logging.DebugPrint(disk.logID, "... CYL: %d\n", disk.cylinder)
 			}
 		} else {
-			disk6061.mapEnabled = memory.TestWbit(datum, 0)
-			disk6061.surface = extractsurface(datum)
-			disk6061.sector = extractSector(datum)
-			disk6061.sectCnt = extractSectCnt(datum)
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "DOC [Specify Surf,Sect,Cnt] (not after seek) with data %s\n",
+			disk.mapEnabled = memory.TestWbit(datum, 0)
+			disk.surface = extractsurface(datum)
+			disk.sector = extractSector(datum)
+			disk.sectCnt = extractSectCnt(datum)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "DOC [Specify Surf,Sect,Cnt] (not after seek) with data %s\n",
 					memory.WordToBinStr(datum))
-				logging.DebugPrint(disk6061.logID, "... MAP: %d., SURF: %d., SECT: %d., SECCNT: %d.\n",
-					memory.BoolToInt(disk6061.mapEnabled), disk6061.surface, disk6061.sector, disk6061.sectCnt)
+				logging.DebugPrint(disk.logID, "... MAP: %d., SURF: %d., SECT: %d., SECCNT: %d.\n",
+					memory.BoolToInt(disk.mapEnabled), disk.surface, disk.sector, disk.sectCnt)
 			}
 		}
 	case 'N': // dummy value for NIO - we just handle the flag below
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "NIO%c received\n", flag)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "NIO%c received\n", flag)
 		}
 	}
-	disk6061.disk6061Mu.Unlock()
+	disk.disk6061Mu.Unlock()
 
-	disk6061HandleFlag(flag)
+	disk.disk6061HandleFlag(flag)
 }
 
-func disk6061DoCommand() {
+func (disk *Disk6061T) disk6061DoCommand() {
 
-	disk6061.disk6061Mu.Lock()
+	var (
+		wd                           dg.WordT
+		bytesRead, bytesWritten, wIx int
+		err                          error
+	)
 
-	disk6061.instructionMode = disk6061InsModeNormal
+	disk.disk6061Mu.Lock()
 
-	switch disk6061.command {
+	disk.instructionMode = disk6061InsModeNormal
+
+	switch disk.command {
 
 	// RECALibrate (goto pos. 0)
 	case disk6061CmdRecal:
-		disk6061.cylinder = 0
-		disk6061.surface = 0
-		disk6061PositionDiskImage()
-		disk6061.driveStatus = disk6061Ready
-		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
-		//disk6061.rwStatus = disk6061Drive0Done
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... RECAL done, %s\n", disk6061PrintableAddr())
+		disk.cylinder = 0
+		disk.surface = 0
+		disk.disk6061PositionDiskImage()
+		disk.driveStatus = disk6061Ready
+		disk.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		//disk.rwStatus = disk6061Drive0Done
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... RECAL done, %s\n", disk.disk6061PrintableAddr())
 		}
 
 	// SEEK
 	case disk6061CmdSeek:
 		// action the seek
-		disk6061PositionDiskImage()
-		disk6061.driveStatus = disk6061Ready
-		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... SEEK done, %s\n", disk6061PrintableAddr())
+		disk.disk6061PositionDiskImage()
+		disk.driveStatus = disk6061Ready
+		disk.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... SEEK done, %s\n", disk.disk6061PrintableAddr())
 		}
 
 	// ===== READ from disk6061 =====
 	case disk6061CmdRead:
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... READ command invoked %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... .... Start Address: %#o\n", disk6061.memAddr)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... READ command invoked %s\n", disk.disk6061PrintableAddr())
+			logging.DebugPrint(disk.logID, "... .... Start Address: %#o\n", disk.memAddr)
 		}
-		disk6061.rwStatus = 0
+		disk.rwStatus = 0
 
-		for disk6061.sectCnt != 0 {
+		for disk.sectCnt != 0 {
 			// check CYL
-			if disk6061.cylinder >= disk6061PhysCyls {
-				disk6061.driveStatus = disk6061Ready
-				disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Cylinder
-				disk6061.disk6061Mu.Unlock()
+			if disk.cylinder >= disk6061PhysCyls {
+				disk.driveStatus = disk6061Ready
+				disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Cylinder
+				disk.disk6061Mu.Unlock()
 				return
 			}
 			// check SECT
-			if disk6061.sector >= disk6061SectPerTrack {
-				disk6061.sector = 0
-				disk6061.surface++
-				if debugLogging {
-					logging.DebugPrint(disk6061.logID, "Sector read overflow, advancing to surface %d.", disk6061.surface)
+			if disk.sector >= disk6061SectPerTrack {
+				disk.sector = 0
+				disk.surface++
+				if disk.debugLogging {
+					logging.DebugPrint(disk.logID, "Sector read overflow, advancing to surface %d.", disk.surface)
 				}
-				// disk6061.driveStatus = disk6061Ready
-				// disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
-				// disk6061.disk6061Mu.Unlock()
+				// disk.driveStatus = disk6061Ready
+				// disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
+				// disk.disk6061Mu.Unlock()
 				// return
 			}
 			// check SURF (head)
-			if disk6061.surface >= disk6061SurfPerDisk {
-				disk6061.driveStatus = disk6061Ready
-				disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Illegalsector
-				disk6061.disk6061Mu.Unlock()
+			if disk.surface >= disk6061SurfPerDisk {
+				disk.driveStatus = disk6061Ready
+				disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Illegalsector
+				disk.disk6061Mu.Unlock()
 				return
 			}
-			disk6061PositionDiskImage()
-			bytesRead, err = disk6061.imageFile.Read(disk6061.readBuff)
+			disk.disk6061PositionDiskImage()
+			bytesRead, err = disk.imageFile.Read(disk.readBuff)
 
 			if bytesRead != disk6061BytesPerSect || err != nil {
 				log.Fatalf("ERROR: unexpected return from disk6061 Image File Read: %s", err)
 			}
 			for wIx = 0; wIx < disk6061WordsPerSect; wIx++ {
-				wd = (dg.WordT(disk6061.readBuff[(wIx*2)+1]) << 8) | dg.WordT(disk6061.readBuff[wIx*2])
-				memory.WriteWordBmcChan16bit(&disk6061.memAddr, wd)
+				wd = (dg.WordT(disk.readBuff[(wIx*2)+1]) << 8) | dg.WordT(disk.readBuff[wIx*2])
+				memory.WriteWordBmcChan16bit(&disk.memAddr, wd)
 			}
-			disk6061.sector++
-			disk6061.sectCnt++
-			disk6061.reads++
+			disk.sector++
+			disk.sectCnt++
+			disk.reads++
 
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "Buffer: %X\n", disk6061.readBuff)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "Buffer: %X\n", disk.readBuff)
 			}
 
 		}
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... .... READ command finished %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "\n... .... Last Address: %#o\n", disk6061.memAddr)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... .... READ command finished %s\n", disk.disk6061PrintableAddr())
+			logging.DebugPrint(disk.logID, "\n... .... Last Address: %#o\n", disk.memAddr)
 		}
-		disk6061.rwStatus = disk6061Rwdone | disk6061Drive0Done
+		disk.rwStatus = disk6061Rwdone | disk6061Drive0Done
 
 	case disk6061CmdRelease:
 		// I think this is a NOP on a single-processor machine
 
 	case disk6061CmdWrite:
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... WRITE command invoked %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... .....  Start Address: %#o\n", disk6061.memAddr)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... WRITE command invoked %s\n", disk.disk6061PrintableAddr())
+			logging.DebugPrint(disk.logID, "... .....  Start Address: %#o\n", disk.memAddr)
 		}
-		disk6061.rwStatus = 0
+		disk.rwStatus = 0
 
-		for disk6061.sectCnt != 0 {
+		for disk.sectCnt != 0 {
 			// check CYL
-			if disk6061.cylinder >= disk6061PhysCyls {
-				disk6061.driveStatus = disk6061Ready
-				disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Cylinder
-				disk6061.disk6061Mu.Unlock()
+			if disk.cylinder >= disk6061PhysCyls {
+				disk.driveStatus = disk6061Ready
+				disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Cylinder
+				disk.disk6061Mu.Unlock()
 				return
 			}
 			// check SECT
-			if disk6061.sector >= disk6061SectPerTrack {
-				disk6061.sector = 0
-				disk6061.surface++
-				if debugLogging {
-					logging.DebugPrint(disk6061.logID, "Sector write overflow, advancing to surface %d.", disk6061.surface)
+			if disk.sector >= disk6061SectPerTrack {
+				disk.sector = 0
+				disk.surface++
+				if disk.debugLogging {
+					logging.DebugPrint(disk.logID, "Sector write overflow, advancing to surface %d.", disk.surface)
 				}
-				// disk6061.driveStatus = disk6061Ready
-				// disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
-				// disk6061.disk6061Mu.Unlock()
+				// disk.driveStatus = disk6061Ready
+				// disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
+				// disk.disk6061Mu.Unlock()
 				// return
 			}
 			// check SURF (head)/SECT
-			if disk6061.surface >= disk6061SurfPerDisk {
-				disk6061.driveStatus = disk6061Ready
-				disk6061.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Illegalsector
-				disk6061.disk6061Mu.Unlock()
+			if disk.surface >= disk6061SurfPerDisk {
+				disk.driveStatus = disk6061Ready
+				disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061Illegalsector
+				disk.disk6061Mu.Unlock()
 				return
 			}
-			disk6061PositionDiskImage()
+			disk.disk6061PositionDiskImage()
 			for wIx = 0; wIx < disk6061WordsPerSect; wIx++ {
-				wd = memory.ReadWordBmcChan16bit(&disk6061.memAddr)
-				disk6061.writeBuff[(wIx*2)+1] = byte(wd >> 8)
-				disk6061.writeBuff[wIx*2] = byte(wd)
+				wd = memory.ReadWordBmcChan16bit(&disk.memAddr)
+				disk.writeBuff[(wIx*2)+1] = byte(wd >> 8)
+				disk.writeBuff[wIx*2] = byte(wd)
 			}
-			bytesWritten, err = disk6061.imageFile.Write(disk6061.writeBuff)
+			bytesWritten, err = disk.imageFile.Write(disk.writeBuff)
 			if bytesWritten != disk6061BytesPerSect || err != nil {
 				log.Fatalf("ERROR: unexpected return from disk6061 Image File Write: %s", err)
 			}
-			disk6061.sector++
-			disk6061.sectCnt++
-			disk6061.writes++
+			disk.sector++
+			disk.sectCnt++
+			disk.writes++
 
-			if debugLogging {
-				logging.DebugPrint(disk6061.logID, "Buffer: %X\n", disk6061.writeBuff)
+			if disk.debugLogging {
+				logging.DebugPrint(disk.logID, "Buffer: %X\n", disk.writeBuff)
 			}
 		}
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... ..... WRITE command finished %s\n", disk6061PrintableAddr())
-			logging.DebugPrint(disk6061.logID, "... ..... Last Address: %#o\n", disk6061.memAddr)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... ..... WRITE command finished %s\n", disk.disk6061PrintableAddr())
+			logging.DebugPrint(disk.logID, "... ..... Last Address: %#o\n", disk.memAddr)
 		}
-		disk6061.driveStatus = disk6061Ready
-		disk6061.rwStatus = disk6061Rwdone //| disk6061Drive0Done
+		disk.driveStatus = disk6061Ready
+		disk.rwStatus = disk6061Rwdone //| disk6061Drive0Done
 
 	default:
-		log.Fatalf("disk6061 Disk R/W Command %d not yet implemented\n", disk6061.command)
+		log.Fatalf("disk6061 Disk R/W Command %d not yet implemented\n", disk.command)
 	}
-	disk6061.disk6061Mu.Unlock()
+	disk.disk6061Mu.Unlock()
 }
 
-func disk6061HandleFlag(f byte) {
+func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 	switch f {
 	case 'S':
-		BusSetBusy(disk6061.devNum, true)
-		BusSetDone(disk6061.devNum, false)
+		BusSetBusy(disk.devNum, true)
+		BusSetDone(disk.devNum, false)
 		// TODO stop any I/O
-		disk6061.disk6061Mu.Lock()
-		disk6061.rwStatus = 0
+		disk.disk6061Mu.Lock()
+		disk.rwStatus = 0
 		// TODO start I/O timeout
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... S flag set\n")
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... S flag set\n")
 		}
-		disk6061.disk6061Mu.Unlock()
-		disk6061DoCommand()
-		BusSetBusy(disk6061.devNum, false)
-		BusSetDone(disk6061.devNum, true)
+		disk.disk6061Mu.Unlock()
+		disk.disk6061DoCommand()
+		BusSetBusy(disk.devNum, false)
+		BusSetDone(disk.devNum, true)
 		// send IRQ if not masked out
-		//if !BusIsDevMasked(disk6061.devNum) {
-		// InterruptingDev[disk6061.devNum] = true
+		//if !BusIsDevMasked(disk.devNum) {
+		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk6061.devNum)
+		BusSendInterrupt(disk.devNum)
 		//}
 
 	case 'C':
-		BusSetBusy(disk6061.devNum, false)
-		BusSetDone(disk6061.devNum, false)
-		disk6061.disk6061Mu.Lock()
-		disk6061.rwStatus = 0
-		disk6061.disk6061Mu.Unlock()
+		BusSetBusy(disk.devNum, false)
+		BusSetDone(disk.devNum, false)
+		disk.disk6061Mu.Lock()
+		disk.rwStatus = 0
+		disk.disk6061Mu.Unlock()
 		// send IRQ if not masked out
-		//if !BusIsDevMasked(disk6061.devNum) {
-		// InterruptingDev[disk6061.devNum] = true
+		//if !BusIsDevMasked(disk.devNum) {
+		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-	//	BusSendInterrupt(disk6061.devNum)
+	//	BusSendInterrupt(disk.devNum)
 	//}
 
 	case 'P':
-		BusSetBusy(disk6061.devNum, false)
-		disk6061.disk6061Mu.Lock()
-		if debugLogging {
-			logging.DebugPrint(disk6061.logID, "... P flag set\n")
+		BusSetBusy(disk.devNum, false)
+		disk.disk6061Mu.Lock()
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... P flag set\n")
 		}
-		disk6061.rwStatus = 0
-		disk6061.disk6061Mu.Unlock()
-		disk6061DoCommand()
-		//disk6061.rwStatus = disk6061Drive0Done
-		//BusSetBusy(disk6061.devNum, false)
-		//BusSetDone(disk6061.devNum, true)
+		disk.rwStatus = 0
+		disk.disk6061Mu.Unlock()
+		disk.disk6061DoCommand()
+		//disk.rwStatus = disk6061Drive0Done
+		//BusSetBusy(disk.devNum, false)
+		//BusSetDone(disk.devNum, true)
 		// send IRQ if not masked out
-		//if !BusIsDevMasked(disk6061.devNum) {
-		// InterruptingDev[disk6061.devNum] = true
+		//if !BusIsDevMasked(disk.devNum) {
+		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk6061.devNum)
+		BusSendInterrupt(disk.devNum)
 		//}
 
 	default:
@@ -653,39 +653,40 @@ func disk6061HandleFlag(f byte) {
 }
 
 // set the MV/Em disk image file postion according to current C/H/S
-func disk6061PositionDiskImage() {
+func (disk *Disk6061T) disk6061PositionDiskImage() {
 	var offset, r int64
-	//lba = ((int64(disk6061.cylinder*disk6061SurfPerDisk) + int64(disk6061.surface)) * int64(disk6061SectPerTrack)) + int64(disk6061.sector)
-	offset = (((int64(disk6061.cylinder*disk6061SurfPerDisk) + int64(disk6061.surface)) * int64(disk6061SectPerTrack)) + int64(disk6061.sector)) * disk6061BytesPerSect
-	r, err = disk6061.imageFile.Seek(offset, 0)
+	var err error
+	//lba = ((int64(disk.cylinder*disk6061SurfPerDisk) + int64(disk.surface)) * int64(disk6061SectPerTrack)) + int64(disk.sector)
+	offset = (((int64(disk.cylinder*disk6061SurfPerDisk) + int64(disk.surface)) * int64(disk6061SectPerTrack)) + int64(disk.sector)) * disk6061BytesPerSect
+	r, err = disk.imageFile.Seek(offset, 0)
 	if r != offset || err != nil {
 		log.Fatal("disk6061 could not postition disk image via seek()")
 	}
 }
 
-func disk6061PrintableAddr() string {
+func (disk *Disk6061T) disk6061PrintableAddr() string {
 	// MUST BE LOCKED BY CALLER
 	pa := fmt.Sprintf("DRV: %d, CYL: %d, SURF: %d, SECT: %d, SECCNT: %d",
-		disk6061.drive, disk6061.cylinder,
-		disk6061.surface, disk6061.sector, disk6061.sectCnt)
+		disk.drive, disk.cylinder,
+		disk.surface, disk.sector, disk.sectCnt)
 	return pa
 }
 
 // reset the disk6061 controller
-func disk6061Reset() {
-	disk6061.disk6061Mu.Lock()
-	disk6061.instructionMode = disk6061InsModeNormal
-	disk6061.rwStatus = 0
-	disk6061.command = disk6061CmdRead
-	disk6061.cylinder = 0
-	disk6061.surface = 0
-	disk6061.sector = 0
-	disk6061.sectCnt = 0
-	disk6061.driveStatus = disk6061Ready
-	if debugLogging {
-		logging.DebugPrint(disk6061.logID, "disk6061 Reset\n")
+func (disk *Disk6061T) disk6061Reset() {
+	disk.disk6061Mu.Lock()
+	disk.instructionMode = disk6061InsModeNormal
+	disk.rwStatus = 0
+	disk.command = disk6061CmdRead
+	disk.cylinder = 0
+	disk.surface = 0
+	disk.sector = 0
+	disk.sectCnt = 0
+	disk.driveStatus = disk6061Ready
+	if disk.debugLogging {
+		logging.DebugPrint(disk.logID, "disk6061 Reset\n")
 	}
-	disk6061.disk6061Mu.Unlock()
+	disk.disk6061Mu.Unlock()
 }
 
 func extractdisk6061Command(word dg.WordT) int8 {
