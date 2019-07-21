@@ -1,5 +1,5 @@
 // debugLogs.go
-// Copyright (C) 2018  Steve Merrony
+// Copyright (C) 2018,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,19 +27,21 @@ import (
 )
 
 const (
-	numDebugLogs     = 5
+	numDebugLogs     = 6
 	numDebugLogLines = 100000 // each circular buffer contains this many lines
 
 	// DebugLog is the general-purpose log
 	DebugLog = 0
 	// MtLog is for the type 6026 MT tape module
 	MtLog = 1
+	// DkpLog is for the type 4231a Moving-Head Disk
+	DkpLog = 2
 	// DpfLog is for the type 6061 DPF disk module
-	DpfLog = 2
+	DpfLog = 3
 	// DskpLog is for the type 6239 DSKP disk module
-	DskpLog = 3
+	DskpLog = 4
 	// MapLog is for BMC/DCH-related logging
-	MapLog = 4
+	MapLog = 5
 
 	logPerms = 0644
 )
@@ -68,6 +70,8 @@ func DebugLogsDump(dir string) {
 				debugDumpFile, _ = os.OpenFile(dir+"debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case MtLog:
 				debugDumpFile, _ = os.OpenFile(dir+"mt_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
+			case DkpLog:
+				debugDumpFile, _ = os.OpenFile(dir+"dkp_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DpfLog:
 				debugDumpFile, _ = os.OpenFile(dir+"dpf_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			case DskpLog:
