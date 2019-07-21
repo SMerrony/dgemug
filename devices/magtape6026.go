@@ -1,6 +1,6 @@
 // magtape6026.go
 
-// Copyright (C) 2018  Steve Merrony
+// Copyright (C) 2018,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -87,88 +87,88 @@ const (
 	mtSr2PEMode = 1
 )
 
-const mtStatsPeriodMs = 500 // Will update status this often
+const mtStatsPeriodMs = 333 // Will update status this often
 
 const maxTapes = 8
 
-type mtT struct {
-	mtDataMu               sync.RWMutex
+// MagTape6026T contains the current state of a type 6026 Magnetic Tape Drive
+type MagTape6026T struct {
+	mtMu                   sync.RWMutex
 	devNum                 int
 	imageAttached          [maxTapes]bool
 	fileName               [maxTapes]string
 	simhFile               [maxTapes]*os.File
+	commandSet             [mtCmdCount]dg.WordT
+	logID                  int
+	debugLogging           bool
 	statusReg1, statusReg2 dg.WordT
 	memAddrReg             dg.PhysAddrT
 	negWordCntReg          int16
 	currentCmd             int
 	currentUnit            int
-	// debug                  bool
 }
 
 // MtStatT holds data for the status collector
 type MtStatT struct {
-	ImageAttached          [maxTapes]bool
-	FileName               [maxTapes]string
+	// Internals
+	ImageAttached [maxTapes]bool
+	FileName      [maxTapes]string
+	// DG device state
 	MemAddrReg             dg.PhysAddrT
 	CurrentCmd             int
 	StatusReg1, StatusReg2 dg.WordT
 }
 
-var (
-	mt         mtT
-	commandSet [mtCmdCount]dg.WordT
-	logID      int
-)
-
 // MtInit sets the initial state of the (unmounted) tape drive(s)
-func MtInit(dev int, statsChan chan MtStatT, logIdent int) bool {
-	mt.devNum = dev
-	logID = logIdent
-	commandSet[mtCmdRead] = mtCmdReadBits
-	commandSet[mtCmdRewind] = mtCmdRewindBits
-	commandSet[mtCmdCtrlMode] = mtCmdCtrlModeBits
-	commandSet[mtCmdSpaceFwd] = mtCmdSpaceFwdBits
-	commandSet[mtCmdSpaceRev] = mtCmdSpaceRevBits
-	commandSet[mtCmdWrite] = mtCmdWiteBits
-	commandSet[mtCmdWriteEOF] = mtCmdWriteEOFBits
-	commandSet[mtCmdErase] = mtCmdEraseBits
-	commandSet[mtCmdReadNonStop] = mtCmdReadNonStopBits
-	commandSet[mtCmdUnload] = mtCmdUnloadBits
-	commandSet[mtCmdDriveMode] = mtCmdDriveModeBits
+func (tape *MagTape6026T) MtInit(dev int, statsChan chan MtStatT, logID int, debugLogging bool) bool {
+	tape.mtMu.Lock()
+	tape.devNum = dev
+	tape.logID = logID
+	tape.debugLogging = debugLogging
+	tape.commandSet[mtCmdRead] = mtCmdReadBits
+	tape.commandSet[mtCmdRewind] = mtCmdRewindBits
+	tape.commandSet[mtCmdCtrlMode] = mtCmdCtrlModeBits
+	tape.commandSet[mtCmdSpaceFwd] = mtCmdSpaceFwdBits
+	tape.commandSet[mtCmdSpaceRev] = mtCmdSpaceRevBits
+	tape.commandSet[mtCmdWrite] = mtCmdWiteBits
+	tape.commandSet[mtCmdWriteEOF] = mtCmdWriteEOFBits
+	tape.commandSet[mtCmdErase] = mtCmdEraseBits
+	tape.commandSet[mtCmdReadNonStop] = mtCmdReadNonStopBits
+	tape.commandSet[mtCmdUnload] = mtCmdUnloadBits
+	tape.commandSet[mtCmdDriveMode] = mtCmdDriveModeBits
 
-	BusSetResetFunc(mt.devNum, MtReset)
-	BusSetDataInFunc(mt.devNum, mtDataIn)
-	BusSetDataOutFunc(mt.devNum, mtDataOut)
+	BusSetResetFunc(tape.devNum, tape.MtReset)
+	BusSetDataInFunc(tape.devNum, tape.mtDataIn)
+	BusSetDataOutFunc(tape.devNum, tape.mtDataOut)
 
-	go mtStatSender(statsChan)
+	go tape.mtStatSender(statsChan)
 
-	mt.mtDataMu.Lock()
-	mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady
-	mt.statusReg2 = mtSr2PEMode
-	mt.mtDataMu.Unlock()
+	tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady
+	tape.statusReg2 = mtSr2PEMode
+	tape.mtMu.Unlock()
 
-	logging.DebugPrint(logID, "mt Initialised via call to mtInit()\n")
+	logging.DebugPrint(tape.logID, "mt Initialised via call to mtInit()\n")
 	return true
 }
 
 // mtStatSender provides a near real-time view of mt status and should be run as a Goroutine
 // TODO = only handles Unit 0 at the moment
-func mtStatSender(sChan chan MtStatT) {
+func (tape *MagTape6026T) mtStatSender(sChan chan MtStatT) {
 	var stats MtStatT
 	logging.DebugPrint(logging.DebugLog, "dskpStatSender() started\n")
 	for {
-		mt.mtDataMu.RLock()
-		if mt.imageAttached[0] {
+		tape.mtMu.RLock()
+		if tape.imageAttached[0] {
 			stats.ImageAttached[0] = true
-			stats.FileName[0] = mt.fileName[0]
-			stats.MemAddrReg = mt.memAddrReg
-			stats.CurrentCmd = mt.currentCmd // Could decode this
-			stats.StatusReg1 = mt.statusReg1
-			stats.StatusReg2 = mt.statusReg2
+			stats.FileName[0] = tape.fileName[0]
+			stats.MemAddrReg = tape.memAddrReg
+			stats.CurrentCmd = tape.currentCmd // Could decode this
+			stats.StatusReg1 = tape.statusReg1
+			stats.StatusReg2 = tape.statusReg2
 		} else {
 			stats = MtStatT{}
 		}
-		mt.mtDataMu.RUnlock()
+		tape.mtMu.RUnlock()
 		// Non-blocking send of stats
 		select {
 		case sChan <- stats:
@@ -181,65 +181,65 @@ func mtStatSender(sChan chan MtStatT) {
 }
 
 // MtReset Resets the mt to known state (any tapes are rewound)
-func MtReset() {
-	mt.mtDataMu.Lock()
+func (tape *MagTape6026T) MtReset() {
+	tape.mtMu.Lock()
 	for t := 0; t < maxTapes; t++ {
-		if mt.imageAttached[t] {
-			simhtape.Rewind(mt.simhFile[t])
+		if tape.imageAttached[t] {
+			simhtape.Rewind(tape.simhFile[t])
 		}
 	}
 	// BOT is an error state...
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
-	mt.statusReg2 = mtSr2PEMode
-	mt.memAddrReg = 0
-	mt.negWordCntReg = 0
-	mt.currentCmd = 0
-	mt.currentUnit = 0
-	mt.mtDataMu.Unlock()
-	logging.DebugPrint(logID, "mt Reset via call to mtReset()\n")
+	tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
+	tape.statusReg2 = mtSr2PEMode
+	tape.memAddrReg = 0
+	tape.negWordCntReg = 0
+	tape.currentCmd = 0
+	tape.currentUnit = 0
+	tape.mtMu.Unlock()
+	logging.DebugPrint(tape.logID, "mt Reset via call to mtReset()\n")
 }
 
 // MtAttach attaches a SimH tape image file to the emulated tape drive
-func MtAttach(tNum int, imgName string) bool {
-	logging.DebugPrint(logID, "mtAttach called on unit #%d with image file: %s\n", tNum, imgName)
+func (tape *MagTape6026T) MtAttach(tNum int, imgName string) bool {
+	logging.DebugPrint(tape.logID, "mtAttach called on unit #%d with image file: %s\n", tNum, imgName)
 	f, err := os.Open(imgName)
 	if err != nil {
-		logging.DebugPrint(logID, "ERROR: Could not open simH Tape Image file: %s, due to: %s\n", imgName, err.Error())
+		logging.DebugPrint(tape.logID, "ERROR: Could not open simH Tape Image file: %s, due to: %s\n", imgName, err.Error())
 		return false
 	}
-	mt.mtDataMu.Lock()
-	mt.fileName[tNum] = imgName
-	mt.simhFile[tNum] = f
-	mt.imageAttached[tNum] = true
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
-	mt.statusReg2 = mtSr2PEMode
-	mt.mtDataMu.Unlock()
-	BusSetAttached(mt.devNum, imgName)
+	tape.mtMu.Lock()
+	tape.fileName[tNum] = imgName
+	tape.simhFile[tNum] = f
+	tape.imageAttached[tNum] = true
+	tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
+	tape.statusReg2 = mtSr2PEMode
+	tape.mtMu.Unlock()
+	BusSetAttached(tape.devNum, imgName)
 	return true
 
 }
 
 // MtDetach disassociates a tape file image from the drive
-func MtDetach(tNum int) bool {
-	logging.DebugPrint(logID, "mtDetach called on unit #%d\n", tNum)
-	mt.mtDataMu.Lock()
-	mt.fileName[tNum] = ""
-	mt.simhFile[tNum] = nil
-	mt.imageAttached[tNum] = false
-	mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
-	mt.statusReg2 = mtSr2PEMode
-	mt.mtDataMu.Unlock()
-	BusSetDetached(mt.devNum)
+func (tape *MagTape6026T) MtDetach(tNum int) bool {
+	logging.DebugPrint(tape.logID, "mtDetach called on unit #%d\n", tNum)
+	tape.mtMu.Lock()
+	tape.fileName[tNum] = ""
+	tape.simhFile[tNum] = nil
+	tape.imageAttached[tNum] = false
+	tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
+	tape.statusReg2 = mtSr2PEMode
+	tape.mtMu.Unlock()
+	BusSetDetached(tape.devNum)
 	return true
 }
 
 // MtScanImage scans an attached SimH tape image to ensure it makes sense
 // (This is just a pass-through to the equivalent function in simhtape)
-func MtScanImage(tNum int) string {
-	mt.mtDataMu.RLock()
-	imageName := mt.fileName[tNum]
-	att := mt.imageAttached[tNum]
-	mt.mtDataMu.RUnlock()
+func (tape *MagTape6026T) MtScanImage(tNum int) string {
+	tape.mtMu.RLock()
+	imageName := tape.fileName[tNum]
+	att := tape.imageAttached[tNum]
+	tape.mtMu.RUnlock()
 	if !att {
 		return "WARNING: No image attached"
 	}
@@ -251,47 +251,43 @@ func MtScanImage(tNum int) string {
 // Load file 0 from tape (1 x 2k block)
 // Put the loaded code at physical location 0
 // ...
-func MtLoadTBoot() {
-	const (
-	// tbootSizeB = 2048
-	// tbootSizeW = 1024
-	)
+func (tape *MagTape6026T) MtLoadTBoot() {
 	var (
 		byte0, byte1 byte
 		word         dg.WordT
 		wdix, memix  dg.PhysAddrT
 	)
-	logging.DebugPrint(logID, "mtLoadTBoot() called\n")
+	logging.DebugPrint(tape.logID, "mtLoadTBoot() called\n")
 	tNum := 0
-	mt.mtDataMu.Lock()
-	defer mt.mtDataMu.Unlock()
-	simhtape.Rewind(mt.simhFile[tNum])
-	logging.DebugPrint(logID, "... tape rewound\n")
+	tape.mtMu.Lock()
+	defer tape.mtMu.Unlock()
+	simhtape.Rewind(tape.simhFile[tNum])
+	logging.DebugPrint(tape.logID, "... tape rewound\n")
 
 readLoop:
 	for {
-		hdr, ok := simhtape.ReadMetaData(mt.simhFile[tNum])
+		hdr, ok := simhtape.ReadMetaData(tape.simhFile[tNum])
 		// if !ok || hdr != tbootSizeB {
 		if !ok {
 			logging.DebugPrint(logging.DebugLog, "WARN: mtLoadTBoot called when no bootable tape image attached\n")
 			return
 		}
-		logging.DebugPrint(logID, "... header read, size is %d\n", hdr)
+		logging.DebugPrint(tape.logID, "... header read, size is %d\n", hdr)
 		switch hdr {
 		case simhtape.SimhMtrTmk: // Tape Mark (separates files)
 			break readLoop
 		default:
 			tbootSizeW := hdr / 2
-			tapeData, ok := simhtape.ReadRecordData(mt.simhFile[tNum], int(hdr))
+			tapeData, ok := simhtape.ReadRecordData(tape.simhFile[tNum], int(hdr))
 			if ok {
-				logging.DebugPrint(logID, "... data read\n")
+				logging.DebugPrint(tape.logID, "... data read\n")
 			} else {
-				logging.DebugPrint(logID, "... error reading data\n")
+				logging.DebugPrint(tape.logID, "... error reading data\n")
 				logging.DebugPrint(logging.DebugLog, "WARNING: Could not read data in mtLoadTBoot()\n")
 				return
 			}
 
-			logging.DebugPrint(logID, "... loading data into memory starting at address %d\n", memix)
+			logging.DebugPrint(tape.logID, "... loading data into memory starting at address %d\n", memix)
 			for wdix = 0; wdix < dg.PhysAddrT(tbootSizeW); wdix++ {
 				byte1 = tapeData[wdix*2]
 				byte0 = tapeData[wdix*2+1]
@@ -299,68 +295,68 @@ readLoop:
 				memory.WriteWord(memix+wdix, word)
 			}
 			memix += dg.PhysAddrT(tbootSizeW)
-			logging.DebugPrint(logID, "... finished loading data at address %d\n", memix+wdix)
-			trailer, ok := simhtape.ReadMetaData(mt.simhFile[tNum])
+			logging.DebugPrint(tape.logID, "... finished loading data at address %d\n", memix+wdix)
+			trailer, ok := simhtape.ReadMetaData(tape.simhFile[tNum])
 			if hdr != trailer || !ok {
 				logging.DebugPrint(logging.DebugLog, "WARN: mtLoadTBoot found mismatched trailer in TBOOT file\n")
 			}
 		}
 	}
-	simhtape.Rewind(mt.simhFile[tNum])
-	logging.DebugPrint(logID, "... tape rewound\n")
-	logging.DebugPrint(logID, "... mtLoadTBoot completed\n")
+	simhtape.Rewind(tape.simhFile[tNum])
+	logging.DebugPrint(tape.logID, "... tape rewound\n")
+	logging.DebugPrint(tape.logID, "... mtLoadTBoot completed\n")
 }
 
 // MtDataIn is called from Bus to implement DIx from the mt device
-func mtDataIn(abc byte, flag byte) (data dg.WordT) {
+func (tape *MagTape6026T) mtDataIn(abc byte, flag byte) (data dg.WordT) {
 
-	mt.mtDataMu.RLock()
+	tape.mtMu.RLock()
 	switch abc {
 	case 'A': /* Read status register 1 - see p.IV-18 of Peripherals guide */
-		data = mt.statusReg1
-		logging.DebugPrint(logID, "DIA - Read SR1 - returning: %#o = %s\n", data, mtReadableSR1())
+		data = tape.statusReg1
+		logging.DebugPrint(tape.logID, "DIA - Read SR1 - returning: %#o = %s\n", data, tape.mtReadableSR1())
 	case 'B': /* Read memory addr register 1 - see p.IV-19 of Peripherals guide */
-		data = dg.WordT(mt.memAddrReg)
-		logging.DebugPrint(logID, "DIB - Read MA - returning: %#o\n", data)
+		data = dg.WordT(tape.memAddrReg)
+		logging.DebugPrint(tape.logID, "DIB - Read MA - returning: %#o\n", data)
 	case 'C': /* Read status register 2 - see p.IV-18 of Peripherals guide */
-		data = mt.statusReg2
-		logging.DebugPrint(logID, "DIC - Read SR2 - returning: %#o\n", data)
+		data = tape.statusReg2
+		logging.DebugPrint(tape.logID, "DIC - Read SR2 - returning: %#o\n", data)
 	}
-	mt.mtDataMu.RUnlock()
+	tape.mtMu.RUnlock()
 
-	mtHandleFlag(flag)
+	tape.mtHandleFlag(flag)
 
 	return data
 }
 
 // MtDataOut is called from Bus to implement DOx from the mt device
-func mtDataOut(datum dg.WordT, abc byte, flag byte) {
-	mt.mtDataMu.Lock()
+func (tape *MagTape6026T) mtDataOut(datum dg.WordT, abc byte, flag byte) {
+	tape.mtMu.Lock()
 	switch abc {
 	case 'A': // Specify Command and Drive - p.IV-17
 		// which command?
 		for c := 0; c < mtCmdCount; c++ {
-			if (datum & mtCmdMask) == commandSet[c] {
-				mt.currentCmd = c
+			if (datum & mtCmdMask) == tape.commandSet[c] {
+				tape.currentCmd = c
 				break
 			}
 		}
 		// which unit?
-		mt.currentUnit = mtExtractUnit(datum)
-		logging.DebugPrint(logID, "DOA - Specify Command and Drive - internal cmd #: %#o, unit: %#o\n",
-			mt.currentCmd, mt.currentUnit)
+		tape.currentUnit = mtExtractUnit(datum)
+		logging.DebugPrint(tape.logID, "DOA - Specify Command and Drive - internal cmd #: %#o, unit: %#o\n",
+			tape.currentCmd, tape.currentUnit)
 	case 'B':
-		mt.memAddrReg = dg.PhysAddrT(datum)
-		logging.DebugPrint(logID, "DOB - MA set to %#o\n", mt.memAddrReg)
+		tape.memAddrReg = dg.PhysAddrT(datum)
+		logging.DebugPrint(tape.logID, "DOB - MA set to %#o\n", tape.memAddrReg)
 	case 'C':
-		mt.negWordCntReg = int16(datum)
-		logging.DebugPrint(logID, "DOC - Set (neg) Word Count to #%o (%d.)\n", datum, mt.negWordCntReg)
+		tape.negWordCntReg = int16(datum)
+		logging.DebugPrint(tape.logID, "DOC - Set (neg) Word Count to #%o (%d.)\n", datum, tape.negWordCntReg)
 	case 'N': // special handling for NIOx...
-		logging.DebugPrint(logID, "NIO - Flag is %c\n", flag)
+		logging.DebugPrint(tape.logID, "NIO - Flag is %c\n", flag)
 	}
-	mt.mtDataMu.Unlock()
+	tape.mtMu.Unlock()
 
-	mtHandleFlag(flag)
+	tape.mtHandleFlag(flag)
 }
 
 func mtExtractUnit(word dg.WordT) int {
@@ -368,109 +364,109 @@ func mtExtractUnit(word dg.WordT) int {
 }
 
 // mtHandleFlag actions the flag/pulse to the mt controller
-func mtHandleFlag(f byte) {
+func (tape *MagTape6026T) mtHandleFlag(f byte) {
 	switch f {
 	case 'S':
-		logging.DebugPrint(logID, "... S flag set\n")
-		mt.mtDataMu.RLock()
-		if mt.currentCmd != mtCmdRewind {
-			BusSetBusy(mt.devNum, true)
+		logging.DebugPrint(tape.logID, "... S flag set\n")
+		tape.mtMu.RLock()
+		if tape.currentCmd != mtCmdRewind {
+			BusSetBusy(tape.devNum, true)
 		}
-		mt.mtDataMu.RUnlock()
-		BusSetDone(mt.devNum, false)
-		mtDoCommand()
-		BusSetBusy(mt.devNum, false)
-		BusSetDone(mt.devNum, true)
+		tape.mtMu.RUnlock()
+		BusSetDone(tape.devNum, false)
+		tape.mtDoCommand()
+		BusSetBusy(tape.devNum, false)
+		BusSetDone(tape.devNum, true)
 
 	case 'C':
 		// if we were performing mt operations in a Goroutine, this would interrupt them...
-		logging.DebugPrint(logID, "... C flag set\n")
-		//mt.mtDataMu.Lock()
-		//mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady // ???
-		//mt.statusReg2 = mtSr2PEMode                                   // ???
-		//mt.mtDataMu.Unlock()
-		BusSetBusy(mt.devNum, false)
-		BusSetDone(mt.devNum, false)
+		logging.DebugPrint(tape.logID, "... C flag set\n")
+		//tape.mtMu.Lock()
+		//tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady // ???
+		//tape.statusReg2 = mtSr2PEMode                                   // ???
+		//tape.mtMu.Unlock()
+		BusSetBusy(tape.devNum, false)
+		BusSetDone(tape.devNum, false)
 
 	case 'P':
 		// 'Reserved'
-		logging.DebugPrint(logID, "WARNING: Received 'P' flag - which is reserved")
+		logging.DebugPrint(tape.logID, "WARNING: Received 'P' flag - which is reserved")
 
 	default:
 		// empty flag - nothing to do
 	}
 }
 
-func mtDoCommand() {
-	mt.mtDataMu.Lock()
-	defer mt.mtDataMu.Unlock()
+func (tape *MagTape6026T) mtDoCommand() {
+	tape.mtMu.Lock()
+	defer tape.mtMu.Unlock()
 
-	switch mt.currentCmd {
+	switch tape.currentCmd {
 	case mtCmdRead:
-		logging.DebugPrint(logID, "*READ* command\n ---- Unit: %d\n ---- Word Count: %d Location: %d\n", mt.currentUnit, mt.negWordCntReg, mt.memAddrReg)
-		hdrLen, _ := simhtape.ReadMetaData(mt.simhFile[mt.currentUnit])
-		logging.DebugPrint(logID, " ----  Header read giving length: %d\n", hdrLen)
+		logging.DebugPrint(tape.logID, "*READ* command\n ---- Unit: %d\n ---- Word Count: %d Location: %d\n", tape.currentUnit, tape.negWordCntReg, tape.memAddrReg)
+		hdrLen, _ := simhtape.ReadMetaData(tape.simhFile[tape.currentUnit])
+		logging.DebugPrint(tape.logID, " ----  Header read giving length: %d\n", hdrLen)
 		if hdrLen == mtEOF {
-			logging.DebugPrint(logID, " ----  Header is EOF indicator\n")
-			mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
+			logging.DebugPrint(tape.logID, " ----  Header is EOF indicator\n")
+			tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
 		} else {
-			logging.DebugPrint(logID, " ----  Calling simhtape.ReadRecord with length: %d\n", hdrLen)
+			logging.DebugPrint(tape.logID, " ----  Calling simhtape.ReadRecord with length: %d\n", hdrLen)
 			var w uint32
 			var wd dg.WordT
 			var pAddr dg.PhysAddrT
-			rec, _ := simhtape.ReadRecordData(mt.simhFile[mt.currentUnit], int(hdrLen))
+			rec, _ := simhtape.ReadRecordData(tape.simhFile[tape.currentUnit], int(hdrLen))
 			for w = 0; w < hdrLen; w += 2 {
 				wd = (dg.WordT(rec[w]) << 8) | dg.WordT(rec[w+1])
-				pAddr = memory.WriteWordDchChan(&mt.memAddrReg, wd)
-				logging.DebugPrint(logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, mt.memAddrReg-1, pAddr)
+				pAddr = memory.WriteWordDchChan(&tape.memAddrReg, wd)
+				logging.DebugPrint(tape.logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, tape.memAddrReg-1, pAddr)
 				// memAddrReg is auto-incremented for every word written  *******
 				// auto-incremement the (two's complement) word count
-				mt.negWordCntReg++
-				if mt.negWordCntReg == 0 {
+				tape.negWordCntReg++
+				if tape.negWordCntReg == 0 {
 					break
 				}
 			}
-			trailer, _ := simhtape.ReadMetaData(mt.simhFile[mt.currentUnit])
-			logging.DebugPrint(logID, " ----  %d bytes loaded\n", w)
-			logging.DebugPrint(logID, " ----  Read SimH Trailer: %d\n", trailer)
+			trailer, _ := simhtape.ReadMetaData(tape.simhFile[tape.currentUnit])
+			logging.DebugPrint(tape.logID, " ----  %d bytes loaded\n", w)
+			logging.DebugPrint(tape.logID, " ----  Read SimH Trailer: %d\n", trailer)
 			// TODO Need to verify how status should be set here...
-			mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1StatusChanged | mtSr1UnitReady
+			tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1StatusChanged | mtSr1UnitReady
 		}
 
 	case mtCmdRewind:
-		logging.DebugPrint(logID, "*REWIND* command\n ------ Unit: #%d\n", mt.currentUnit)
-		simhtape.Rewind(mt.simhFile[mt.currentUnit])
-		mt.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged | mtSr1BOT
+		logging.DebugPrint(tape.logID, "*REWIND* command\n ------ Unit: #%d\n", tape.currentUnit)
+		simhtape.Rewind(tape.simhFile[tape.currentUnit])
+		tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged | mtSr1BOT
 
 	case mtCmdSpaceFwd:
-		logging.DebugPrint(logID, "*SPACE FORWARD* command\n ----- ------- Unit: #%d\n", mt.currentUnit)
-		if mt.negWordCntReg == 0 { // one whole file
-			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
+		logging.DebugPrint(tape.logID, "*SPACE FORWARD* command\n ----- ------- Unit: #%d\n", tape.currentUnit)
+		if tape.negWordCntReg == 0 { // one whole file
+			stat := simhtape.SpaceFwd(tape.simhFile[tape.currentUnit], tape.negWordCntReg)
 			// according to the simH source, MA should be set to # files/recs skipped
 			// can't find any reference to this in the Periph Pgmrs Guide but it lets INSTL
 			// progress further...
 			// It seems to need the two's complement of the number...
-			mt.memAddrReg = 0xffffffff
+			tape.memAddrReg = 0xffffffff
 			if stat == simhtape.SimhMtStatOk {
-				//mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
+				//tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+				tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
 			} else {
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOT | mtSr1StatusChanged | mtSr1Error
+				tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOT | mtSr1StatusChanged | mtSr1Error
 			}
 		} else {
-			stat := simhtape.SpaceFwd(mt.simhFile[mt.currentUnit], mt.negWordCntReg)
+			stat := simhtape.SpaceFwd(tape.simhFile[tape.currentUnit], tape.negWordCntReg)
 			switch stat {
 			case simhtape.SimhMtStatOk:
-				//mt.memAddrReg = 0
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged
+				//tape.memAddrReg = 0
+				tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1StatusChanged
 			case simhtape.SimhMtStatTmk:
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
+				tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1StatusChanged | mtSr1Error
 			case simhtape.SimhMtStatInvRec:
-				mt.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1DataError | mtSr1StatusChanged | mtSr1Error
+				tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1DataError | mtSr1StatusChanged | mtSr1Error
 			default:
 				log.Fatalf("ERROR: Unexpected return from simhTape.SpaceFwd %d", stat)
 			}
-			mt.memAddrReg = dg.PhysAddrT(mt.negWordCntReg)
+			tape.memAddrReg = dg.PhysAddrT(tape.negWordCntReg)
 		}
 
 	case mtCmdSpaceRev:
@@ -478,14 +474,14 @@ func mtDoCommand() {
 	case mtCmdUnload:
 		log.Fatalln("ERROR: mtDoCommand - UNLOAD command Not Yet Implemented")
 	default:
-		log.Fatalf("ERROR: mtDoCommand - Command #%d Not Yet Implemented\n", mt.currentCmd)
+		log.Fatalf("ERROR: mtDoCommand - Command #%d Not Yet Implemented\n", tape.currentCmd)
 	}
 }
 
-func mtReadableSR1() (res string) {
+func (tape *MagTape6026T) mtReadableSR1() (res string) {
 	res = mtSr1Readable
 	for b := 0; b < 16; b++ {
-		if (mt.statusReg1 & (1 << (15 - uint8(b)))) == 0 {
+		if (tape.statusReg1 & (1 << (15 - uint8(b)))) == 0 {
 			res = res[:b] + "-" + res[b+1:]
 		}
 	}
