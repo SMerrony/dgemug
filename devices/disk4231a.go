@@ -258,9 +258,6 @@ func (disk *Disk4231aT) disk4231aDataOut(datum dg.WordT, abc byte, flag byte) {
 			disk.statusReg &= ^dg.WordT(disk4231aStatusEndError)
 			disk.statusReg &= ^dg.WordT(disk4231aStatusCheckError)
 			disk.statusReg &= ^dg.WordT(disk4231aStatusSectorError)
-			if disk.debugLogging {
-				logging.DebugPrint(disk.logID, "... Clear R/W Done et al.\n")
-			}
 		}
 		if memory.TestWbit(datum, 1) {
 			disk.statusReg &= ^dg.WordT(disk4231aStatusDrv0Done)
@@ -291,7 +288,7 @@ func (disk *Disk4231aT) disk4231aDataOut(datum dg.WordT, abc byte, flag byte) {
 		disk.sector = extractDisk4231aSector(datum)
 		disk.sectCnt = extractDisk4231aSectCnt(datum)
 		if disk.debugLogging {
-			logging.DebugPrint(disk.logID, "DIC [Specify Disk Addr & Sect Cnt with data %s\n",
+			logging.DebugPrint(disk.logID, "DOC [Specify Disk Addr & Sect Cnt with data %s\n",
 				memory.WordToBinStr(datum))
 			logging.DebugPrint(disk.logID, "... DRV: %d, SURF: %d., SECT: %d., SECCNT: %d.\n",
 				disk.drive, disk.surface, disk.sector, disk.sectCnt)
@@ -345,7 +342,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 		for disk.sectCnt != 0 {
 			// check CYL
 			if disk.cylinder >= disk4231aPhysCyls {
-				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusAddressError | disk4231aStatusError
+				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusAddressError | disk4231aStatusError
 				disk.disk4231aMu.Unlock()
 				return
 			}
@@ -359,7 +356,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 			}
 			// check SURF (head)
 			if disk.surface >= disk4231aSurfPerDisk {
-				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusAddressError | disk4231aStatusHeadError | disk4231aStatusError
+				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusAddressError | disk4231aStatusHeadError | disk4231aStatusError
 				disk.disk4231aMu.Unlock()
 				return
 			}
@@ -386,7 +383,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 			logging.DebugPrint(disk.logID, "... .... READ command finished %s\n", disk.disk4231aPrintableAddr())
 			logging.DebugPrint(disk.logID, "\n... .... Last Address: %#o\n", disk.memAddr)
 		}
-		disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusDPDone
+		disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDPDone
 
 		// case disk4231aCmdRelease:
 	// 	// I think this is a NOP on a single-processor machine
@@ -400,7 +397,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 		for disk.sectCnt != 0 {
 			// check CYL
 			if disk.cylinder >= disk4231aPhysCyls {
-				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusAddressError | disk4231aStatusError
+				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusAddressError | disk4231aStatusError
 				if disk.debugLogging {
 					logging.DebugPrint(disk.logID, "Cylinder overflow: %d.", disk.cylinder)
 				}
@@ -417,7 +414,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 			}
 			// check SURF (head)
 			if disk.surface >= disk4231aSurfPerDisk {
-				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusAddressError | disk4231aStatusHeadError | disk4231aStatusError
+				disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusAddressError | disk4231aStatusHeadError | disk4231aStatusError
 				if disk.debugLogging {
 					logging.DebugPrint(disk.logID, "Surface overflow: %d.", disk.surface)
 				}
@@ -447,7 +444,7 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 			logging.DebugPrint(disk.logID, "... ..... Last Address: %#o\n", disk.memAddr)
 		}
 
-		disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDrv0Done | disk4231aStatusDPDone
+		disk.statusReg = disk4231aStatusDiscReady | disk4231aStatusDPDone
 
 	default:
 		log.Fatalf("disk4231a Disk R/W Command %d not yet implemented\n", disk.command)
@@ -480,6 +477,9 @@ func (disk *Disk4231aT) disk4231aHandleFlag(f byte) {
 	case 'C': // stop all positioning and txfer ops
 		BusSetBusy(disk.devNum, false)
 		BusSetDone(disk.devNum, false)
+		if disk.debugLogging {
+			logging.DebugPrint(disk.logID, "... C flag set\n")
+		}
 		disk.disk4231aMu.Lock()
 		disk.statusReg = 0
 		disk.disk4231aMu.Unlock()
@@ -561,7 +561,7 @@ func extractDisk4231aDriveNo(word dg.WordT) uint8 {
 }
 
 func extractDisk4231aSector(word dg.WordT) uint8 {
-	return uint8((word & 0x01f0) >> 5)
+	return uint8((word & 0x01f0) >> 4)
 }
 
 func extractDisk4231aSectCnt(word dg.WordT) int8 {
