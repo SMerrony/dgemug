@@ -165,6 +165,7 @@ const (
 type Disk6239DataT struct {
 	// MV/Em internals...
 	disk6239DataMu sync.RWMutex
+	bus            *BusT
 	devNum         int
 	imageAttached  bool
 	imageFileName  string
@@ -197,15 +198,16 @@ type Disk6239StatT struct {
 }
 
 // Disk6239Init is called once by the main routine to initialise this disk6239 emulator
-func (disk *Disk6239DataT) Disk6239Init(dev int, statsChann chan Disk6239StatT, logID int, logging bool) {
+func (disk *Disk6239DataT) Disk6239Init(dev int, bus *BusT, statsChann chan Disk6239StatT, logID int, logging bool) {
 	disk.disk6239DataMu.Lock()
 	disk.devNum = dev
+	disk.bus = bus
 
 	go disk.disk6239StatSender(statsChann)
 
-	BusSetResetFunc(disk.devNum, disk.disk6239Reset)
-	BusSetDataInFunc(disk.devNum, disk.disk6239DataIn)
-	BusSetDataOutFunc(disk.devNum, disk.disk6239DataOut)
+	bus.SetResetFunc(disk.devNum, disk.disk6239Reset)
+	bus.SetDataInFunc(disk.devNum, disk.disk6239DataIn)
+	bus.SetDataOutFunc(disk.devNum, disk.disk6239DataOut)
 
 	disk.logID = logID
 	disk.imageAttached = false
@@ -236,7 +238,7 @@ func (disk *Disk6239DataT) Disk6239Attach(dNum int, imgName string) bool {
 
 	disk.disk6239DataMu.Unlock()
 
-	BusSetAttached(disk.devNum, imgName)
+	disk.bus.SetAttached(disk.devNum, imgName)
 	return true
 }
 
@@ -517,18 +519,18 @@ func (disk *Disk6239DataT) disk6239GetCBextendedStatusSize() int {
 func (disk *Disk6239DataT) disk6239HandleFlag(f byte) {
 	switch f {
 	case 'S':
-		BusSetBusy(disk.devNum, true)
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, true)
+		disk.bus.SetDone(disk.devNum, false)
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... S flag set\n")
 		}
 		disk.disk6239DoPioCommand()
 
-		BusSetBusy(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, false)
 		// set the DONE flag if the return bit was set
 		disk.disk6239DataMu.RLock()
 		if memory.TestWbit(disk.commandRegC, 15) {
-			BusSetDone(disk.devNum, true)
+			disk.bus.SetDone(disk.devNum, true)
 		}
 		disk.disk6239DataMu.RUnlock()
 
@@ -536,7 +538,7 @@ func (disk *Disk6239DataT) disk6239HandleFlag(f byte) {
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... C flag set, clearing DONE flag\n")
 		}
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetDone(disk.devNum, false)
 		// TODO clear pending interrupt
 		//disk.statusRegC = 0
 		disk.disk6239SetPioStatusRegC(statXecStateMapped,
@@ -744,7 +746,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			if disk.debugLogging {
 				logging.DebugPrint(disk.logID, "...ready to set ASYNC status\n")
 			}
-			for BusGetBusy(disk.devNum) || BusGetDone(disk.devNum) {
+			for disk.bus.GetBusy(disk.devNum) || disk.bus.GetDone(disk.devNum) {
 				time.Sleep(disk6239AsynchStatRetryInterval)
 			}
 			disk.disk6239DataMu.Lock()
@@ -758,7 +760,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			if disk.debugLogging {
 				logging.DebugPrint(disk.logID, "...set ASYNC status\n")
 			}
-			BusSetDone(disk.devNum, true)
+			disk.bus.SetDone(disk.devNum, true)
 		} else {
 			// chain to next CB
 			//disk6239ProcessCB(nextCB)

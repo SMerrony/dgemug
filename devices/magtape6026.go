@@ -94,6 +94,7 @@ const maxTapes = 8
 // MagTape6026T contains the current state of a type 6026 Magnetic Tape Drive
 type MagTape6026T struct {
 	mtMu                   sync.RWMutex
+	bus                    *BusT
 	devNum                 int
 	imageAttached          [maxTapes]bool
 	fileName               [maxTapes]string
@@ -120,9 +121,10 @@ type MtStatT struct {
 }
 
 // MtInit sets the initial state of the (unmounted) tape drive(s)
-func (tape *MagTape6026T) MtInit(dev int, statsChan chan MtStatT, logID int, debugLogging bool) bool {
+func (tape *MagTape6026T) MtInit(dev int, bus *BusT, statsChan chan MtStatT, logID int, debugLogging bool) bool {
 	tape.mtMu.Lock()
 	tape.devNum = dev
+	tape.bus = bus
 	tape.logID = logID
 	tape.debugLogging = debugLogging
 	tape.commandSet[mtCmdRead] = mtCmdReadBits
@@ -137,9 +139,9 @@ func (tape *MagTape6026T) MtInit(dev int, statsChan chan MtStatT, logID int, deb
 	tape.commandSet[mtCmdUnload] = mtCmdUnloadBits
 	tape.commandSet[mtCmdDriveMode] = mtCmdDriveModeBits
 
-	BusSetResetFunc(tape.devNum, tape.MtReset)
-	BusSetDataInFunc(tape.devNum, tape.mtDataIn)
-	BusSetDataOutFunc(tape.devNum, tape.mtDataOut)
+	tape.bus.SetResetFunc(tape.devNum, tape.MtReset)
+	tape.bus.SetDataInFunc(tape.devNum, tape.mtDataIn)
+	tape.bus.SetDataOutFunc(tape.devNum, tape.mtDataOut)
 
 	go tape.mtStatSender(statsChan)
 
@@ -214,7 +216,7 @@ func (tape *MagTape6026T) MtAttach(tNum int, imgName string) bool {
 	tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
 	tape.statusReg2 = mtSr2PEMode
 	tape.mtMu.Unlock()
-	BusSetAttached(tape.devNum, imgName)
+	tape.bus.SetAttached(tape.devNum, imgName)
 	return true
 
 }
@@ -229,7 +231,7 @@ func (tape *MagTape6026T) MtDetach(tNum int) bool {
 	tape.statusReg1 = mtSr1Error | mtSr1HiDensity | mtSr19Track | mtSr1BOT | mtSr1StatusChanged | mtSr1UnitReady
 	tape.statusReg2 = mtSr2PEMode
 	tape.mtMu.Unlock()
-	BusSetDetached(tape.devNum)
+	tape.bus.SetDetached(tape.devNum)
 	return true
 }
 
@@ -370,13 +372,13 @@ func (tape *MagTape6026T) mtHandleFlag(f byte) {
 		logging.DebugPrint(tape.logID, "... S flag set\n")
 		tape.mtMu.RLock()
 		if tape.currentCmd != mtCmdRewind {
-			BusSetBusy(tape.devNum, true)
+			tape.bus.SetBusy(tape.devNum, true)
 		}
 		tape.mtMu.RUnlock()
-		BusSetDone(tape.devNum, false)
+		tape.bus.SetDone(tape.devNum, false)
 		tape.mtDoCommand()
-		BusSetBusy(tape.devNum, false)
-		BusSetDone(tape.devNum, true)
+		tape.bus.SetBusy(tape.devNum, false)
+		tape.bus.SetDone(tape.devNum, true)
 
 	case 'C':
 		// if we were performing mt operations in a Goroutine, this would interrupt them...
@@ -385,8 +387,8 @@ func (tape *MagTape6026T) mtHandleFlag(f byte) {
 		//tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady // ???
 		//tape.statusReg2 = mtSr2PEMode                                   // ???
 		//tape.mtMu.Unlock()
-		BusSetBusy(tape.devNum, false)
-		BusSetDone(tape.devNum, false)
+		tape.bus.SetBusy(tape.devNum, false)
+		tape.bus.SetDone(tape.devNum, false)
 
 	case 'P':
 		// 'Reserved'

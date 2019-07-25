@@ -27,28 +27,29 @@ import (
 )
 
 func TestIRQmasking(t *testing.T) {
-	BusInit()
+	var bus BusT
+	bus.BusInit()
 	var testDevMap = DeviceMapT{
 		1: {"TEST", 2, true, false},
 		2: {"TEST2", 15, true, false},
 	}
-	BusAddDevice(testDevMap, 1, true)
-	BusAddDevice(testDevMap, 2, true)
+	bus.AddDevice(testDevMap, 1, true)
+	bus.AddDevice(testDevMap, 2, true)
 
-	fmt.Printf("Device Map:\n%s\n", BusGetPrintableDevList())
+	fmt.Printf("Device Map:\n%s\n", bus.GetPrintableDevList())
 
-	if BusIsDevMasked(1) {
+	if bus.IsDevMasked(1) {
 		t.Error("Device 1 should not be masked")
 	}
-	BusSetIrqMask(1)
-	if BusIsDevMasked(1) {
+	bus.SetIrqMask(1)
+	if bus.IsDevMasked(1) {
 		t.Error("Device 1 should not be masked")
 	}
-	if !BusIsDevMasked(2) {
+	if !bus.IsDevMasked(2) {
 		t.Error("Device 2 should be masked")
 	}
-	BusSetIrqMask(0x7000)
-	if !BusIsDevMasked(1) {
+	bus.SetIrqMask(0x7000)
+	if !bus.IsDevMasked(1) {
 		t.Error("Device 1 should be masked")
 	}
 }

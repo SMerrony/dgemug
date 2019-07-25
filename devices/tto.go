@@ -1,6 +1,6 @@
 // tto - console output
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright (C) 2017,2019  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,16 +34,18 @@ const (
 )
 
 var (
-	tto    net.Conn
+	tto    net.Conn // FIXME should be a type...
+	bus    *BusT
 	devNum int
 )
 
 // TtoInit performs iniial setup of the TTO device
-func TtoInit(dev int, c net.Conn) {
+func TtoInit(dev int, busp *BusT, c net.Conn) {
 	devNum = dev
+	bus = busp
 	tto = c
-	BusSetResetFunc(devNum, ttoReset)
-	BusSetDataOutFunc(devNum, ttoDataOut)
+	bus.SetResetFunc(devNum, ttoReset)
+	bus.SetDataOutFunc(devNum, ttoDataOut)
 }
 
 // TtoPutChar outputs a single byte to TTO
@@ -80,26 +82,26 @@ func ttoDataOut(datum dg.WordT, abc byte, flag byte) {
 	case 'A':
 		ascii = byte(datum)
 		if flag == 'S' {
-			BusSetBusy(devNum, true)
-			BusSetDone(devNum, false)
+			bus.SetBusy(devNum, true)
+			bus.SetDone(devNum, false)
 		}
 		TtoPutChar(ascii)
-		BusSetBusy(devNum, false)
-		BusSetDone(devNum, true)
+		bus.SetBusy(devNum, false)
+		bus.SetDone(devNum, true)
 		// send IRQ if not masked out
-		if !BusIsDevMasked(devNum) {
+		if !bus.IsDevMasked(devNum) {
 			// InterruptingDev[devNum] = true
 			// IRQ = true
-			BusSendInterrupt(devNum)
+			bus.SendInterrupt(devNum)
 		}
 	case 'N':
 		switch flag {
 		case 'S':
-			BusSetBusy(devNum, true)
-			BusSetDone(devNum, false)
+			bus.SetBusy(devNum, true)
+			bus.SetDone(devNum, false)
 		case 'C':
-			BusSetBusy(devNum, false)
-			BusSetDone(devNum, false)
+			bus.SetBusy(devNum, false)
+			bus.SetDone(devNum, false)
 		}
 	default:
 		log.Fatalf("ERROR: unexpected source buffer <%c> for DOx ac,TTO instruction\n", abc)

@@ -115,6 +115,7 @@ const disk6061StatsPeriodMs = 500
 // Disk6061T holds the current state of a Type 6061 Moving-Head Disk
 type Disk6061T struct {
 	// MV/Em internals...
+	bus                 *BusT
 	ImageAttached       bool
 	disk6061Mu          sync.RWMutex
 	devNum              int
@@ -152,10 +153,11 @@ type Disk6061StatT struct {
 }
 
 // Disk6061Init must be called to initialise the emulated disk6061 controller
-func (disk *Disk6061T) Disk6061Init(dev int, statsChann chan Disk6061StatT, logID int, logging bool) {
+func (disk *Disk6061T) Disk6061Init(dev int, bus *BusT, statsChann chan Disk6061StatT, logID int, logging bool) {
 	disk.disk6061Mu.Lock()
 	defer disk.disk6061Mu.Unlock()
 	disk.devNum = dev
+	disk.bus = bus
 	disk.logID = logID
 	disk.debugLogging = logging
 
@@ -165,9 +167,9 @@ func (disk *Disk6061T) Disk6061Init(dev int, statsChann chan Disk6061StatT, logI
 
 	go disk.disk6061StatsSender(statsChann)
 
-	BusSetResetFunc(disk.devNum, disk.disk6061Reset)
-	BusSetDataInFunc(disk.devNum, disk.disk6061In)
-	BusSetDataOutFunc(disk.devNum, disk.disk6061Out)
+	bus.SetResetFunc(disk.devNum, disk.disk6061Reset)
+	bus.SetDataInFunc(disk.devNum, disk.disk6061In)
+	bus.SetDataOutFunc(disk.devNum, disk.disk6061Out)
 	disk.ImageAttached = false
 	disk.instructionMode = disk6061InsModeNormal
 	disk.driveStatus = disk6061Ready
@@ -192,7 +194,7 @@ func (disk *Disk6061T) Disk6061Attach(dNum int, imgName string) bool {
 	disk.imageFileName = imgName
 	disk.ImageAttached = true
 	disk.disk6061Mu.Unlock()
-	BusSetAttached(disk.devNum, imgName)
+	disk.bus.SetAttached(disk.devNum, imgName)
 	return true
 }
 
@@ -595,8 +597,8 @@ func (disk *Disk6061T) disk6061DoCommand() {
 func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 	switch f {
 	case 'S':
-		BusSetBusy(disk.devNum, true)
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, true)
+		disk.bus.SetDone(disk.devNum, false)
 		// TODO stop any I/O
 		disk.disk6061Mu.Lock()
 		disk.rwStatus = 0
@@ -606,18 +608,18 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 		}
 		disk.disk6061Mu.Unlock()
 		disk.disk6061DoCommand()
-		BusSetBusy(disk.devNum, false)
-		BusSetDone(disk.devNum, true)
+		disk.bus.SetBusy(disk.devNum, false)
+		disk.bus.SetDone(disk.devNum, true)
 		// send IRQ if not masked out
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk.devNum)
+		disk.bus.SendInterrupt(disk.devNum)
 		//}
 
 	case 'C':
-		BusSetBusy(disk.devNum, false)
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, false)
+		disk.bus.SetDone(disk.devNum, false)
 		disk.disk6061Mu.Lock()
 		disk.rwStatus = 0
 		disk.disk6061Mu.Unlock()
@@ -625,11 +627,11 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-	//	BusSendInterrupt(disk.devNum)
+	//	disk.bus.SendInterrupt(disk.devNum)
 	//}
 
 	case 'P':
-		BusSetBusy(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, false)
 		disk.disk6061Mu.Lock()
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... P flag set\n")
@@ -638,13 +640,13 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 		disk.disk6061Mu.Unlock()
 		disk.disk6061DoCommand()
 		//disk.rwStatus = disk6061Drive0Done
-		//BusSetBusy(disk.devNum, false)
-		//BusSetDone(disk.devNum, true)
+		//disk.bus.SetBusy(disk.devNum, false)
+		//disk.bus.SetDone(disk.devNum, true)
 		// send IRQ if not masked out
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk.devNum)
+		disk.bus.SendInterrupt(disk.devNum)
 		//}
 
 	default:

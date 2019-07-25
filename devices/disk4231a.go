@@ -80,6 +80,7 @@ const disk4231aStatsPeriodMs = 333
 // Disk4231aT holds the current state of the Type-6231A Moving-Head Disk
 type Disk4231aT struct {
 	// MV/Em internals...
+	bus                 *BusT
 	ImageAttached       bool
 	disk4231aMu         sync.RWMutex
 	devNum              int
@@ -113,9 +114,10 @@ type Disk4231aStatT struct {
 }
 
 // Disk4231aInit must be called to initialise the emulated disk4231a controller
-func (disk *Disk4231aT) Disk4231aInit(dev int, statsChann chan Disk4231aStatT, logID int, logging bool) {
+func (disk *Disk4231aT) Disk4231aInit(dev int, bus *BusT, statsChann chan Disk4231aStatT, logID int, logging bool) {
 	disk.disk4231aMu.Lock()
 	defer disk.disk4231aMu.Unlock()
+	disk.bus = bus
 	disk.devNum = dev
 	disk.logID = logID
 	disk.debugLogging = logging
@@ -124,9 +126,9 @@ func (disk *Disk4231aT) Disk4231aInit(dev int, statsChann chan Disk4231aStatT, l
 
 	go disk.disk4231aStatsSender(statsChann)
 
-	BusSetResetFunc(disk.devNum, disk.disk4231aReset)
-	BusSetDataInFunc(disk.devNum, disk.disk4231aDataIn)
-	BusSetDataOutFunc(disk.devNum, disk.disk4231aDataOut)
+	bus.SetResetFunc(disk.devNum, disk.disk4231aReset)
+	bus.SetDataInFunc(disk.devNum, disk.disk4231aDataIn)
+	bus.SetDataOutFunc(disk.devNum, disk.disk4231aDataOut)
 	disk.ImageAttached = false
 	disk.statusReg = disk4231aStatusDiscReady
 	disk.mapEnabled = false
@@ -150,7 +152,7 @@ func (disk *Disk4231aT) Disk4231aAttach(dNum int, imgName string) bool {
 	disk.imageFileName = imgName
 	disk.ImageAttached = true
 	disk.disk4231aMu.Unlock()
-	BusSetAttached(disk.devNum, imgName)
+	disk.bus.SetAttached(disk.devNum, imgName)
 	return true
 }
 
@@ -455,8 +457,8 @@ func (disk *Disk4231aT) disk4231aDoCommand() {
 func (disk *Disk4231aT) disk4231aHandleFlag(f byte) {
 	switch f {
 	case 'S': // initiate Read, Write, Seek or Recalibrate
-		BusSetBusy(disk.devNum, true)
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, true)
+		disk.bus.SetDone(disk.devNum, false)
 		// TODO stop any I/O
 		// disk.disk4231aMu.Lock()
 		// TODO start I/O timeout
@@ -465,34 +467,34 @@ func (disk *Disk4231aT) disk4231aHandleFlag(f byte) {
 		}
 		// disk.disk4231aMu.Unlock()
 		disk.disk4231aDoCommand()
-		BusSetBusy(disk.devNum, false)
-		BusSetDone(disk.devNum, true)
+		disk.bus.SetBusy(disk.devNum, false)
+		disk.bus.SetDone(disk.devNum, true)
 		// send IRQ if not masked out
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk.devNum)
+		disk.bus.SendInterrupt(disk.devNum)
 		//}
 
 	case 'C': // stop all positioning and txfer ops
-		BusSetBusy(disk.devNum, false)
-		BusSetDone(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, false)
+		disk.bus.SetDone(disk.devNum, false)
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... C flag set\n")
 		}
 		disk.disk4231aMu.Lock()
 		disk.statusReg = 0
 		disk.disk4231aMu.Unlock()
-		//BusSendInterrupt(disk.devNum)
+		//disk.bus.SendInterrupt(disk.devNum)
 		// send IRQ if not masked out
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-	//	BusSendInterrupt(disk.devNum)
+	//	disk.bus.SendInterrupt(disk.devNum)
 	//}
 
 	case 'P': // Initiate a Seek or Recalibrate operation
-		BusSetBusy(disk.devNum, false)
+		disk.bus.SetBusy(disk.devNum, false)
 		disk.disk4231aMu.Lock()
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... P flag set\n")
@@ -507,7 +509,7 @@ func (disk *Disk4231aT) disk4231aHandleFlag(f byte) {
 		//if !BusIsDevMasked(disk.devNum) {
 		// InterruptingDev[disk.devNum] = true
 		// IRQ = true
-		BusSendInterrupt(disk.devNum)
+		disk.bus.SendInterrupt(disk.devNum)
 		//}
 
 	default:
