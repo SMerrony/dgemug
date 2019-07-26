@@ -1,4 +1,4 @@
-// tto - console output
+//  - console output
 
 // Copyright (C) 2017,2019  Steve Merrony
 
@@ -24,6 +24,7 @@ package devices
 import (
 	"log"
 	"net"
+	"sync"
 
 	dg "github.com/SMerrony/dgemug/dg"
 )
@@ -33,75 +34,88 @@ const (
 	asciiFF = 0x0c
 )
 
-var (
-	tto    net.Conn // FIXME should be a type...
+// TtoT describes the current state of the TTO device
+type TtoT struct {
+	ttoMu  sync.RWMutex
+	conn   net.Conn
 	bus    *BusT
 	devNum int
-)
-
-// TtoInit performs iniial setup of the TTO device
-func TtoInit(dev int, busp *BusT, c net.Conn) {
-	devNum = dev
-	bus = busp
-	tto = c
-	bus.SetResetFunc(devNum, ttoReset)
-	bus.SetDataOutFunc(devNum, ttoDataOut)
 }
 
-// TtoPutChar outputs a single byte to TTO
-func TtoPutChar(c byte) {
-	tto.Write([]byte{c})
+// Init performs iniial setup of the TTO device
+func (tto *TtoT) Init(dev int, bus *BusT, c net.Conn) {
+	tto.ttoMu.Lock()
+	tto.devNum = dev
+	tto.bus = bus
+	tto.conn = c
+	bus.SetResetFunc(dev, tto.Reset)
+	bus.SetDataOutFunc(dev, tto.dataOut)
+	tto.ttoMu.Unlock()
 }
 
-// TtoPutString outputs a string to TTO (no NL appended)
-func TtoPutString(s string) {
-	tto.Write([]byte(s))
+// PutChar outputs a single byte to TTO
+func (tto *TtoT) PutChar(c byte) {
+	tto.ttoMu.Lock()
+	tto.conn.Write([]byte{c})
+	tto.ttoMu.Unlock()
 }
 
-// TtoPutStringNL outputs a string followed by a NL to TTO
-func TtoPutStringNL(s string) {
-	tto.Write([]byte(s))
-	tto.Write([]byte{asciiNL})
+// PutString outputs a string to TTO (no NL appended)
+func (tto *TtoT) PutString(s string) {
+	tto.ttoMu.Lock()
+	tto.conn.Write([]byte(s))
+	tto.ttoMu.Unlock()
 }
 
-// TtoPutNLString outputs a NL followed by a string to TTO
-func TtoPutNLString(s string) {
-	tto.Write([]byte{asciiNL})
-	tto.Write([]byte(s))
+// PutStringNL outputs a string followed by a NL to TTO
+func (tto *TtoT) PutStringNL(s string) {
+	tto.ttoMu.Lock()
+	tto.conn.Write([]byte(s))
+	tto.conn.Write([]byte{asciiNL})
+	tto.ttoMu.Unlock()
 }
 
-func ttoReset() {
-	TtoPutChar(asciiFF)
+// PutNLString outputs a NL followed by a string to TTO
+func (tto *TtoT) PutNLString(s string) {
+	tto.ttoMu.Lock()
+	tto.conn.Write([]byte{asciiNL})
+	tto.conn.Write([]byte(s))
+	tto.ttoMu.Unlock()
+}
+
+// Reset simply clears the screen or throws a page
+func (tto *TtoT) Reset() {
+	tto.PutChar(asciiFF)
 	log.Println("INFO: TTO Reset")
 }
 
 // This is called from Bus to implement DOA to the TTO device
-func ttoDataOut(datum dg.WordT, abc byte, flag byte) {
+func (tto *TtoT) dataOut(datum dg.WordT, abc byte, flag byte) {
 	var ascii byte
 	switch abc {
 	case 'A':
 		ascii = byte(datum)
 		if flag == 'S' {
-			bus.SetBusy(devNum, true)
-			bus.SetDone(devNum, false)
+			tto.bus.SetBusy(tto.devNum, true)
+			tto.bus.SetDone(tto.devNum, false)
 		}
-		TtoPutChar(ascii)
-		bus.SetBusy(devNum, false)
-		bus.SetDone(devNum, true)
+		tto.PutChar(ascii)
+		tto.bus.SetBusy(tto.devNum, false)
+		tto.bus.SetDone(tto.devNum, true)
 		// send IRQ if not masked out
-		if !bus.IsDevMasked(devNum) {
-			// InterruptingDev[devNum] = true
+		if !tto.bus.IsDevMasked(tto.devNum) {
+			// InterruptingDev[tto.devNum] = true
 			// IRQ = true
-			bus.SendInterrupt(devNum)
+			tto.bus.SendInterrupt(tto.devNum)
 		}
 	case 'N':
 		switch flag {
 		case 'S':
-			bus.SetBusy(devNum, true)
-			bus.SetDone(devNum, false)
+			tto.bus.SetBusy(tto.devNum, true)
+			tto.bus.SetDone(tto.devNum, false)
 		case 'C':
-			bus.SetBusy(devNum, false)
-			bus.SetDone(devNum, false)
+			tto.bus.SetBusy(tto.devNum, false)
+			tto.bus.SetDone(tto.devNum, false)
 		}
 	default:
 		log.Fatalf("ERROR: unexpected source buffer <%c> for DOx ac,TTO instruction\n", abc)
