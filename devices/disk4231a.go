@@ -501,7 +501,13 @@ func (disk *Disk4231aT) disk4231aHandleFlag(f byte) {
 		}
 		disk.statusReg = 0
 		disk.disk4231aMu.Unlock()
-		disk.disk4231aDoCommand()
+		if disk.command != disk4231aCmdRead && disk.command != disk4231aCmdWrite {
+			disk.disk4231aDoCommand()
+		} else {
+			//disk.statusReg = disk4231aStatusError
+			disk.command = disk4231aCmdRecal
+			disk.disk4231aDoCommand()
+		}
 		//disk.rwStatus = disk4231aDrive0Done
 		//BusSetBusy(disk.devNum, false)
 		//BusSetDone(disk.devNum, true)
