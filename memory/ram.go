@@ -107,6 +107,20 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 	WriteWord(wordAddr, wd)
 }
 
+// ReadWord16 returns the DG Word at the specified physical address
+func ReadWord16(wordAddr dg.WordT) dg.WordT {
+	var wd dg.WordT
+	// if wordAddr >= memSizeWords {
+	// 	logging.DebugLogsDump("logs/")
+	// 	debug.PrintStack()
+	// 	log.Fatalf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
+	// }
+	ramMu.RLock()
+	wd = ram[wordAddr]
+	ramMu.RUnlock()
+	return wd
+}
+
 // ReadWord returns the DG Word at the specified physical address
 func ReadWord(wordAddr dg.PhysAddrT) dg.WordT {
 	var wd dg.WordT
@@ -149,6 +163,22 @@ func ReadEclipseWordTrap(wordAddr dg.WordT) (dg.WordT, bool) {
 	wd = ram[wordAddr]
 	ramMu.RUnlock()
 	return wd, true
+}
+
+// WriteWord16 - ALL memory-writing should ultimately go through this function
+// N.B. minor exceptions may be made for NsPush() and NsPop()
+func WriteWord16(wordAddr dg.WordT, datum dg.WordT) {
+	// if wordAddr >= memSizeWords {
+	// 	debug.PrintStack()
+	// 	logging.DebugLogsDump("logs/")
+	// 	log.Fatalf("ERROR: Attempt to write word beyond end of physical memory using address: %d", wordAddr)
+	// }
+	// if wordAddr < 4 {
+	// 	runtime.Breakpoint()
+	// }
+	ramMu.Lock()
+	ram[wordAddr] = datum
+	ramMu.Unlock()
 }
 
 // WriteWord - ALL memory-writing should ultimately go through this function
