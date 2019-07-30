@@ -289,7 +289,7 @@ readLoop:
 				return
 			}
 
-			logging.DebugPrint(tape.logID, "... loading data into memory starting at address %d\n", memix)
+			// logging.DebugPrint(tape.logID, "... loading data into memory starting at address %d\n", memix)
 			for wdix = 0; wdix < dg.PhysAddrT(tbootSizeW); wdix++ {
 				byte1 = tapeData[wdix*2]
 				byte0 = tapeData[wdix*2+1]
@@ -405,14 +405,14 @@ func (tape *MagTape6026T) mtDoCommand() {
 
 	switch tape.currentCmd {
 	case mtCmdRead:
-		logging.DebugPrint(tape.logID, "*READ* command\n ---- Unit: %d\n ---- Word Count: %d Location: %d\n", tape.currentUnit, tape.negWordCntReg, tape.memAddrReg)
+		logging.DebugPrint(tape.logID, "*READ* command ---- Unit: %d ---- Word Count: %d Location: %d\n", tape.currentUnit, tape.negWordCntReg, tape.memAddrReg)
 		hdrLen, _ := simhtape.ReadMetaData(tape.simhFile[tape.currentUnit])
 		logging.DebugPrint(tape.logID, " ----  Header read giving length: %d\n", hdrLen)
 		if hdrLen == mtEOF {
 			logging.DebugPrint(tape.logID, " ----  Header is EOF indicator\n")
 			tape.statusReg1 = mtSr1HiDensity | mtSr19Track | mtSr1UnitReady | mtSr1EOF | mtSr1Error
 		} else {
-			logging.DebugPrint(tape.logID, " ----  Calling simhtape.ReadRecord with length: %d\n", hdrLen)
+			// logging.DebugPrint(tape.logID, " ----  Calling simhtape.ReadRecord with length: %d\n", hdrLen)
 			var w uint32
 			var wd dg.WordT
 			var pAddr dg.PhysAddrT
@@ -420,7 +420,9 @@ func (tape *MagTape6026T) mtDoCommand() {
 			for w = 0; w < hdrLen; w += 2 {
 				wd = (dg.WordT(rec[w]) << 8) | dg.WordT(rec[w+1])
 				pAddr = memory.WriteWordDchChan(&tape.memAddrReg, wd)
-				logging.DebugPrint(tape.logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, tape.memAddrReg-1, pAddr)
+				if w == 0 || w == (hdrLen-2) {
+					logging.DebugPrint(tape.logID, " ----  Written word %#04x to logical address: %#o, physical: %#o\n", wd, tape.memAddrReg-1, pAddr)
+				}
 				// memAddrReg is auto-incremented for every word written  *******
 				// auto-incremement the (two's complement) word count
 				tape.negWordCntReg++
