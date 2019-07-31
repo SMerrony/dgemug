@@ -129,7 +129,7 @@ func TestTestWbit(t *testing.T) {
 	}
 }
 func TestTestDWbit(t *testing.T) {
-	var wd dg.DwordT = 0x40000000
+	var wd dg.DwordT = 0x55555555
 	r := TestDwbit(wd, 1)
 	if !r {
 		t.Error("Expected true")
