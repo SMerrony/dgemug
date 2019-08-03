@@ -210,6 +210,7 @@ func (disk *Disk6239DataT) Disk6239Init(dev int, bus *BusT, statsChann chan Disk
 	bus.SetDataOutFunc(disk.devNum, disk.disk6239DataOut)
 
 	disk.logID = logID
+	disk.debugLogging = logging
 	disk.imageAttached = false
 	disk.cbChan = make(chan dg.PhysAddrT, disk6239MaxQueuedCBs)
 	disk.disk6239DataMu.Unlock()
@@ -292,7 +293,8 @@ func (disk *Disk6239DataT) Disk6239CreateBlank(imgName string) bool {
 func (disk *Disk6239DataT) Disk6239LoadDKBT() {
 	logging.DebugPrint(disk.logID, "Disk6239LoadDKBT() called\n")
 	disk.disk6239Reset()
-	disk.disk6239DoPioCommand() // In a reset state this will cause disk6239PioProgLoad to happen
+	//disk.disk6239DoPioCommand() // In a reset state this will cause disk6239PioProgLoad to happen
+	disk.disk6239ProgLoad()
 	logging.DebugPrint(disk.logID, "Disk6239LoadDKBT() completed\n")
 }
 
@@ -336,6 +338,22 @@ func (disk *Disk6239DataT) disk6239DataOut(datum dg.WordT, abc byte, flag byte) 
 	disk.disk6239HandleFlag(flag)
 }
 
+func (disk *Disk6239DataT) disk6239ProgLoad() {
+	if disk.debugLogging {
+		logging.DebugPrint(disk.logID, "PROGRAM LOAD initiated\n")
+	}
+	readBuff := make([]byte, disk6239BytesPerSector*2)
+	disk.imageFile.Read(readBuff)
+	addr := dg.PhysAddrT(0)
+	for w := 0; w < disk6239WordsPerSector*2; w++ {
+		tmpWd := dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
+		memory.WriteWordBmcChan(&addr, tmpWd)
+	}
+	if disk.debugLogging {
+		logging.DebugPrint(disk.logID, "PROGRAM LOAD completed\n")
+	}
+}
+
 func (disk *Disk6239DataT) disk6239DoPioCommand() {
 
 	var addr, w dg.PhysAddrT
@@ -345,19 +363,7 @@ func (disk *Disk6239DataT) disk6239DoPioCommand() {
 	pioCmd := disk.disk6239ExtractPioCommand(disk.commandRegC)
 	switch pioCmd {
 	case disk6239PioProgLoad:
-		if disk.debugLogging {
-			logging.DebugPrint(disk.logID, "PROGRAM LOAD initiated\n")
-		}
-		readBuff := make([]byte, disk6239BytesPerSector)
-		disk.imageFile.Read(readBuff)
-		addr := dg.PhysAddrT(0)
-		for w = 0; w < disk6239WordsPerSector; w++ {
-			tmpWd := dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
-			memory.WriteWordBmcChan(&addr, tmpWd)
-		}
-		if disk.debugLogging {
-			logging.DebugPrint(disk.logID, "PROGRAM LOAD completed\n")
-		}
+		disk.disk6239ProgLoad()
 
 	case disk6239PioBegin:
 		if disk.debugLogging {
@@ -777,7 +783,7 @@ func (disk *Disk6239DataT) disk6239Reset() {
 	disk.disk6239ResetUnitInfBlock()
 	//disk.statusRegA = 0
 	disk.statusRegB = 0
-	//disk.statusRegC = 0
+	disk.statusRegC = 0
 	disk.disk6239SetPioStatusRegC(statXecStateResetDone, 0, disk6239PioReset, memory.TestWbit(disk.commandRegC, 15))
 	disk.disk6239DataMu.Unlock()
 	if disk.debugLogging {
