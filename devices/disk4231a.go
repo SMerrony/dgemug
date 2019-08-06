@@ -195,16 +195,16 @@ func (disk *Disk4231aT) Disk4231aCreateBlank(imgName string) bool {
 	return true
 }
 
-// Disk4231aLoadDKBT - This func mimics a system ROM routine to boot from disk.
+// Disk4231aLoadDKBT - This func mimics a ROM routine to boot from disk.
 // Rather than copying a ROM routine (!) we simply mimic its basic actions...
-// Load 1st two blocks from disk into location 0
+// Load 1st block from disk into location 0
 func (disk *Disk4231aT) Disk4231aLoadDKBT() {
 	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() called\n")
 	// set posn
 	disk.command = disk4231aCmdRecal
 	disk.disk4231aDoCommand()
 	disk.memAddr = 0
-	disk.sectCnt = -2
+	disk.sectCnt = -1
 	disk.command = disk4231aCmdRead
 	disk.disk4231aDoCommand()
 	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() completed\n")

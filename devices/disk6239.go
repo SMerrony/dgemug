@@ -342,10 +342,10 @@ func (disk *Disk6239DataT) disk6239ProgLoad() {
 	if disk.debugLogging {
 		logging.DebugPrint(disk.logID, "PROGRAM LOAD initiated\n")
 	}
-	readBuff := make([]byte, disk6239BytesPerSector*2)
+	readBuff := make([]byte, disk6239BytesPerSector)
 	disk.imageFile.Read(readBuff)
 	addr := dg.PhysAddrT(0)
-	for w := 0; w < disk6239WordsPerSector*2; w++ {
+	for w := 0; w < disk6239WordsPerSector; w++ {
 		tmpWd := dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
 		memory.WriteWordBmcChan(&addr, tmpWd)
 	}

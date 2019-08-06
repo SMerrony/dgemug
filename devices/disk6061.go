@@ -85,7 +85,7 @@ const (
 	disk6061Offset
 	disk6061Busy
 	disk6061Ready
-	Disk6061Trespassed
+	disk6061Trespassed
 	disk6061Reserved
 	disk6061Invalid
 )
@@ -239,14 +239,14 @@ func (disk *Disk6061T) Disk6061CreateBlank(imgName string) bool {
 
 // Disk6061LoadDKBT - This func mimics a system ROM routine to boot from disk.
 // Rather than copying a ROM routine (!) we simply mimic its basic actions...
-// Load 1st two blocks from disk into location 0
+// Load 1st block from disk into location 0
 func (disk *Disk6061T) Disk6061LoadDKBT() {
 	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() called\n")
 	// set posn
 	disk.command = disk6061CmdRecal
 	disk.disk6061DoCommand()
 	disk.memAddr = 0
-	disk.sectCnt = -2
+	disk.sectCnt = -1
 	disk.command = disk6061CmdRead
 	disk.disk6061DoCommand()
 	logging.DebugPrint(disk.logID, "Disk6961LoadDKBT() completed\n")
