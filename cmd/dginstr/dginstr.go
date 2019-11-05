@@ -1,7 +1,7 @@
 // dginstr is a command-line utility to check and convert CSV instruction definitions into
 // files usable by various emulators.
 
-// Copyright (C) 2017,2018  Steve Merrony
+// Copyright (C) 2017,2018,2019 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ const (
 	maxTypes   = 20
 	maxFormats = 40
 	maxInstrs  = 500
-	instrAttrs = 6
+	instrAttrs = 7
 )
 
 var (
@@ -168,7 +168,7 @@ func loadCSV() bool {
 			(genNova && strings.Contains(line[5], "NOVA")) ||
 			(genEclipse && strings.Contains(line[5], "ECLIPSE")) ||
 			(genMV && strings.Contains(line[5], "EAGLE")) {
-			row := make([]string, 6)
+			row := make([]string, 7)
 			for c := 0; c < instrAttrs; c++ {
 				row[c] = line[c]
 			}
@@ -237,14 +237,15 @@ package main
 	fmt.Fprintf(goWriter, "func instructionsInit() {\n")
 
 	for i := 0; i < numInstrs; i++ {
-		fmt.Fprintf(goWriter, "\tinstructionSet[instr%s] = instrChars{\"%s\", %s, %s, %s, %s, %s}\n",
+		fmt.Fprintf(goWriter, "\tinstructionSet[instr%s] = instrChars{\"%s\", %s, %s, %s, %s, %s, %s}\n",
 			instrsTable[i][0],
 			instrsTable[i][0],
 			instrsTable[i][1],
 			instrsTable[i][2],
 			instrsTable[i][3],
 			instrsTable[i][4],
-			instrsTable[i][5])
+			instrsTable[i][5],
+			instrsTable[i][6])
 	}
 
 	fmt.Fprintf(goWriter, "}\n")
