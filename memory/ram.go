@@ -95,9 +95,7 @@ func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
 
 // WriteByte takes a normal word addr, low-byte flag and datum byte
 func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
-	ramMu.RLock()
-	wd := ram[wordAddr]
-	ramMu.RUnlock()
+	wd := ReadWord(wordAddr)
 	if loByte {
 		wd = (wd & 0xff00) | dg.WordT(b)
 	} else {
