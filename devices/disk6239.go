@@ -164,16 +164,18 @@ const (
 // Disk6239DataT holds the current state of a Type 6239 Disk
 type Disk6239DataT struct {
 	// MV/Em internals...
-	disk6239DataMu sync.RWMutex
-	bus            *BusT
-	devNum         int
-	imageAttached  bool
-	imageFileName  string
-	imageFile      *os.File
-	reads, writes  uint64
-	logID          int
-	debugLogging   bool
-	cbChan         chan dg.PhysAddrT
+	disk6239DataMu      sync.RWMutex
+	bus                 *BusT
+	devNum              int
+	imageAttached       bool
+	imageFileName       string
+	imageFile           *os.File
+	reads, writes       uint64
+	logID               int
+	debugLogging        bool
+	cbChan              chan dg.PhysAddrT
+	activeCB            [disk6239CbMaxSize]dg.WordT
+	readBuff, writeBuff []byte
 	// DG data...
 	commandRegA, commandRegB, commandRegC dg.WordT
 	statusRegA, statusRegB, statusRegC    dg.WordT
@@ -202,6 +204,8 @@ func (disk *Disk6239DataT) Disk6239Init(dev int, bus *BusT, statsChann chan Disk
 	disk.disk6239DataMu.Lock()
 	disk.devNum = dev
 	disk.bus = bus
+	disk.readBuff = make([]byte, disk6239BytesPerSector)
+	disk.writeBuff = make([]byte, disk6239BytesPerSector)
 
 	go disk.disk6239StatSender(statsChann)
 
@@ -576,14 +580,11 @@ func (disk *Disk6239DataT) disk6239PositionDiskImage() {
 // CB processing in a goroutine
 func (disk *Disk6239DataT) disk6239CBprocessor() {
 	var (
-		cb            [disk6239CbMaxSize]dg.WordT
 		w, cbLength   int
 		nextCB        dg.PhysAddrT
 		sect          dg.DwordT
 		physTransfers bool
 		physAddr      dg.PhysAddrT
-		readBuff      = make([]byte, disk6239BytesPerSector)
-		writeBuff     = make([]byte, disk6239BytesPerSector)
 		tmpWd         dg.WordT
 	)
 	for {
@@ -595,7 +596,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		// copy CB contents from host memory
 		addr := cbAddr
 		for w = 0; w < cbLength; w++ {
-			cb[w] = memory.ReadWordBmcChan(&addr)
+			disk.activeCB[w] = memory.ReadWordBmcChan(&addr)
 			// if disk.debugLogging {
 			// 	logging.DebugPrint(disk.logID, "... CB[%d]: %d\n", w, cb[w])
 			// }
@@ -603,12 +604,12 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... CB: ")
 			for cbwd := 0; cbwd < cbLength; cbwd++ {
-				logging.DebugPrint(disk.logID, "%d: %d, ", cbwd, cb[cbwd])
+				logging.DebugPrint(disk.logID, "%d: %d, ", cbwd, disk.activeCB[cbwd])
 			}
 		}
 
-		opCode := cb[disk6239CbInaFlagsOpcode] & 0x03ff
-		nextCB = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbLinkAddrHigh], cb[disk6239CbLinkAddrLow]))
+		opCode := disk.activeCB[disk6239CbInaFlagsOpcode] & 0x03ff
+		nextCB = dg.PhysAddrT(memory.DwordFromTwoWords(disk.activeCB[disk6239CbLinkAddrHigh], disk.activeCB[disk6239CbLinkAddrLow]))
 		if disk.debugLogging {
 			logging.DebugPrint(disk.logID, "... CB OpCode: %d\n", opCode)
 			logging.DebugPrint(disk.logID, "... .. Next CB Addr: %d\n", nextCB)
@@ -620,13 +621,13 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				logging.DebugPrint(disk.logID, "... .. NO OP\n")
 			}
 			if cbLength >= disk6239CbErrStatus+1 {
-				cb[disk6239CbErrStatus] = 0
+				disk.activeCB[disk6239CbErrStatus] = 0
 			}
 			if cbLength >= disk6239CbUnitStatus+1 {
-				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
+				disk.activeCB[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
 			if cbLength >= disk6239CbCbStatus+1 {
-				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
+				disk.activeCB[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
 		case disk6239CbOpRecalibrateDisk:
@@ -641,99 +642,99 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 			disk.disk6239PositionDiskImage()
 			disk.disk6239DataMu.Unlock()
 			if cbLength >= disk6239CbErrStatus+1 {
-				cb[disk6239CbErrStatus] = 0
+				disk.activeCB[disk6239CbErrStatus] = 0
 			}
 			if cbLength >= disk6239CbUnitStatus+1 {
-				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
+				disk.activeCB[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
 			if cbLength >= disk6239CbCbStatus+1 {
-				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
+				disk.activeCB[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
 		case disk6239CbOpRead:
 			disk.disk6239DataMu.Lock()
-			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDevAddrHigh], cb[disk6239CbDevAddrLow])
-			if memory.TestWbit(cb[disk6239CbPagenoListAddrHigh], 0) {
+			disk.sectorNo = memory.DwordFromTwoWords(disk.activeCB[disk6239CbDevAddrHigh], disk.activeCB[disk6239CbDevAddrLow])
+			if memory.TestWbit(disk.activeCB[disk6239CbPagenoListAddrHigh], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB READ from premapped logical addresses  Not Yet Implemented")
 			} else {
 				physTransfers = true
-				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTxferAddrHigh], cb[disk6239CbTxferAddrLow]))
+				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(disk.activeCB[disk6239CbTxferAddrHigh], disk.activeCB[disk6239CbTxferAddrLow]))
 			}
 			if disk.debugLogging {
-				logging.DebugPrint(disk.logID, "... .. CB READ command, SECCNT: %d\n", cb[disk6239CbTxferCount])
+				logging.DebugPrint(disk.logID, "... .. CB READ command, SECCNT: %d\n", disk.activeCB[disk6239CbTxferCount])
 				logging.DebugPrint(disk.logID, "... .. .. .... from sector:     %d\n", disk.sectorNo)
 				logging.DebugPrint(disk.logID, "... .. .. .... from phys addr:  %d\n", physAddr)
 				logging.DebugPrint(disk.logID, "... .. .. .... physical txfer?: %d\n", memory.BoolToInt(physTransfers))
 			}
-			for sect = 0; sect < dg.DwordT(cb[disk6239CbTxferCount]); sect++ {
+			for sect = 0; sect < dg.DwordT(disk.activeCB[disk6239CbTxferCount]); sect++ {
 				disk.sectorNo += sect
 				disk.disk6239PositionDiskImage()
-				disk.imageFile.Read(readBuff)
+				disk.imageFile.Read(disk.readBuff)
 				addr = physAddr + (dg.PhysAddrT(sect) * disk6239WordsPerSector)
 				for w = 0; w < disk6239WordsPerSector; w++ {
-					tmpWd = dg.WordT(readBuff[w*2]) | (dg.WordT(readBuff[(w*2)+1]) << 8)
+					tmpWd = dg.WordT(disk.readBuff[w*2]) | (dg.WordT(disk.readBuff[(w*2)+1]) << 8)
 					memory.WriteWordBmcChan(&addr, tmpWd)
 				}
 				disk.reads++
 			}
 			if cbLength >= disk6239CbErrStatus+1 {
-				cb[disk6239CbErrStatus] = 0
+				disk.activeCB[disk6239CbErrStatus] = 0
 			}
 			if cbLength >= disk6239CbUnitStatus+1 {
-				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
+				disk.activeCB[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
 			if cbLength >= disk6239CbCbStatus+1 {
-				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
+				disk.activeCB[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
 			if disk.debugLogging {
 				logging.DebugPrint(disk.logID, "... .. .... READ command finished\n")
-				logging.DebugPrint(disk.logID, "Last buffer: %X\n", readBuff)
+				logging.DebugPrint(disk.logID, "Last buffer: %X\n", disk.readBuff)
 			}
 			disk.disk6239DataMu.Unlock()
 
 		case disk6239CbOpWrite:
 			disk.disk6239DataMu.Lock()
-			disk.sectorNo = memory.DwordFromTwoWords(cb[disk6239CbDevAddrHigh], cb[disk6239CbDevAddrLow])
-			if memory.TestWbit(cb[disk6239CbPagenoListAddrHigh], 0) {
+			disk.sectorNo = memory.DwordFromTwoWords(disk.activeCB[disk6239CbDevAddrHigh], disk.activeCB[disk6239CbDevAddrLow])
+			if memory.TestWbit(disk.activeCB[disk6239CbPagenoListAddrHigh], 0) {
 				// logical premapped host address
 				physTransfers = false
 				log.Fatal("disk6239 - CB WRITE from premapped logical addresses  Not Yet Implemented")
 			} else {
 				physTransfers = true
-				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(cb[disk6239CbTxferAddrHigh], cb[disk6239CbTxferAddrLow]))
+				physAddr = dg.PhysAddrT(memory.DwordFromTwoWords(disk.activeCB[disk6239CbTxferAddrHigh], disk.activeCB[disk6239CbTxferAddrLow]))
 			}
 			if disk.debugLogging {
-				logging.DebugPrint(disk.logID, "... .. CB WRITE command, SECCNT: %d\n", cb[disk6239CbTxferCount])
+				logging.DebugPrint(disk.logID, "... .. CB WRITE command, SECCNT: %d\n", disk.activeCB[disk6239CbTxferCount])
 				logging.DebugPrint(disk.logID, "... .. .. ..... to sector:       %d\n", disk.sectorNo)
 				logging.DebugPrint(disk.logID, "... .. .. ..... from phys addr:  %d\n", physAddr)
 				logging.DebugPrint(disk.logID, "... .. .. ..... physical txfer?: %d\n", memory.BoolToInt(physTransfers))
 			}
-			for sect = 0; sect < dg.DwordT(cb[disk6239CbTxferCount]); sect++ {
+			for sect = 0; sect < dg.DwordT(disk.activeCB[disk6239CbTxferCount]); sect++ {
 				disk.sectorNo += sect
 				disk.disk6239PositionDiskImage()
 				memAddr := physAddr + (dg.PhysAddrT(sect) * disk6239WordsPerSector)
 				for w = 0; w < disk6239WordsPerSector; w++ {
 					tmpWd = memory.ReadWordBmcChan(&memAddr)
-					writeBuff[(w*2)+1] = byte(tmpWd >> 8)
-					writeBuff[w*2] = byte(tmpWd & 0x00ff)
+					disk.writeBuff[(w*2)+1] = byte(tmpWd >> 8)
+					disk.writeBuff[w*2] = byte(tmpWd & 0x00ff)
 				}
-				disk.imageFile.Write(writeBuff)
+				disk.imageFile.Write(disk.writeBuff)
 				if disk.debugLogging {
-					logging.DebugPrint(disk.logID, "Wrote buffer: %X\n", writeBuff)
+					logging.DebugPrint(disk.logID, "Wrote buffer: %X\n", disk.writeBuff)
 				}
 				disk.writes++
 			}
 			if cbLength >= disk6239CbErrStatus+1 {
-				cb[disk6239CbErrStatus] = 0
+				disk.activeCB[disk6239CbErrStatus] = 0
 			}
 			if cbLength >= disk6239CbUnitStatus+1 {
-				cb[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
+				disk.activeCB[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
 			if cbLength >= disk6239CbCbStatus+1 {
-				cb[disk6239CbCbStatus] = 1 // finally, set Done bit
+				disk.activeCB[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 			disk.disk6239DataMu.Unlock()
 
@@ -744,7 +745,7 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 		// write back CB
 		addr = cbAddr
 		for w = 0; w < cbLength; w++ {
-			memory.WriteWordBmcChan(&addr, cb[w])
+			memory.WriteWordBmcChan(&addr, disk.activeCB[w])
 		}
 
 		if nextCB == 0 {
