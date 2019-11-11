@@ -62,7 +62,7 @@ func MemInit(wordSize int, doLog bool) {
 	for addr := range ram {
 		ram[addr] = 0
 	}
-	log.Printf("INFO: Initialised %d words of main memory\n", wordSize)
+	log.Printf("INFO: Initialised %#o words of main memory\n", wordSize)
 }
 
 // GetSegment - return the segment number for the supplied address
@@ -119,7 +119,7 @@ func ReadWord(wordAddr dg.PhysAddrT) dg.WordT {
 	if wordAddr >= memSizeWords {
 		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
-		log.Fatalf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
+		log.Fatalf("ERROR: Attempt to read word beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
 	}
 	ramMu.RLock()
 	wd = ram[wordAddr]
@@ -133,7 +133,7 @@ func ReadWordTrap(wordAddr dg.PhysAddrT) (dg.WordT, bool) {
 	if wordAddr >= memSizeWords {
 		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
-		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
+		log.Printf("ERROR: Attempt to read word beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
 		return 0, false
 	}
 	ramMu.RLock()
@@ -148,7 +148,7 @@ func ReadEclipseWordTrap(wordAddr dg.WordT) (dg.WordT, bool) {
 	if dg.PhysAddrT(wordAddr) >= memSizeWords {
 		logging.DebugLogsDump("logs/")
 		debug.PrintStack()
-		log.Printf("ERROR: Attempt to read word beyond end of physical memory using address: %d", wordAddr)
+		log.Printf("ERROR: Attempt to read word beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
 		return 0, false
 	}
 	ramMu.RLock()
@@ -174,7 +174,7 @@ func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
 		logging.DebugLogsDump("logs/")
-		log.Fatalf("ERROR: Attempt to write word beyond end of physical memory using address: %d", wordAddr)
+		log.Fatalf("ERROR: Attempt to write word beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
 	}
 	ramMu.Lock()
 	ram[wordAddr] = datum
@@ -187,7 +187,7 @@ func ReadDWord(wordAddr dg.PhysAddrT) dg.DwordT {
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
 		logging.DebugLogsDump("logs/")
-		log.Fatalf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d", wordAddr)
+		log.Fatalf("ERROR: Attempt to read doubleword beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
 	}
 	ramMu.RLock()
 	hiWd = ram[wordAddr]
@@ -202,7 +202,7 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	if wordAddr >= memSizeWords {
 		debug.PrintStack()
 		logging.DebugLogsDump("logs/")
-		log.Printf("ERROR: Attempt to read doubleword beyond end of physical memory using address: %d\n", wordAddr)
+		log.Printf("ERROR: Attempt to read doubleword beyond end of physical memory (%#o) using address: %#o\n", memSizeWords, wordAddr)
 		return 0, false
 	}
 	ramMu.RLock()
@@ -215,7 +215,7 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 // WriteDWord writes a doubleword into memory at the given physical address
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
 	if wordAddr >= memSizeWords {
-		log.Fatalf("ERROR: Attempt to write doubleword beyond end of physical memory using address: %d", wordAddr)
+		log.Fatalf("ERROR: Attempt to write doubleword beyond end of physical memory (#o) using address: %#o", memSizeWords, wordAddr)
 	}
 	WriteWord(wordAddr, DwordGetUpperWord(dwd))
 	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
