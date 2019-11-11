@@ -283,7 +283,7 @@ func WordToBinStr(w dg.WordT) string {
 // SexWordToDword - sign-extend a DG word to a DG DoubleWord
 func SexWordToDword(wd dg.WordT) dg.DwordT {
 	var dwd dg.DwordT
-	if wd&0x8000 != 0 {
+	if TestWbit(wd, 0) {
 		dwd = dg.DwordT(wd) | 0xffff0000
 	} else {
 		dwd = dg.DwordT(wd) & 0x0000ffff
