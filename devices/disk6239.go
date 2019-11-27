@@ -329,6 +329,9 @@ func (disk *Disk6239DataT) disk6239DataIn(abc byte, flag byte) (datum dg.WordT) 
 
 // Handle the DOA/B/C PIO commands
 func (disk *Disk6239DataT) disk6239DataOut(datum dg.WordT, abc byte, flag byte) {
+	if disk.debugLogging {
+		logging.DebugPrint(disk.logID, "DO%c\n", abc)
+	}
 	disk.disk6239DataMu.Lock()
 	switch abc {
 	case 'A':
