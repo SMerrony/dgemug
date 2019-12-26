@@ -31,21 +31,6 @@ import (
 	"github.com/SMerrony/dgemug/logging"
 )
 
-// const (
-// 	// memSizeWords defines the size of MV/Em's emulated RAM in 16-bit words
-// 	memSizeWords = 8388608
-// 	// MemSizeLCPID is the code returned by the LCPID to indicate the size of RAM
-// 	MemSizeLCPID = 0x3F
-// )
-
-// The memoryT structure holds our representation of system RAM.
-// It is not exported and should not be directly accessed other than within this package.
-// type memoryT struct {
-// 	ram        [memSizeWords]dg.WordT
-// 	ramMu      sync.RWMutex
-// 	atuEnabled bool
-// }
-
 var (
 	ram          []dg.WordT
 	ramMu        sync.RWMutex
@@ -157,7 +142,7 @@ func ReadEclipseWordTrap(wordAddr dg.WordT) (dg.WordT, bool) {
 	return wd, true
 }
 
-// WriteWord16 - ALL memory-writing should ultimately go through this function
+// WriteWord16 - For the 16-bit emulators ALL memory-writing should ultimately go through this function
 // N.B. minor exceptions may be made for NsPush() and NsPop()
 func WriteWord16(wordAddr dg.WordT, datum dg.WordT) {
 	ramMu.Lock()
@@ -165,10 +150,10 @@ func WriteWord16(wordAddr dg.WordT, datum dg.WordT) {
 	ramMu.Unlock()
 }
 
-// WriteWord - ALL memory-writing should ultimately go through this function
+// WriteWord - For the 32-bit emulator ALL memory-writing should ultimately go through this function
 // N.B. minor exceptions may be made for NsPush() and NsPop()
 func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
-	// if wordAddr == 2 {
+	// if wordAddr == 6 {
 	// 	runtime.Breakpoint()
 	// }
 	if wordAddr >= memSizeWords {
@@ -214,9 +199,6 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 
 // WriteDWord writes a doubleword into memory at the given physical address
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
-	if wordAddr >= memSizeWords {
-		log.Fatalf("ERROR: Attempt to write doubleword beyond end of physical memory (#o) using address: %#o", memSizeWords, wordAddr)
-	}
 	WriteWord(wordAddr, DwordGetUpperWord(dwd))
 	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
 }
