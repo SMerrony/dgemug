@@ -257,6 +257,16 @@ func QwordFromTwoDwords(hdw dg.DwordT, ldw dg.DwordT) dg.QwordT {
 	return dg.QwordT(hdw)<<32 | dg.QwordT(ldw)
 }
 
+// QwordGetLowerDword gets the DG-lower (RHS) of a quadword
+func QwordGetLowerDword(qwd dg.QwordT) dg.DwordT {
+	return dg.DwordT(qwd)
+}
+
+// QwordGetUpperDword gets the DG-upper (LHS) of a quadword
+func QwordGetUpperDword(qwd dg.QwordT) dg.DwordT {
+	return dg.DwordT(qwd >> 32)
+}
+
 // WordToBinStr - get a pretty-printable string of a word
 func WordToBinStr(w dg.WordT) string {
 	return fmt.Sprintf("%08b %08b", w>>8, w&0x0ff)
