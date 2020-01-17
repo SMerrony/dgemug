@@ -852,3 +852,11 @@ func (disk *Disk6239DataT) disk6239SetPioStatusRegC(stat byte, ccs byte, cmdEcho
 		}
 	}
 }
+
+// Disk6239SetLogging sets the internal debugging/logging flag according to the passed value
+// N.B. The disk will run slower when this is set.
+func (disk *Disk6239DataT) Disk6239SetLogging(debug bool) {
+	disk.disk6239DataMu.Lock()
+	disk.debugLogging = debug
+	disk.disk6239DataMu.Unlock()
+}

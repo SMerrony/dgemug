@@ -1,6 +1,6 @@
 // disk.go
 
-// Copyright (C) 2017,2018,2019  Steve Merrony
+// Copyright (C) 2017,2018,2019 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -196,6 +196,14 @@ func (disk *Disk6061T) Disk6061Attach(dNum int, imgName string) bool {
 	disk.disk6061Mu.Unlock()
 	disk.bus.SetAttached(disk.devNum, imgName)
 	return true
+}
+
+// Disk6061SetLogging sets the disk's internal; debug logging flag as specified
+// N.B. The disk runs slower with this set.
+func (disk *Disk6061T) Disk6061SetLogging(log bool) {
+	disk.disk6061Mu.Lock()
+	disk.debugLogging = log
+	disk.disk6061Mu.Unlock()
 }
 
 func (disk *Disk6061T) disk6061StatsSender(sChan chan Disk6061StatT) {
