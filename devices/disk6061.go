@@ -489,10 +489,6 @@ func (disk *Disk6061T) disk6061DoCommand() {
 				if disk.debugLogging {
 					logging.DebugPrint(disk.logID, "Sector read overflow, advancing to surface %d.", disk.surface)
 				}
-				// disk.driveStatus = disk6061Ready
-				// disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
-				// disk.disk6061Mu.Unlock()
-				// return
 			}
 			// check SURF (head)
 			if disk.surface >= disk6061SurfPerDisk {
@@ -551,10 +547,6 @@ func (disk *Disk6061T) disk6061DoCommand() {
 				if disk.debugLogging {
 					logging.DebugPrint(disk.logID, "Sector write overflow, advancing to surface %d.", disk.surface)
 				}
-				// disk.driveStatus = disk6061Ready
-				// disk.rwStatus = disk6061Rwdone | disk6061Rwfault | disk6061_ILLEGALSECTOR
-				// disk.disk6061Mu.Unlock()
-				// return
 			}
 			// check SURF (head)/SECT
 			if disk.surface >= disk6061SurfPerDisk {
@@ -623,12 +615,6 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 		disk.disk6061Mu.Lock()
 		disk.rwStatus = 0
 		disk.disk6061Mu.Unlock()
-		// send IRQ if not masked out
-		//if !BusIsDevMasked(disk.devNum) {
-		// InterruptingDev[disk.devNum] = true
-		// IRQ = true
-	//	disk.bus.SendInterrupt(disk.devNum)
-	//}
 
 	case 'P':
 		disk.bus.SetBusy(disk.devNum, false)
@@ -639,15 +625,7 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 		disk.rwStatus = 0
 		disk.disk6061Mu.Unlock()
 		disk.disk6061DoCommand()
-		//disk.rwStatus = disk6061Drive0Done
-		//disk.bus.SetBusy(disk.devNum, false)
-		//disk.bus.SetDone(disk.devNum, true)
-		// send IRQ if not masked out
-		//if !BusIsDevMasked(disk.devNum) {
-		// InterruptingDev[disk.devNum] = true
-		// IRQ = true
 		disk.bus.SendInterrupt(disk.devNum)
-		//}
 
 	default:
 		// no/empty flag - nothing to do
@@ -658,7 +636,6 @@ func (disk *Disk6061T) disk6061HandleFlag(f byte) {
 func (disk *Disk6061T) disk6061PositionDiskImage() {
 	var offset, r int64
 	var err error
-	//lba = ((int64(disk.cylinder*disk6061SurfPerDisk) + int64(disk.surface)) * int64(disk6061SectPerTrack)) + int64(disk.sector)
 	offset = (((int64(disk.cylinder*disk6061SurfPerDisk) + int64(disk.surface)) * int64(disk6061SectPerTrack)) + int64(disk.sector)) * disk6061BytesPerSect
 	r, err = disk.imageFile.Seek(offset, 0)
 	if r != offset || err != nil {

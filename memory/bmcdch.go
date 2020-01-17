@@ -271,7 +271,7 @@ func ReadWordDchChan(addr *dg.PhysAddrT) dg.WordT {
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "ReadWordDchChan got addr: %#o, read from addr: %#o\n", *addr, physAddr)
 	}
-	*addr = *addr + 1
+	*addr++
 	return ReadWord(physAddr)
 }
 
@@ -289,7 +289,7 @@ func ReadWordBmcChan(addr *dg.PhysAddrT) dg.WordT {
 	if isLogging {
 		logging.DebugPrint(logging.MapLog, "ReadWordBmcChan got addr: %#o, wrote to addr: %#o\n", addr, pAddr)
 	}
-	*addr = *addr + 1
+	*addr++
 	return wd
 }
 

@@ -682,13 +682,13 @@ func (disk *Disk6239DataT) disk6239CBprocessor() {
 				}
 				disk.reads++
 			}
-			if cbLength >= disk6239CbErrStatus+1 {
+			if cbLength > disk6239CbErrStatus {
 				disk.activeCB[disk6239CbErrStatus] = 0
 			}
-			if cbLength >= disk6239CbUnitStatus+1 {
+			if cbLength > disk6239CbUnitStatus {
 				disk.activeCB[disk6239CbUnitStatus] = 1 << 13 // b0010000000000000; // Ready
 			}
-			if cbLength >= disk6239CbCbStatus+1 {
+			if cbLength > disk6239CbCbStatus {
 				disk.activeCB[disk6239CbCbStatus] = 1 // finally, set Done bit
 			}
 
