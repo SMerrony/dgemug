@@ -1,6 +1,6 @@
 // bitHandling.go
 
-// Copyright (C) 2018  Steve Merrony
+// Copyright (C) 2018,2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,11 @@ func FlipWbit(word *dg.WordT, bitNum uint) {
 // SetWbit sets a single bit in a DG word
 func SetWbit(word *dg.WordT, bitNum uint) {
 	*word = *word | (1 << (15 - bitNum))
+}
+
+// SetDwbit - sets a bit in a Double-Word
+func SetDwbit(dw *dg.DwordT, bitNum uint) {
+	*dw = *dw | (1 << (31 - bitNum))
 }
 
 // SetQwbit - sets a bit in a Quad-Word
