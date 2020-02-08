@@ -87,6 +87,11 @@ func GetQwbits(value dg.QwordT, leftBit uint, nbits uint) dg.QwordT {
 	return value & mask
 }
 
+// TestBbit - does byte b8 have bit b set?
+func TestBbit(b8 dg.ByteT, b int) bool {
+	return (b8 & (1 << (7 - uint8(b)))) != 0
+}
+
 // TestWbit - does word w have bit b set?
 func TestWbit(w dg.WordT, b int) bool {
 	return (w & (1 << (15 - uint8(b)))) != 0
