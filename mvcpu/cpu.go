@@ -1,0 +1,460 @@
+// cpu.go
+
+// Copyright ©2017-2020 Steve Merrony
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+package mvcpu
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/SMerrony/dgemug/devices"
+	"github.com/SMerrony/dgemug/logging"
+
+	//"github.com/SMerrony/dgemug/dg"
+	"runtime"
+	"sync"
+	"time"
+
+	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/memory"
+)
+
+const (
+	cpuModelNo = 0x224C // => MV/10000 according to p.2-19 of AOS/VS Internals
+	ucodeRev   = 0x04
+
+	// MemSizeWords defines the size of MV/Em's emulated RAM in 16-bit words
+	MemSizeWords = 8388608 // = 040 000 000 (8) = 0x80 0000
+	// MemSizeLCPID is the code returned by the LCPID to indicate the size of RAM in half megabytes
+	MemSizeLCPID = ((MemSizeWords * 2) / (256 * 1024)) - 1 // 0x3F
+	// MemSizeNCLID is the code returned by NCLID to indicate size of RAM in 32Kb increments
+	MemSizeNCLID = ((MemSizeWords * 2) / (32 * 1024)) - 1
+)
+
+const (
+	maxPosS16 = 1<<15 - 1
+	minNegS16 = -(maxPosS16 + 1)
+	maxPosS32 = 1<<31 - 1
+	minNegS32 = -(maxPosS32 + 1)
+)
+
+const (
+	asciiNL  = 0x0A
+	asciiSPC = 0x20
+)
+
+// TODO sbrBits is currently an abstraction of the Segment Base Registers - may need to represent physically
+// via a 32-bit DWord in the future
+type sbrBits struct {
+	v, len, lef, io bool
+	physAddr        uint32 // 19 bits used
+}
+
+// MvCPUT holds the current state of a MvCPUT
+type MvCPUT struct {
+	cpuMu sync.RWMutex
+	// representations of physical attributes
+	pc dg.PhysAddrT // 32-bit PC
+	ac [4]dg.DwordT // 4 x 32-bit Accumulators
+	// mask                    dg.WordT     // interrupt mask - moved to bus
+	psr                     dg.WordT     // Processor Status Register - see PoP 2-11 & A-4
+	carry, atu, ion, pfflag bool         // flag bits
+	sbr                     [8]sbrBits   // SBRs (see above)
+	fpac                    [4]dg.QwordT // 4 x 64-bit Floating Point Accumulators
+	fpsr                    dg.QwordT    // 64-bit Floating-Point Status Register
+	sr                      dg.WordT     // Not sure about this... fake Switch Register
+	wfp, wsp, wsl, wsb      dg.PhysAddrT // current wide stack pointers
+
+	devNum int
+	bus    *devices.BusT
+
+	// emulator internals
+	instrCount uint64 // how many instructions executed during the current run, running at 2 MIPS this will loop round roughly every 100 million years!
+	scpIO      bool   // true if console I/O is directed to the SCP
+}
+
+// MvCPUStatT defines the data we will send to the statusCollector monitor
+type MvCPUStatT struct {
+	Pc              dg.PhysAddrT
+	Ac              [4]dg.DwordT
+	Carry, Atu, Ion bool
+	InstrCount      uint64
+	GoVersion       string
+	GoroutineCount  int
+	HostCPUCount    int
+	HeapSizeMB      int
+}
+
+const cpuStatPeriodMs = 333 // 125 // i.e. we send stats every 1/8th of a second
+
+var debugLogging bool
+
+// CPUInit sets up an MV-Class CPU
+func (cpu *MvCPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan MvCPUStatT) {
+	cpu.devNum = devNum
+	cpu.bus = bus
+	cpu.CPUReset()
+	decoderGenAllPossOpcodes()
+	if statsChan != nil {
+		go cpu.cpuStatSender(statsChan)
+	}
+}
+
+func (cpu *MvCPUT) CPUReset() {
+	cpu.cpuMu.Lock()
+	cpu.pc = 0
+	for a := 0; a < 4; a++ {
+		cpu.ac[a] = 0
+		cpu.fpac[a] = 0
+	}
+	cpu.psr = 0
+	cpu.carry = false
+	cpu.atu = false
+	cpu.ion = false
+	cpu.pfflag = false
+	cpu.CPUSetOVR(false)
+	cpu.instrCount = 0
+	cpu.cpuMu.Unlock()
+}
+
+func (cpu *MvCPUT) PrepToRun() {
+	cpu.cpuMu.Lock()
+	cpu.instrCount = 0
+	cpu.scpIO = false
+	cpu.cpuMu.Unlock()
+}
+
+func (cpu *MvCPUT) Boot(devNum int, pc dg.PhysAddrT) {
+	cpu.cpuMu.Lock()
+	cpu.sr = 0x8000 | dg.WordT(devNum)
+	cpu.ac[0] = dg.DwordT(devNum)
+	cpu.pc = pc
+	cpu.cpuMu.Unlock()
+}
+
+func (cpu *MvCPUT) CPUPrintableStatus() string {
+	cpu.cpuMu.RLock()
+	res := fmt.Sprintf("%c         AC0          AC1         AC2          AC3           PC CRY LEF ATU ION%c", asciiNL, asciiNL)
+	res += fmt.Sprintf("%#12o %#12o %#12o %#12o %#12o", cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3], cpu.pc)
+	res += fmt.Sprintf("  %d   %d   %d   %d",
+		memory.BoolToInt(cpu.carry),
+		memory.BoolToInt(cpu.sbr[memory.GetSegment(cpu.pc)].lef),
+		memory.BoolToInt(cpu.atu),
+		memory.BoolToInt(cpu.ion))
+	cpu.cpuMu.RUnlock()
+	return res
+}
+
+func (cpu *MvCPUT) CPUCompactPrintableStatus() string {
+	cpu.cpuMu.RLock()
+	res := fmt.Sprintf("AC0=%-12o AC1=%-12o AC2=%-12o AC3=%-12o C:%d I:%d PC=%-12o",
+		cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3],
+		memory.BoolToInt(cpu.carry), memory.BoolToInt(cpu.ion), cpu.pc)
+	cpu.cpuMu.RUnlock()
+	return res
+}
+
+func (cpu *MvCPUT) GetAc(ac int) (contents dg.DwordT) {
+	cpu.cpuMu.RLock()
+	contents = cpu.ac[ac]
+	cpu.cpuMu.RUnlock()
+	return contents
+}
+
+func (cpu *MvCPUT) SetAc(ac int, val dg.DwordT) {
+	cpu.cpuMu.Lock()
+	cpu.ac[ac] = val
+	cpu.cpuMu.Unlock()
+}
+
+func (cpu *MvCPUT) GetAtu() (atu bool) {
+	cpu.cpuMu.RLock()
+	atu = cpu.atu
+	cpu.cpuMu.RUnlock()
+	return atu
+}
+
+func (cpu *MvCPUT) GetLef(segment int) (lef bool) {
+	cpu.cpuMu.RLock()
+	lef = cpu.sbr[segment].lef
+	cpu.cpuMu.RUnlock()
+	return lef
+}
+
+func (cpu *MvCPUT) GetIO(segment int) (io bool) {
+	cpu.cpuMu.RLock()
+	io = cpu.sbr[segment].io
+	cpu.cpuMu.RUnlock()
+	return io
+}
+
+func (cpu *MvCPUT) GetInstrCount() (ic uint64) {
+	cpu.cpuMu.RLock()
+	ic = cpu.instrCount
+	cpu.cpuMu.RUnlock()
+	return ic
+}
+
+// CPUGetOVR is a getter for the OVR flag embedded in the PSR
+func (cpu *MvCPUT) CPUGetOVR() bool {
+	return memory.TestWbit(cpu.psr, 1)
+}
+
+// CPUSetOVR is a setter for the OVR flag embedded in the PSR
+func (cpu *MvCPUT) CPUSetOVR(newOVR bool) {
+	if newOVR {
+		memory.SetWbit(&cpu.psr, 1)
+	} else {
+		memory.ClearWbit(&cpu.psr, 1)
+	}
+}
+
+// CPUGetOVK is a getter for the OVK mask embedded in the PSR
+func (cpu *MvCPUT) CPUGetOVK() bool {
+	return memory.TestWbit(cpu.psr, 0)
+}
+
+// CPUSetOVK is a setter for the OVK flag embedded in the PSR
+func (cpu *MvCPUT) CPUSetOVK(newOVK bool) {
+	if newOVK {
+		memory.SetWbit(&cpu.psr, 0)
+	} else {
+		memory.ClearWbit(&cpu.psr, 0)
+	}
+}
+
+// GetPC is a getter for the PC
+func (cpu *MvCPUT) GetPC() (pc dg.PhysAddrT) {
+	cpu.cpuMu.RLock()
+	pc = cpu.pc
+	cpu.cpuMu.RUnlock()
+	return pc
+}
+
+func (cpu *MvCPUT) SetPC(addr dg.PhysAddrT) {
+	cpu.cpuMu.Lock()
+	cpu.pc = addr
+	cpu.cpuMu.Unlock()
+}
+
+// CPUGetSCPIO is a getter for the SCP I/O flag
+func (cpu *MvCPUT) CPUGetSCPIO() (scp bool) {
+	cpu.cpuMu.RLock()
+	scp = cpu.scpIO
+	cpu.cpuMu.RUnlock()
+	return scp
+}
+
+// CPUSetSCPIO is a setter for the SCP I/O flag
+func (cpu *MvCPUT) CPUSetSCPIO(scp bool) {
+	cpu.cpuMu.Lock()
+	cpu.scpIO = scp
+	cpu.cpuMu.Unlock()
+}
+
+// Execute a single instruction
+// A false return means failure, the VM should stop
+func (cpu *MvCPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
+	cpu.cpuMu.Lock()
+	switch iPtr.instrType {
+	case NOVA_MEMREF:
+		rc = novaMemRef(cpu, iPtr)
+	case NOVA_OP:
+		rc = novaOp(cpu, iPtr)
+	case NOVA_IO:
+		rc = novaIO(cpu, iPtr)
+	case NOVA_MATH:
+		rc = novaMath(cpu, iPtr)
+	case NOVA_PC:
+		rc = novaPC(cpu, iPtr)
+	case ECLIPSE_MEMREF:
+		rc = eclipseMemRef(cpu, iPtr)
+	case ECLIPSE_OP:
+		rc = eclipseOp(cpu, iPtr)
+	case ECLIPSE_PC:
+		rc = eclipsePC(cpu, iPtr)
+	case ECLIPSE_STACK:
+		rc = eclipseStack(cpu, iPtr)
+	case EAGLE_IO:
+		rc = eagleIO(cpu, iPtr)
+	case EAGLE_OP:
+		rc = eagleOp(cpu, iPtr)
+	case EAGLE_MEMREF:
+		rc = eagleMemRef(cpu, iPtr)
+	case EAGLE_PC:
+		rc = eaglePC(cpu, iPtr)
+	case EAGLE_STACK:
+		rc = eagleStack(cpu, iPtr)
+	default:
+		log.Println("ERROR: Unimplemented instruction type in CPUExecute()")
+		rc = false
+	}
+	cpu.instrCount++
+	cpu.cpuMu.Unlock()
+	return rc
+}
+
+func (cpu *MvCPUT) Run(disassembly bool,
+	deviceMap devices.DeviceMapT,
+	breakpoints []dg.PhysAddrT,
+	inputRadix int,
+	tto *devices.TtoT) (errDetail string, instrCounts [maxInstrs]int) {
+
+	var (
+		thisOp dg.WordT
+		prevPC dg.PhysAddrT
+		iPtr   *decodedInstrT
+		ok     bool
+		indIrq byte
+	)
+
+	// initial read lock taken before loop starts to eliminate one lock/unlock per cycle
+	cpu.cpuMu.RLock()
+
+RunLoop: // performance-critical section starts here
+	for {
+		// FETCH
+		thisOp = memory.ReadWord(cpu.pc)
+
+		// DECODE
+		iPtr, ok = InstructionDecode(thisOp, cpu.pc, cpu.sbr[cpu.pc>>29].lef, cpu.sbr[cpu.pc>>29].io, cpu.atu, disassembly, deviceMap)
+		cpu.cpuMu.RUnlock()
+		if !ok || iPtr.ix == -1 {
+			errDetail = " *** Error: could not decode instruction ***"
+			break
+		}
+
+		if debugLogging {
+			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CPUCompactPrintableStatus(), iPtr.disassembly)
+		}
+
+		// EXECUTE
+		if !cpu.CPUExecute(iPtr) {
+			errDetail = " *** Error: could not execute instruction (or CPU HALT encountered) ***"
+			break
+		}
+
+		// INTERRUPT?
+		cpu.cpuMu.Lock()
+		if cpu.ion && cpu.bus.GetIRQ() {
+			if debugLogging {
+				logging.DebugPrint(logging.DebugLog, "<<< Interrupt >>>\n")
+			}
+			// disable further interrupts, reset the irq
+			cpu.ion = false
+			cpu.bus.SetIRQ(false)
+			// TODO - disable User MAP
+			// store PC in location zero
+			memory.WriteWord(0, dg.WordT(cpu.pc))
+			// fetch service routine address from location one
+			if memory.TestWbit(memory.ReadWord(1), 0) {
+				indIrq = '@'
+			} else {
+				indIrq = ' '
+			}
+			cpu.pc = resolve15bitDisplacement(cpu, indIrq, absoluteMode, memory.ReadWord(1), 0)
+			// next time round RunLoop the interrupt service routine will be started...
+		}
+		cpu.cpuMu.Unlock()
+
+		// BREAKPOINT?
+		if len(breakpoints) > 0 {
+			cpu.cpuMu.Lock()
+			for _, bAddr := range breakpoints {
+				if bAddr == cpu.pc {
+					cpu.scpIO = true
+					cpu.cpuMu.Unlock()
+					msg := fmt.Sprintf(" *** BREAKpoint hit at physical address "+
+						fmtRadixVerb(inputRadix)+
+						" (previous PC "+fmtRadixVerb(inputRadix)+
+						") ***",
+						cpu.pc, prevPC)
+					tto.PutNLString(msg)
+					log.Println(msg)
+
+					break RunLoop
+				}
+			}
+			cpu.cpuMu.Unlock()
+		}
+
+		// Console interrupt?
+		cpu.cpuMu.RLock()
+		if cpu.scpIO {
+			cpu.cpuMu.RUnlock()
+			errDetail = " *** Console ESCape ***"
+			break
+		}
+
+		// instruction counting
+		instrCounts[iPtr.ix]++
+
+		prevPC = cpu.GetPC()
+
+		// N.B. RLock still in effect as we loop around
+	}
+
+	return errDetail, instrCounts
+}
+
+func (cpu *MvCPUT) cpuStatSender(sChan chan MvCPUStatT) {
+	var stats MvCPUStatT
+	var memStats runtime.MemStats
+	stats.GoVersion = runtime.Version()
+	stats.HostCPUCount = runtime.NumCPU()
+	for {
+		cpu.cpuMu.RLock()
+		stats.Pc = cpu.pc
+		stats.Ac[0] = cpu.ac[0]
+		stats.Ac[1] = cpu.ac[1]
+		stats.Ac[2] = cpu.ac[2]
+		stats.Ac[3] = cpu.ac[3]
+		stats.Ion = cpu.ion
+		stats.Atu = cpu.atu
+		stats.Carry = cpu.carry
+		stats.InstrCount = cpu.instrCount
+		cpu.cpuMu.RUnlock()
+		stats.GoroutineCount = runtime.NumGoroutine()
+		runtime.ReadMemStats(&memStats)
+		stats.HeapSizeMB = int(memStats.HeapAlloc / 1048576)
+		select {
+		case sChan <- stats:
+		default:
+		}
+		time.Sleep(time.Millisecond * cpuStatPeriodMs)
+	}
+}
+
+func fmtRadixVerb(inputRadix int) string {
+	switch inputRadix {
+	case 2:
+		return "%b"
+	case 8:
+		return "%#o"
+	case 10:
+		return "%d."
+	case 16:
+		return "%#x"
+	default:
+		log.Fatalf("ERROR: Invalid input radix %d", inputRadix)
+		return ""
+	}
+}

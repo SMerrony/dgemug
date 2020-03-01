@@ -209,7 +209,7 @@ func exportGo() bool {
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package main
+package mvcpu
 
 `)
 
@@ -234,7 +234,7 @@ package main
 	}
 
 	fmt.Fprintf(goWriter, ")\n\n// InstructionsInit initialises the instruction characterstics for each instruction(\n")
-	fmt.Fprintf(goWriter, "func instructionsInit() {\n")
+	fmt.Fprintf(goWriter, "func InstructionsInit() {\n")
 
 	for i := 0; i < numInstrs; i++ {
 		fmt.Fprintf(goWriter, "\tinstructionSet[instr%s] = instrChars{\"%s\", %s, %s, %s, %s, %s, %s}\n",
