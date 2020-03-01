@@ -24,7 +24,7 @@ package mvcpu
 import "testing"
 
 func TestNADD(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -72,7 +72,7 @@ func TestNADD(t *testing.T) {
 }
 
 func TestNSUB(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -104,7 +104,7 @@ func TestNSUB(t *testing.T) {
 }
 
 func TestWADC(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -124,7 +124,7 @@ func TestWADC(t *testing.T) {
 }
 
 func TestWADI(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var immOneAcc immOneAccT
@@ -160,7 +160,7 @@ func TestWADI(t *testing.T) {
 }
 
 func TestWANDI(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var oneAccImmDwd3Word oneAccImmDwd3WordT
@@ -188,7 +188,7 @@ func TestWANDI(t *testing.T) {
 }
 
 func TestWINC(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -222,7 +222,7 @@ func TestWINC(t *testing.T) {
 }
 
 func TestWLSH(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -260,7 +260,7 @@ func TestWLSH(t *testing.T) {
 }
 
 func TestWLSHI(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var oneAccImm2Word oneAccImm2WordT
@@ -288,7 +288,7 @@ func TestWLSHI(t *testing.T) {
 }
 
 func TestWNADI(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var oneAccImm2Word oneAccImm2WordT
@@ -310,7 +310,7 @@ func TestWNADI(t *testing.T) {
 }
 
 func TestWNEG(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -343,7 +343,7 @@ func TestWNEG(t *testing.T) {
 }
 
 func TestWSBI(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var immOneAcc immOneAccT
@@ -379,7 +379,7 @@ func TestWSBI(t *testing.T) {
 }
 
 func TestZEX(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT

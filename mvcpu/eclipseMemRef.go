@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 package mvcpu
 
 import (
@@ -29,7 +30,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipseMemRef(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eclipseMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
@@ -77,7 +78,7 @@ func eclipseMemRef(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
 	return true
 }
 
-func cmp(cpuPtr *MvCPUT) {
+func cmp(cpuPtr *CPUT) {
 	var str1len, str2len int16
 	str2len = int16(memory.DwordGetLowerWord(cpuPtr.ac[0]))
 	str1len = int16(memory.DwordGetLowerWord(cpuPtr.ac[1]))
@@ -134,7 +135,7 @@ func cmp(cpuPtr *MvCPUT) {
 	cpuPtr.ac[3] = dg.DwordT(str1bp)
 }
 
-func cmv(cpuPtr *MvCPUT) {
+func cmv(cpuPtr *CPUT) {
 	// ACO destCount, AC1 srcCount, AC2 dest byte ptr, AC3 src byte ptr
 	var destAscend, srcAscend bool
 	destCount := int16(memory.DwordGetLowerWord(cpuPtr.ac[0]))

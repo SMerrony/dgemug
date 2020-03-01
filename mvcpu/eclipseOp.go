@@ -1,6 +1,6 @@
 // mvemg project eclipseOp.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipseOp(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eclipseOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 

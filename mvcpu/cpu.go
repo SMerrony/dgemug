@@ -68,8 +68,8 @@ type sbrBits struct {
 	physAddr        uint32 // 19 bits used
 }
 
-// MvCPUT holds the current state of a MvCPUT
-type MvCPUT struct {
+// CPUT holds the current state of a CPUT
+type CPUT struct {
 	cpuMu sync.RWMutex
 	// representations of physical attributes
 	pc dg.PhysAddrT // 32-bit PC
@@ -91,8 +91,8 @@ type MvCPUT struct {
 	scpIO      bool   // true if console I/O is directed to the SCP
 }
 
-// MvCPUStatT defines the data we will send to the statusCollector monitor
-type MvCPUStatT struct {
+// CPUStatT defines the data we will send to the statusCollector monitor
+type CPUStatT struct {
 	Pc              dg.PhysAddrT
 	Ac              [4]dg.DwordT
 	Carry, Atu, Ion bool
@@ -108,7 +108,7 @@ const cpuStatPeriodMs = 333 // 125 // i.e. we send stats every 1/8th of a second
 var debugLogging bool
 
 // CPUInit sets up an MV-Class CPU
-func (cpu *MvCPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan MvCPUStatT) {
+func (cpu *CPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan CPUStatT) {
 	cpu.devNum = devNum
 	cpu.bus = bus
 	cpu.CPUReset()
@@ -118,7 +118,8 @@ func (cpu *MvCPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan MvCPUSt
 	}
 }
 
-func (cpu *MvCPUT) CPUReset() {
+// CPUReset sets sane initial values for a CPU
+func (cpu *CPUT) CPUReset() {
 	cpu.cpuMu.Lock()
 	cpu.pc = 0
 	for a := 0; a < 4; a++ {
@@ -135,14 +136,16 @@ func (cpu *MvCPUT) CPUReset() {
 	cpu.cpuMu.Unlock()
 }
 
-func (cpu *MvCPUT) PrepToRun() {
+// PrepToRun is called prior to a normal run
+func (cpu *CPUT) PrepToRun() {
 	cpu.cpuMu.Lock()
 	cpu.instrCount = 0
 	cpu.scpIO = false
 	cpu.cpuMu.Unlock()
 }
 
-func (cpu *MvCPUT) Boot(devNum int, pc dg.PhysAddrT) {
+// Boot sets up the CPU for booting
+func (cpu *CPUT) Boot(devNum int, pc dg.PhysAddrT) {
 	cpu.cpuMu.Lock()
 	cpu.sr = 0x8000 | dg.WordT(devNum)
 	cpu.ac[0] = dg.DwordT(devNum)
@@ -150,7 +153,8 @@ func (cpu *MvCPUT) Boot(devNum int, pc dg.PhysAddrT) {
 	cpu.cpuMu.Unlock()
 }
 
-func (cpu *MvCPUT) CPUPrintableStatus() string {
+// CPUPrintableStatus returns a verbose status of the CPU
+func (cpu *CPUT) CPUPrintableStatus() string {
 	cpu.cpuMu.RLock()
 	res := fmt.Sprintf("%c         AC0          AC1         AC2          AC3           PC CRY LEF ATU ION%c", asciiNL, asciiNL)
 	res += fmt.Sprintf("%#12o %#12o %#12o %#12o %#12o", cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3], cpu.pc)
@@ -163,7 +167,8 @@ func (cpu *MvCPUT) CPUPrintableStatus() string {
 	return res
 }
 
-func (cpu *MvCPUT) CPUCompactPrintableStatus() string {
+// CompactPrintableStatus returns a concise CPU status
+func (cpu *CPUT) CompactPrintableStatus() string {
 	cpu.cpuMu.RLock()
 	res := fmt.Sprintf("AC0=%-12o AC1=%-12o AC2=%-12o AC3=%-12o C:%d I:%d PC=%-12o",
 		cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3],
@@ -172,41 +177,47 @@ func (cpu *MvCPUT) CPUCompactPrintableStatus() string {
 	return res
 }
 
-func (cpu *MvCPUT) GetAc(ac int) (contents dg.DwordT) {
+// GetAc is a getter for the ACs
+func (cpu *CPUT) GetAc(ac int) (contents dg.DwordT) {
 	cpu.cpuMu.RLock()
 	contents = cpu.ac[ac]
 	cpu.cpuMu.RUnlock()
 	return contents
 }
 
-func (cpu *MvCPUT) SetAc(ac int, val dg.DwordT) {
+// SetAc is a setter for the ACs
+func (cpu *CPUT) SetAc(ac int, val dg.DwordT) {
 	cpu.cpuMu.Lock()
 	cpu.ac[ac] = val
 	cpu.cpuMu.Unlock()
 }
 
-func (cpu *MvCPUT) GetAtu() (atu bool) {
+// GetAtu returns the current ATU setting
+func (cpu *CPUT) GetAtu() (atu bool) {
 	cpu.cpuMu.RLock()
 	atu = cpu.atu
 	cpu.cpuMu.RUnlock()
 	return atu
 }
 
-func (cpu *MvCPUT) GetLef(segment int) (lef bool) {
+// GetLef returns the current LEF mode bit
+func (cpu *CPUT) GetLef(segment int) (lef bool) {
 	cpu.cpuMu.RLock()
 	lef = cpu.sbr[segment].lef
 	cpu.cpuMu.RUnlock()
 	return lef
 }
 
-func (cpu *MvCPUT) GetIO(segment int) (io bool) {
+// GetIO returns the current IO bit for a segment
+func (cpu *CPUT) GetIO(segment int) (io bool) {
 	cpu.cpuMu.RLock()
 	io = cpu.sbr[segment].io
 	cpu.cpuMu.RUnlock()
 	return io
 }
 
-func (cpu *MvCPUT) GetInstrCount() (ic uint64) {
+// GetInstrCount returns the instruction-counting array
+func (cpu *CPUT) GetInstrCount() (ic uint64) {
 	cpu.cpuMu.RLock()
 	ic = cpu.instrCount
 	cpu.cpuMu.RUnlock()
@@ -214,12 +225,12 @@ func (cpu *MvCPUT) GetInstrCount() (ic uint64) {
 }
 
 // CPUGetOVR is a getter for the OVR flag embedded in the PSR
-func (cpu *MvCPUT) CPUGetOVR() bool {
+func (cpu *CPUT) CPUGetOVR() bool {
 	return memory.TestWbit(cpu.psr, 1)
 }
 
 // CPUSetOVR is a setter for the OVR flag embedded in the PSR
-func (cpu *MvCPUT) CPUSetOVR(newOVR bool) {
+func (cpu *CPUT) CPUSetOVR(newOVR bool) {
 	if newOVR {
 		memory.SetWbit(&cpu.psr, 1)
 	} else {
@@ -228,12 +239,12 @@ func (cpu *MvCPUT) CPUSetOVR(newOVR bool) {
 }
 
 // CPUGetOVK is a getter for the OVK mask embedded in the PSR
-func (cpu *MvCPUT) CPUGetOVK() bool {
+func (cpu *CPUT) CPUGetOVK() bool {
 	return memory.TestWbit(cpu.psr, 0)
 }
 
 // CPUSetOVK is a setter for the OVK flag embedded in the PSR
-func (cpu *MvCPUT) CPUSetOVK(newOVK bool) {
+func (cpu *CPUT) CPUSetOVK(newOVK bool) {
 	if newOVK {
 		memory.SetWbit(&cpu.psr, 0)
 	} else {
@@ -242,21 +253,22 @@ func (cpu *MvCPUT) CPUSetOVK(newOVK bool) {
 }
 
 // GetPC is a getter for the PC
-func (cpu *MvCPUT) GetPC() (pc dg.PhysAddrT) {
+func (cpu *CPUT) GetPC() (pc dg.PhysAddrT) {
 	cpu.cpuMu.RLock()
 	pc = cpu.pc
 	cpu.cpuMu.RUnlock()
 	return pc
 }
 
-func (cpu *MvCPUT) SetPC(addr dg.PhysAddrT) {
+// SetPC sets the Program Counter
+func (cpu *CPUT) SetPC(addr dg.PhysAddrT) {
 	cpu.cpuMu.Lock()
 	cpu.pc = addr
 	cpu.cpuMu.Unlock()
 }
 
 // CPUGetSCPIO is a getter for the SCP I/O flag
-func (cpu *MvCPUT) CPUGetSCPIO() (scp bool) {
+func (cpu *CPUT) CPUGetSCPIO() (scp bool) {
 	cpu.cpuMu.RLock()
 	scp = cpu.scpIO
 	cpu.cpuMu.RUnlock()
@@ -264,15 +276,15 @@ func (cpu *MvCPUT) CPUGetSCPIO() (scp bool) {
 }
 
 // CPUSetSCPIO is a setter for the SCP I/O flag
-func (cpu *MvCPUT) CPUSetSCPIO(scp bool) {
+func (cpu *CPUT) CPUSetSCPIO(scp bool) {
 	cpu.cpuMu.Lock()
 	cpu.scpIO = scp
 	cpu.cpuMu.Unlock()
 }
 
-// Execute a single instruction
+// CPUExecute runs a single instruction
 // A false return means failure, the VM should stop
-func (cpu *MvCPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
+func (cpu *CPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
 	cpu.cpuMu.Lock()
 	switch iPtr.instrType {
 	case NOVA_MEMREF:
@@ -312,7 +324,8 @@ func (cpu *MvCPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
 	return rc
 }
 
-func (cpu *MvCPUT) Run(disassembly bool,
+// Run is the main activity loop for the virtual CPU
+func (cpu *CPUT) Run(disassembly bool,
 	deviceMap devices.DeviceMapT,
 	breakpoints []dg.PhysAddrT,
 	inputRadix int,
@@ -343,7 +356,7 @@ RunLoop: // performance-critical section starts here
 		}
 
 		if debugLogging {
-			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CPUCompactPrintableStatus(), iPtr.disassembly)
+			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
 		// EXECUTE
@@ -415,8 +428,8 @@ RunLoop: // performance-critical section starts here
 	return errDetail, instrCounts
 }
 
-func (cpu *MvCPUT) cpuStatSender(sChan chan MvCPUStatT) {
-	var stats MvCPUStatT
+func (cpu *CPUT) cpuStatSender(sChan chan CPUStatT) {
+	var stats CPUStatT
 	var memStats runtime.MemStats
 	stats.GoVersion = runtime.Version()
 	stats.HostCPUCount = runtime.NumCPU()

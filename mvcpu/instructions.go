@@ -1,6 +1,6 @@
 // instructions.go
 
-// Copyright (C) 2017,2019 Steve Merrony
+// Copyright ©2017-2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,7 @@ var instructionSet [maxInstrs]instrChars
 
 var ioFlags = [...]byte{' ', 'S', 'C', 'P'}
 
+// GetMnemonic returns the mnemonic for a given opcode
 func GetMnemonic(i int) (mnem string) {
 	return instructionSet[i].mnemonic
 }

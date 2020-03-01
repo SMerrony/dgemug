@@ -24,7 +24,7 @@ package mvcpu
 import "testing"
 
 func TestDIV(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	iPtr.ix = instrDIV
 	cpuPtr.ac[0] = 0 // hi dividend

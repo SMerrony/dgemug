@@ -28,7 +28,7 @@ import (
 )
 
 // func TestResolve16bitEclipseAddr(t *testing.T) {
-// 	cpuPtr := new(MvCPUT)
+// 	cpuPtr := new(CPUT)
 // 	cpuPtr.pc = 11
 // 	memory.MemInit(1000, false)
 // 	memory.WriteWord(10, 9)
@@ -63,7 +63,7 @@ import (
 // }
 
 func TestResolve32bitEffAddr(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	cpuPtr.pc = 2
 	memory.MemInit(1000, false)
 	memory.WriteDWord(2, 20)

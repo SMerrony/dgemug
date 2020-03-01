@@ -26,7 +26,7 @@ import "testing"
 import "github.com/SMerrony/dgemug/dg"
 
 func TestADDI(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var oneAccImm2Word oneAccImm2WordT
 	iPtr.ix = instrADDI
@@ -54,7 +54,7 @@ func TestADDI(t *testing.T) {
 }
 
 func TestANDI(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var oneAccImmWd2Word oneAccImmWd2WordT
 	iPtr.ix = instrANDI
@@ -82,7 +82,7 @@ func TestANDI(t *testing.T) {
 }
 
 func TestHXL(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var immOneAcc immOneAccT
 	iPtr.ix = instrHXL
@@ -110,7 +110,7 @@ func TestHXL(t *testing.T) {
 	}
 }
 func TestHXR(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var immOneAcc immOneAccT
 	iPtr.ix = instrHXR
@@ -139,7 +139,7 @@ func TestHXR(t *testing.T) {
 }
 
 func TestSBI(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var immOneAcc immOneAccT
 	iPtr.ix = instrSBI

@@ -28,7 +28,7 @@ import (
 )
 
 func TestISZTS(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	iPtr.ix = instrISZTS
 	memory.MemInit(1000, false)
@@ -62,7 +62,7 @@ func TestISZTS(t *testing.T) {
 }
 
 func TestWSKBO(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var wskb wskbT
 	iPtr.ix = instrWSKBO
@@ -88,7 +88,7 @@ func TestWSKBO(t *testing.T) {
 }
 
 func TestWSLE(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
 	twoAcc1Word.acs = 0
@@ -147,7 +147,7 @@ func TestWSLE(t *testing.T) {
 }
 
 func TestXNISZ(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var noAccModeInd2Word noAccModeInd2WordT
 	iPtr.ix = instrXNISZ
@@ -185,7 +185,7 @@ func TestXNISZ(t *testing.T) {
 }
 
 func TestXWDSZ(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var noAccModeInd2Word noAccModeInd2WordT
 	iPtr.ix = instrXWDSZ

@@ -25,7 +25,7 @@ import "testing"
 import "github.com/SMerrony/dgemug/memory"
 
 func TestSave(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var unique2Word unique2WordT
 	memory.MemInit(10000, false)

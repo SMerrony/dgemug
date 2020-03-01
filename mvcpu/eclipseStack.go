@@ -1,6 +1,6 @@
 // eclipseStack.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 package mvcpu
 
 import (
@@ -28,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipseStack(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eclipseStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 

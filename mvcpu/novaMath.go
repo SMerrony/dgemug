@@ -28,7 +28,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaMath(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func novaMath(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 	case instrDIV: // unsigned divide

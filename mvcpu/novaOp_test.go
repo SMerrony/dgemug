@@ -24,7 +24,7 @@ package mvcpu
 import "testing"
 
 func TestADC(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaTwoAccMultOp novaTwoAccMultOpT
 	iPtr.ix = instrADC
@@ -53,7 +53,7 @@ func TestADC(t *testing.T) {
 }
 
 func TestADD(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaTwoAccMultOp novaTwoAccMultOpT
 	iPtr.ix = instrADD
@@ -133,7 +133,7 @@ func TestADD(t *testing.T) {
 }
 
 func TestCOM(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaTwoAccMultOp novaTwoAccMultOpT
 	iPtr.ix = instrCOM
@@ -162,7 +162,7 @@ func TestCOM(t *testing.T) {
 }
 
 func TestMOV(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaTwoAccMultOp novaTwoAccMultOpT
 	iPtr.ix = instrMOV
@@ -345,7 +345,7 @@ func TestMOV(t *testing.T) {
 }
 
 func TestNEG(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaTwoAccMultOp novaTwoAccMultOpT
 	iPtr.ix = instrNEG

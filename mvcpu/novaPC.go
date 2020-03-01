@@ -27,7 +27,7 @@ import (
 	"github.com/SMerrony/dgemug/dg"
 )
 
-func novaPC(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func novaPC(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	var novaNoAccEffAddr novaNoAccEffAddrT
 

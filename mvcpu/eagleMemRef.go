@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eagleMemRef(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eagleMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
@@ -230,7 +230,7 @@ func copyByte(srcBA, destBA dg.DwordT) {
 	memWriteByteBA(readByteBA(srcBA), destBA)
 }
 
-func wblm(cpuPtr *MvCPUT) {
+func wblm(cpuPtr *CPUT) {
 	/* AC0 - unused, AC1 - no. wds to move (if neg then descending order), AC2 - src, AC3 - dest */
 	if cpuPtr.ac[1] == 0 {
 		log.Println("INFO: WBLM called with AC1 == 0, not moving anything")
@@ -254,7 +254,7 @@ func wblm(cpuPtr *MvCPUT) {
 	}
 }
 
-func wcmv(cpuPtr *MvCPUT) {
+func wcmv(cpuPtr *CPUT) {
 	// ACO destCount, AC1 srcCount, AC2 dest byte ptr, AC3 src byte ptr
 	destCount := int32(cpuPtr.ac[0])
 	if destCount == 0 {
@@ -325,7 +325,7 @@ func getDirection(ac dg.DwordT) int32 {
 	return 0
 }
 
-func wcmp(cpuPtr *MvCPUT) {
+func wcmp(cpuPtr *CPUT) {
 	// AC0 String2 length and dir (bwd if -ve)
 	// AC1 String1 length and dir (bwd if -ve)
 	// AC2 Byte Pointer to first byte of String2 to be compared
@@ -369,7 +369,7 @@ func wcmp(cpuPtr *MvCPUT) {
 	}
 }
 
-func wcst(cpuPtr *MvCPUT) {
+func wcst(cpuPtr *CPUT) {
 	strLenDir := int(int32(cpuPtr.ac[1]))
 	if strLenDir == 0 {
 		if debugLogging {
@@ -409,7 +409,7 @@ func wcst(cpuPtr *MvCPUT) {
 	}
 }
 
-func wctr(cpuPtr *MvCPUT) {
+func wctr(cpuPtr *CPUT) {
 	// AC0 Wide Byte addr of translation table - unchanged
 	// AC1 # of bytes in each string, NB. -ve => translate-and-move mode, +ve => translate-and-compare mode
 	// AC2 destination string ("string2") Byte addr

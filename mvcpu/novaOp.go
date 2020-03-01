@@ -28,7 +28,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaOp(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	var (
 		shifter          dg.WordT

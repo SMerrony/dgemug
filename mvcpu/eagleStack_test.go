@@ -28,7 +28,7 @@ import (
 )
 
 func TestAdvanceWSP(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	memory.MemInit(1000, false)
 	wsp1 := cpuPtr.wsp
 	advanceWSP(cpuPtr, 1)
@@ -39,7 +39,7 @@ func TestAdvanceWSP(t *testing.T) {
 }
 
 func TestWsPushAndPop(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	memory.MemInit(1000, false)
 	wsPush(cpuPtr, 0, 1)
 	wsp := cpuPtr.wsp
@@ -54,7 +54,7 @@ func TestWsPushAndPop(t *testing.T) {
 }
 
 func TestPopQWord(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	memory.MemInit(1000, false)
 	wsPush(cpuPtr, 0, 0x11112222)
 	wsPush(cpuPtr, 0, 0x33334444)

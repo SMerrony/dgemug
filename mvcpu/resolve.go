@@ -34,7 +34,7 @@ const (
 	physMask32 = 0x7fffffff
 )
 
-func resolve15bitDisplacement(cpuPtr *MvCPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
+func resolve15bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
 		eff = dg.PhysAddrT(disp) | (cpuPtr.pc & 0x7000_0000)
@@ -79,7 +79,7 @@ func resolve15bitDisplacement(cpuPtr *MvCPUT, ind byte, mode int, disp dg.WordT,
 	return eff
 }
 
-func resolve8bitDisplacement(cpuPtr *MvCPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
+func resolve8bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
 		eff = dg.PhysAddrT(disp) | (cpuPtr.pc & 0x7000_0000)
@@ -131,7 +131,7 @@ func resolve32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte boo
 	return wordAddr, loByte
 }
 
-func resolve32bitEffAddr(cpuPtr *MvCPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
+func resolve32bitEffAddr(cpuPtr *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
 
 	eff = dg.PhysAddrT(disp)
 
@@ -174,7 +174,7 @@ func resolve32bitEffAddr(cpuPtr *MvCPUT, ind byte, mode int, disp int32, dispOff
 	return eff
 }
 
-func resolve32bitIndirectableAddr(cpuPtr *MvCPUT, iAddr dg.DwordT) dg.PhysAddrT {
+func resolve32bitIndirectableAddr(cpuPtr *CPUT, iAddr dg.DwordT) dg.PhysAddrT {
 	eff := iAddr
 	// handle indirection
 	for memory.TestDwbit(eff, 0) {
@@ -190,7 +190,7 @@ func resolve32bitIndirectableAddr(cpuPtr *MvCPUT, iAddr dg.DwordT) dg.PhysAddrT 
 
 // resolveEclipseBitAddr as per page 10-8 of Pop
 // Used by BTO, BTZ, SNB, SZB, SZBO
-func resolveEclipseBitAddr(cpuPtr *MvCPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
+func resolveEclipseBitAddr(cpuPtr *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
 	// TODO handle segments and indirection
 	if twoAcc1Word.acd == twoAcc1Word.acs {
 		wordAddr = 0
@@ -208,7 +208,7 @@ func resolveEclipseBitAddr(cpuPtr *MvCPUT, twoAcc1Word *twoAcc1WordT) (wordAddr 
 
 // resolveEagleeBitAddr as per page 1-17 of Pop
 // Used by eg. WSZB
-func resolveEagleBitAddr(cpuPtr *MvCPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
+func resolveEagleBitAddr(cpuPtr *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
 	// TODO handle segments and indirection
 	if twoAcc1Word.acd == twoAcc1Word.acs {
 		wordAddr = 0

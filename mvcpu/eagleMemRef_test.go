@@ -29,7 +29,7 @@ import (
 )
 
 func TestWBTZ(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -91,7 +91,7 @@ func TestWBTZ(t *testing.T) {
 }
 
 func TestWBLM(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	iPtr.ix = instrWBLM
@@ -162,7 +162,7 @@ func TestWBLM(t *testing.T) {
 }
 
 func TestWCMV(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	iPtr.ix = instrWCMV
@@ -243,7 +243,7 @@ func TestWCMV(t *testing.T) {
 }
 
 func TestWLDB(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
@@ -274,7 +274,7 @@ func TestWLDB(t *testing.T) {
 }
 
 func TestXLDB(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var oneAccMode2Word oneAccMode2WordT
@@ -323,7 +323,7 @@ func TestXLDB(t *testing.T) {
 }
 
 func TestXSTB(t *testing.T) {
-	var cpu MvCPUT
+	var cpu CPUT
 	cpuPtr := &cpu
 	var iPtr decodedInstrT
 	var oneAccMode2Word oneAccMode2WordT

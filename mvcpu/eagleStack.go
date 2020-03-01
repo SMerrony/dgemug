@@ -40,7 +40,7 @@ const (
 	WsbLoc  = 026 // WSB 22.
 )
 
-func eagleStack(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
@@ -257,7 +257,7 @@ func eagleStack(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
 }
 
 // wsav is common to WSAVR and WSAVS
-func wsav(cpuPtr *MvCPUT, u2wd *unique2WordT) {
+func wsav(cpuPtr *CPUT, u2wd *unique2WordT) {
 	wfpSav := dg.DwordT(cpuPtr.wfp)
 	wsPush(cpuPtr, 0, cpuPtr.ac[0]) // 1
 	wsPush(cpuPtr, 0, cpuPtr.ac[1]) // 2
@@ -277,7 +277,7 @@ func wsav(cpuPtr *MvCPUT, u2wd *unique2WordT) {
 }
 
 // wssav is common to WSSVR and WSSVS
-func wssav(cpuPtr *MvCPUT, u2wd *unique2WordT) {
+func wssav(cpuPtr *CPUT, u2wd *unique2WordT) {
 	wfpSav := dg.DwordT(cpuPtr.wfp)
 	wsPush(cpuPtr, 0, memory.DwordFromTwoWords(cpuPtr.psr, 0)) // 1
 	wsPush(cpuPtr, 0, cpuPtr.ac[0])                            // 2
@@ -298,7 +298,7 @@ func wssav(cpuPtr *MvCPUT, u2wd *unique2WordT) {
 }
 
 // wsPush - PUSH a doubleword onto the Wide Stack
-func wsPush(cpuPtr *MvCPUT, seg dg.PhysAddrT, data dg.DwordT) {
+func wsPush(cpuPtr *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
 	cpuPtr.wsp += 2
@@ -307,7 +307,7 @@ func wsPush(cpuPtr *MvCPUT, seg dg.PhysAddrT, data dg.DwordT) {
 }
 
 // WsPop - POP a doubleword off the Wide Stack
-func wsPop(cpuPtr *MvCPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
+func wsPop(cpuPtr *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 	// TODO segment handling
 	dword = memory.ReadDWord(cpuPtr.wsp)
 	cpuPtr.wsp -= 2
@@ -316,7 +316,7 @@ func wsPop(cpuPtr *MvCPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 }
 
 // used by WPOPB, WRTN
-func wpopb(cpuPtr *MvCPUT) {
+func wpopb(cpuPtr *CPUT) {
 	wspSav := cpuPtr.wsp
 	// pop off 6 double words
 	dwd := wsPop(cpuPtr, 0) // 1
@@ -336,7 +336,7 @@ func wpopb(cpuPtr *MvCPUT) {
 }
 
 // wsPopQWord - POP a Quad-word off the Wide Stack
-func wsPopQWord(cpuPtr *MvCPUT, seg dg.PhysAddrT) dg.QwordT {
+func wsPopQWord(cpuPtr *CPUT, seg dg.PhysAddrT) dg.QwordT {
 	// TODO segment handling
 	var qw dg.QwordT
 	rhDWord := wsPop(cpuPtr, seg)
@@ -346,7 +346,7 @@ func wsPopQWord(cpuPtr *MvCPUT, seg dg.PhysAddrT) dg.QwordT {
 }
 
 // advanceWSP increases the WSP by the given amount of DWords
-func advanceWSP(cpuPtr *MvCPUT, dwdCnt uint) {
+func advanceWSP(cpuPtr *CPUT, dwdCnt uint) {
 	cpuPtr.wsp += dg.PhysAddrT(dwdCnt * 2)
 	logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpuPtr.wsp)
 }

@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eaglePC(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eaglePC(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 

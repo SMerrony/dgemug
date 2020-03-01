@@ -28,7 +28,7 @@ import (
 )
 
 func TestDSZ(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrDSZ
@@ -64,7 +64,7 @@ func TestDSZ(t *testing.T) {
 }
 
 func TestISZ(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrISZ
@@ -100,7 +100,7 @@ func TestISZ(t *testing.T) {
 }
 
 func TestSTA(t *testing.T) {
-	cpuPtr := new(MvCPUT)
+	cpuPtr := new(CPUT)
 	var iPtr decodedInstrT
 	var novaOneAccEffAddr novaOneAccEffAddrT
 	iPtr.ix = instrSTA

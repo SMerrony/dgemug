@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 package mvcpu
 
 import (
@@ -28,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipsePC(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func eclipsePC(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 

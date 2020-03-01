@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaIO(cpuPtr *MvCPUT, iPtr *decodedInstrT) bool {
+func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	// The Eclipse LEF instruction is handled funkily...
 	if cpuPtr.atu && cpuPtr.sbr[memory.GetSegment(cpuPtr.pc)].lef {
@@ -199,13 +199,13 @@ func halt() bool {
 	return false // stop processing
 }
 
-func intds(cpuPtr *MvCPUT) bool {
+func intds(cpuPtr *CPUT) bool {
 	cpuPtr.ion = false
 	cpuPtr.pc++
 	return true
 }
 
-func inta(cpuPtr *MvCPUT, destAc int) bool {
+func inta(cpuPtr *CPUT, destAc int) bool {
 	// load the AC with the device code of the highest priority interrupt
 	intDevNum := cpuPtr.bus.GetHighestPriorityInt()
 	cpuPtr.ac[destAc] = dg.DwordT(intDevNum)
@@ -215,26 +215,26 @@ func inta(cpuPtr *MvCPUT, destAc int) bool {
 	return true
 }
 
-func inten(cpuPtr *MvCPUT) bool {
+func inten(cpuPtr *CPUT) bool {
 	cpuPtr.ion = true
 	cpuPtr.pc++
 	return true
 }
 
-func iorst(cpuPtr *MvCPUT) bool {
+func iorst(cpuPtr *CPUT) bool {
 	cpuPtr.bus.ResetAllIODevices()
 	cpuPtr.pc++
 	return true
 }
 
-func msko(cpuPtr *MvCPUT, destAc int) bool {
+func msko(cpuPtr *CPUT, destAc int) bool {
 	//cpuPtr.mask = memory.DwordGetLowerWord(cpuPtr.ac[destAc])
 	cpuPtr.bus.SetIrqMask(memory.DwordGetLowerWord(cpuPtr.ac[destAc]))
 	cpuPtr.pc++
 	return true
 }
 
-func reads(cpuPtr *MvCPUT, destAc int) bool {
+func reads(cpuPtr *CPUT, destAc int) bool {
 	// load the AC with the contents of the dummy CPU register 'SR'
 	cpuPtr.ac[destAc] = dg.DwordT(cpuPtr.sr)
 	cpuPtr.pc++
