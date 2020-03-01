@@ -1,6 +1,6 @@
 // ram.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,14 +57,11 @@ func GetSegment(addr dg.PhysAddrT) int {
 
 // ReadByte - read a byte from memory using word address and low-byte flag (true => lower (rightmost) byte)
 func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
-	var res dg.ByteT
 	wd := ReadWord(wordAddr)
-	if loByte {
-		res = dg.ByteT(wd & 0xff)
-	} else {
-		res = dg.ByteT(wd >> 8)
+	if !loByte {
+		wd >>= 8
 	}
-	return res
+	return dg.ByteT(wd)
 }
 
 // ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
