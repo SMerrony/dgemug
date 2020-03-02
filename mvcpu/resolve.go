@@ -34,10 +34,10 @@ const (
 	physMask32 = 0x7fffffff
 )
 
-func resolve15bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
+func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpuPtr.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
 	} else {
 		// relative mode
 		// sign-extend to 31-bits
@@ -48,11 +48,11 @@ func resolve15bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp dg.WordT, d
 	}
 	switch mode {
 	case pcMode:
-		eff += cpuPtr.pc + dg.PhysAddrT(dispOffset)
+		eff += cpu.pc + dg.PhysAddrT(dispOffset)
 	case ac2Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[2])
+		eff += dg.PhysAddrT(cpu.ac[2])
 	case ac3Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[3])
+		eff += dg.PhysAddrT(cpu.ac[3])
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
@@ -69,7 +69,7 @@ func resolve15bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp dg.WordT, d
 		eff = dg.PhysAddrT(indAddr)
 	}
 	// check ATU
-	if cpuPtr.atu == false {
+	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
@@ -79,10 +79,10 @@ func resolve15bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp dg.WordT, d
 	return eff
 }
 
-func resolve8bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
+func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpuPtr.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
 	} else {
 		// relative mode
 		// sign-extend to 31-bits
@@ -93,11 +93,11 @@ func resolve8bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp int16) (eff 
 	}
 	switch mode {
 	case pcMode:
-		eff += cpuPtr.pc
+		eff += cpu.pc
 	case ac2Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[2])
+		eff += dg.PhysAddrT(cpu.ac[2])
 	case ac3Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[3])
+		eff += dg.PhysAddrT(cpu.ac[3])
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
@@ -114,7 +114,7 @@ func resolve8bitDisplacement(cpuPtr *CPUT, ind byte, mode int, disp int16) (eff 
 		eff = dg.PhysAddrT(indAddr)
 	}
 	// check ATU
-	if cpuPtr.atu == false {
+	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
@@ -131,7 +131,7 @@ func resolve32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte boo
 	return wordAddr, loByte
 }
 
-func resolve32bitEffAddr(cpuPtr *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
+func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
 
 	eff = dg.PhysAddrT(disp)
 
@@ -140,11 +140,11 @@ func resolve32bitEffAddr(cpuPtr *CPUT, ind byte, mode int, disp int32, dispOffse
 	case absoluteMode:
 		// nothing to do
 	case pcMode:
-		eff += cpuPtr.pc + dg.PhysAddrT(dispOffset)
+		eff += cpu.pc + dg.PhysAddrT(dispOffset)
 	case ac2Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[2])
+		eff += dg.PhysAddrT(cpu.ac[2])
 	case ac3Mode:
-		eff += dg.PhysAddrT(cpuPtr.ac[3])
+		eff += dg.PhysAddrT(cpu.ac[3])
 	}
 
 	// handle indirection
@@ -163,7 +163,7 @@ func resolve32bitEffAddr(cpuPtr *CPUT, ind byte, mode int, disp int32, dispOffse
 	}
 
 	// check ATU
-	if cpuPtr.atu == false {
+	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
@@ -174,14 +174,14 @@ func resolve32bitEffAddr(cpuPtr *CPUT, ind byte, mode int, disp int32, dispOffse
 	return eff
 }
 
-func resolve32bitIndirectableAddr(cpuPtr *CPUT, iAddr dg.DwordT) dg.PhysAddrT {
+func resolve32bitIndirectableAddr(cpu *CPUT, iAddr dg.DwordT) dg.PhysAddrT {
 	eff := iAddr
 	// handle indirection
 	for memory.TestDwbit(eff, 0) {
 		eff = memory.ReadDWord(dg.PhysAddrT(eff & physMask32))
 	}
 	// check ATU
-	if cpuPtr.atu == false {
+	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
@@ -190,36 +190,36 @@ func resolve32bitIndirectableAddr(cpuPtr *CPUT, iAddr dg.DwordT) dg.PhysAddrT {
 
 // resolveEclipseBitAddr as per page 10-8 of Pop
 // Used by BTO, BTZ, SNB, SZB, SZBO
-func resolveEclipseBitAddr(cpuPtr *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
+func resolveEclipseBitAddr(cpu *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
 	// TODO handle segments and indirection
 	if twoAcc1Word.acd == twoAcc1Word.acs {
 		wordAddr = 0
 	} else {
-		if memory.TestDwbit(cpuPtr.ac[twoAcc1Word.acs], 0) {
+		if memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 0) {
 			log.Fatal("ERROR: Indirect 16-bit BIT pointers not yet supported")
 		}
-		wordAddr = dg.PhysAddrT(cpuPtr.ac[twoAcc1Word.acs]) & physMask16 // mask off lower 15 bits
+		wordAddr = dg.PhysAddrT(cpu.ac[twoAcc1Word.acs]) & physMask16 // mask off lower 15 bits
 	}
-	offset := dg.PhysAddrT(cpuPtr.ac[twoAcc1Word.acd]) >> 4
+	offset := dg.PhysAddrT(cpu.ac[twoAcc1Word.acd]) >> 4
 	wordAddr += offset // add unsigned offset
-	bitNum = uint(cpuPtr.ac[twoAcc1Word.acd] & 0x000f)
+	bitNum = uint(cpu.ac[twoAcc1Word.acd] & 0x000f)
 	return wordAddr, bitNum
 }
 
 // resolveEagleeBitAddr as per page 1-17 of Pop
 // Used by eg. WSZB
-func resolveEagleBitAddr(cpuPtr *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
+func resolveEagleBitAddr(cpu *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.PhysAddrT, bitNum uint) {
 	// TODO handle segments and indirection
 	if twoAcc1Word.acd == twoAcc1Word.acs {
 		wordAddr = 0
 	} else {
-		if memory.TestDwbit(cpuPtr.ac[twoAcc1Word.acs], 0) {
+		if memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 0) {
 			log.Fatal("ERROR: Indirect 32-bit BIT pointers not yet supported")
 		}
-		wordAddr = dg.PhysAddrT(cpuPtr.ac[twoAcc1Word.acs])
+		wordAddr = dg.PhysAddrT(cpu.ac[twoAcc1Word.acs])
 	}
-	offset := dg.PhysAddrT(cpuPtr.ac[twoAcc1Word.acd]) >> 4
+	offset := dg.PhysAddrT(cpu.ac[twoAcc1Word.acd]) >> 4
 	wordAddr += offset // add unsigned offset
-	bitNum = uint(cpuPtr.ac[twoAcc1Word.acd] & 0x000f)
+	bitNum = uint(cpu.ac[twoAcc1Word.acd] & 0x000f)
 	return wordAddr, bitNum
 }

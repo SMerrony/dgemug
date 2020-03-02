@@ -111,15 +111,15 @@ var debugLogging bool
 func (cpu *CPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan CPUStatT) {
 	cpu.devNum = devNum
 	cpu.bus = bus
-	cpu.CPUReset()
+	cpu.Reset()
 	decoderGenAllPossOpcodes()
 	if statsChan != nil {
-		go cpu.cpuStatSender(statsChan)
+		go cpu.statSender(statsChan)
 	}
 }
 
-// CPUReset sets sane initial values for a CPU
-func (cpu *CPUT) CPUReset() {
+// Reset sets sane initial values for a CPU
+func (cpu *CPUT) Reset() {
 	cpu.cpuMu.Lock()
 	cpu.pc = 0
 	for a := 0; a < 4; a++ {
@@ -131,7 +131,7 @@ func (cpu *CPUT) CPUReset() {
 	cpu.atu = false
 	cpu.ion = false
 	cpu.pfflag = false
-	cpu.CPUSetOVR(false)
+	cpu.SetOVR(false)
 	cpu.instrCount = 0
 	cpu.cpuMu.Unlock()
 }
@@ -153,8 +153,8 @@ func (cpu *CPUT) Boot(devNum int, pc dg.PhysAddrT) {
 	cpu.cpuMu.Unlock()
 }
 
-// CPUPrintableStatus returns a verbose status of the CPU
-func (cpu *CPUT) CPUPrintableStatus() string {
+// PrintableStatus returns a verbose status of the CPU
+func (cpu *CPUT) PrintableStatus() string {
 	cpu.cpuMu.RLock()
 	res := fmt.Sprintf("%c         AC0          AC1         AC2          AC3           PC CRY LEF ATU ION%c", asciiNL, asciiNL)
 	res += fmt.Sprintf("%#12o %#12o %#12o %#12o %#12o", cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3], cpu.pc)
@@ -224,13 +224,13 @@ func (cpu *CPUT) GetInstrCount() (ic uint64) {
 	return ic
 }
 
-// CPUGetOVR is a getter for the OVR flag embedded in the PSR
-func (cpu *CPUT) CPUGetOVR() bool {
+// GetOVR is a getter for the OVR flag embedded in the PSR
+func (cpu *CPUT) GetOVR() bool {
 	return memory.TestWbit(cpu.psr, 1)
 }
 
-// CPUSetOVR is a setter for the OVR flag embedded in the PSR
-func (cpu *CPUT) CPUSetOVR(newOVR bool) {
+// SetOVR is a setter for the OVR flag embedded in the PSR
+func (cpu *CPUT) SetOVR(newOVR bool) {
 	if newOVR {
 		memory.SetWbit(&cpu.psr, 1)
 	} else {
@@ -238,13 +238,13 @@ func (cpu *CPUT) CPUSetOVR(newOVR bool) {
 	}
 }
 
-// CPUGetOVK is a getter for the OVK mask embedded in the PSR
-func (cpu *CPUT) CPUGetOVK() bool {
+// GetOVK is a getter for the OVK mask embedded in the PSR
+func (cpu *CPUT) GetOVK() bool {
 	return memory.TestWbit(cpu.psr, 0)
 }
 
-// CPUSetOVK is a setter for the OVK flag embedded in the PSR
-func (cpu *CPUT) CPUSetOVK(newOVK bool) {
+// SetOVK is a setter for the OVK flag embedded in the PSR
+func (cpu *CPUT) SetOVK(newOVK bool) {
 	if newOVK {
 		memory.SetWbit(&cpu.psr, 0)
 	} else {
@@ -267,24 +267,24 @@ func (cpu *CPUT) SetPC(addr dg.PhysAddrT) {
 	cpu.cpuMu.Unlock()
 }
 
-// CPUGetSCPIO is a getter for the SCP I/O flag
-func (cpu *CPUT) CPUGetSCPIO() (scp bool) {
+// GetSCPIO is a getter for the SCP I/O flag
+func (cpu *CPUT) GetSCPIO() (scp bool) {
 	cpu.cpuMu.RLock()
 	scp = cpu.scpIO
 	cpu.cpuMu.RUnlock()
 	return scp
 }
 
-// CPUSetSCPIO is a setter for the SCP I/O flag
-func (cpu *CPUT) CPUSetSCPIO(scp bool) {
+// SetSCPIO is a setter for the SCP I/O flag
+func (cpu *CPUT) SetSCPIO(scp bool) {
 	cpu.cpuMu.Lock()
 	cpu.scpIO = scp
 	cpu.cpuMu.Unlock()
 }
 
-// CPUExecute runs a single instruction
+// Execute runs a single instruction
 // A false return means failure, the VM should stop
-func (cpu *CPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
+func (cpu *CPUT) Execute(iPtr *decodedInstrT) (rc bool) {
 	cpu.cpuMu.Lock()
 	switch iPtr.instrType {
 	case NOVA_MEMREF:
@@ -316,7 +316,7 @@ func (cpu *CPUT) CPUExecute(iPtr *decodedInstrT) (rc bool) {
 	case EAGLE_STACK:
 		rc = eagleStack(cpu, iPtr)
 	default:
-		log.Println("ERROR: Unimplemented instruction type in CPUExecute()")
+		log.Println("ERROR: Unimplemented instruction type in Execute()")
 		rc = false
 	}
 	cpu.instrCount++
@@ -360,7 +360,7 @@ RunLoop: // performance-critical section starts here
 		}
 
 		// EXECUTE
-		if !cpu.CPUExecute(iPtr) {
+		if !cpu.Execute(iPtr) {
 			errDetail = " *** Error: could not execute instruction (or CPU HALT encountered) ***"
 			break
 		}
@@ -428,7 +428,7 @@ RunLoop: // performance-critical section starts here
 	return errDetail, instrCounts
 }
 
-func (cpu *CPUT) cpuStatSender(sChan chan CPUStatT) {
+func (cpu *CPUT) statSender(sChan chan CPUStatT) {
 	var stats CPUStatT
 	var memStats runtime.MemStats
 	stats.GoVersion = runtime.Version()

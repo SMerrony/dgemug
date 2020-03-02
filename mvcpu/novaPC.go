@@ -27,7 +27,7 @@ import (
 	"github.com/SMerrony/dgemug/dg"
 )
 
-func novaPC(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func novaPC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	var novaNoAccEffAddr novaNoAccEffAddrT
 
@@ -35,13 +35,13 @@ func novaPC(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrJMP:
 		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
-		cpuPtr.pc = resolve8bitDisplacement(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
 
 	case instrJSR:
 		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
-		tmpPC := dg.DwordT(cpuPtr.pc + 1)
-		cpuPtr.pc = resolve8bitDisplacement(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
-		cpuPtr.ac[3] = tmpPC
+		tmpPC := dg.DwordT(cpu.pc + 1)
+		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.ac[3] = tmpPC
 
 	default:
 		log.Fatalf("ERROR: NOVA_PC instruction <%s> not yet implemented\n", iPtr.mnemonic)

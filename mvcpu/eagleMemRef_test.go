@@ -29,8 +29,7 @@ import (
 )
 
 func TestWBTZ(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
 	iPtr.ix = instrWBTZ
@@ -42,9 +41,9 @@ func TestWBTZ(t *testing.T) {
 	iPtr.variant = twoAcc1Word
 	var wordOffset dg.DwordT = 73 << 4
 	var bitNum dg.DwordT = 3
-	cpuPtr.ac[0] = wordOffset | bitNum
+	cpu.ac[0] = wordOffset | bitNum
 	memory.WriteWord(73, 0xffff)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WBTZ 1")
 	}
 	w := memory.ReadWord(73)
@@ -58,10 +57,10 @@ func TestWBTZ(t *testing.T) {
 	iPtr.variant = twoAcc1Word
 	wordOffset = 33 << 4
 	bitNum = 3
-	cpuPtr.ac[0] = wordOffset | bitNum
-	cpuPtr.ac[1] = 40
+	cpu.ac[0] = wordOffset | bitNum
+	cpu.ac[1] = 40
 	memory.WriteWord(73, 0xffff)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WBTZ 2")
 	}
 	w = memory.ReadWord(73)
@@ -75,13 +74,13 @@ func TestWBTZ(t *testing.T) {
 	iPtr.variant = twoAcc1Word
 	wordOffset = 33 << 4
 	bitNum = 3
-	cpuPtr.ac[0] = wordOffset | bitNum
+	cpu.ac[0] = wordOffset | bitNum
 	// put an indirect address in ac1 pointing to 60
-	cpuPtr.ac[1] = 0x80000000 | 60
+	cpu.ac[1] = 0x80000000 | 60
 	// put 40 in location 60
 	memory.WriteDWord(60, 40) // DWord!!!
 	memory.WriteWord(73, 0xffff)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WBTZ 3")
 	}
 	w = memory.ReadWord(73)
@@ -91,8 +90,7 @@ func TestWBTZ(t *testing.T) {
 }
 
 func TestWBLM(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	iPtr.ix = instrWBLM
 	memory.MemInit(1000, false)
@@ -104,11 +102,11 @@ func TestWBLM(t *testing.T) {
 	for wdaddr = 0; wdaddr < 1000; wdaddr++ {
 		memory.WriteWord(wdaddr, dg.WordT(wdaddr))
 	}
-	cpuPtr.ac[0] = 77
-	cpuPtr.ac[1] = 5
-	cpuPtr.ac[2] = 50 // src
-	cpuPtr.ac[3] = 40 // dest
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[0] = 77
+	cpu.ac[1] = 5
+	cpu.ac[2] = 50 // src
+	cpu.ac[3] = 40 // dest
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute forwards WBLM")
 	}
 	for wdaddr = 40; wdaddr < 45; wdaddr++ {
@@ -116,16 +114,16 @@ func TestWBLM(t *testing.T) {
 			t.Errorf("Expected %d, got %d", wdaddr+10, memory.ReadWord(wdaddr))
 		}
 	}
-	if cpuPtr.ac[0] != 77 {
+	if cpu.ac[0] != 77 {
 		t.Error("Expected AC0 == 77")
 	}
-	if cpuPtr.ac[1] != 0 {
+	if cpu.ac[1] != 0 {
 		t.Error("Expected AC1 = 0")
 	}
-	if cpuPtr.ac[2] != 55 {
+	if cpu.ac[2] != 55 {
 		t.Error("Expected AC2 = 55")
 	}
-	if cpuPtr.ac[3] != 45 {
+	if cpu.ac[3] != 45 {
 		t.Error("Expected AC3 = 45")
 	}
 
@@ -135,11 +133,11 @@ func TestWBLM(t *testing.T) {
 	for wdaddr = 0; wdaddr < 1000; wdaddr++ {
 		memory.WriteWord(wdaddr, dg.WordT(wdaddr))
 	}
-	cpuPtr.ac[0] = 77
-	cpuPtr.ac[1] = 0xffff_fffb // -5
-	cpuPtr.ac[2] = 50          // src
-	cpuPtr.ac[3] = 40          // dest
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[0] = 77
+	cpu.ac[1] = 0xffff_fffb // -5
+	cpu.ac[2] = 50          // src
+	cpu.ac[3] = 40          // dest
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute reverse WBLM")
 	}
 	for wdaddr = 40; wdaddr > 35; wdaddr-- {
@@ -147,23 +145,22 @@ func TestWBLM(t *testing.T) {
 			t.Errorf("Expected %d, got %d", wdaddr+10, memory.ReadWord(wdaddr))
 		}
 	}
-	if cpuPtr.ac[0] != 77 {
+	if cpu.ac[0] != 77 {
 		t.Error("Expected AC0 == 77")
 	}
-	if cpuPtr.ac[1] != 0 {
+	if cpu.ac[1] != 0 {
 		t.Error("Expected AC1 = 0")
 	}
-	if cpuPtr.ac[2] != 45 {
-		t.Errorf("Expected AC2 = 45, got %d", cpuPtr.ac[2])
+	if cpu.ac[2] != 45 {
+		t.Errorf("Expected AC2 = 45, got %d", cpu.ac[2])
 	}
-	if cpuPtr.ac[3] != 35 {
+	if cpu.ac[3] != 35 {
 		t.Error("Expected AC3 = 35")
 	}
 }
 
 func TestWCMV(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	iPtr.ix = instrWCMV
 	memory.MemInit(1000, false)
@@ -180,11 +177,11 @@ func TestWCMV(t *testing.T) {
 	srcNoBytes := 7
 	destBytePtr := 200 << 1
 	srcBytePtr := 100 << 1
-	cpuPtr.ac[0] = dg.DwordT(destNoBytes)
-	cpuPtr.ac[1] = dg.DwordT(srcNoBytes)
-	cpuPtr.ac[2] = dg.DwordT(destBytePtr)
-	cpuPtr.ac[3] = dg.DwordT(srcBytePtr)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[0] = dg.DwordT(destNoBytes)
+	cpu.ac[1] = dg.DwordT(srcNoBytes)
+	cpu.ac[2] = dg.DwordT(destBytePtr)
+	cpu.ac[3] = dg.DwordT(srcBytePtr)
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WCMV")
 	}
 	r := memory.ReadByte(200, false)
@@ -202,11 +199,11 @@ func TestWCMV(t *testing.T) {
 
 	// non-word-aligned fwd move
 	srcBytePtr++
-	cpuPtr.ac[0] = dg.DwordT(destNoBytes)
-	cpuPtr.ac[1] = dg.DwordT(srcNoBytes)
-	cpuPtr.ac[2] = dg.DwordT(destBytePtr)
-	cpuPtr.ac[3] = dg.DwordT(srcBytePtr)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[0] = dg.DwordT(destNoBytes)
+	cpu.ac[1] = dg.DwordT(srcNoBytes)
+	cpu.ac[2] = dg.DwordT(destBytePtr)
+	cpu.ac[3] = dg.DwordT(srcBytePtr)
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WCMV")
 	}
 	r = memory.ReadByte(200, false)
@@ -221,11 +218,11 @@ func TestWCMV(t *testing.T) {
 	// src backwards
 	srcBytePtr = 100 << 1
 	destNoBytes = -7
-	cpuPtr.ac[0] = dg.DwordT(destNoBytes)
-	cpuPtr.ac[1] = dg.DwordT(srcNoBytes)
-	cpuPtr.ac[2] = dg.DwordT(destBytePtr)
-	cpuPtr.ac[3] = dg.DwordT(srcBytePtr)
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[0] = dg.DwordT(destNoBytes)
+	cpu.ac[1] = dg.DwordT(srcNoBytes)
+	cpu.ac[2] = dg.DwordT(destBytePtr)
+	cpu.ac[3] = dg.DwordT(srcBytePtr)
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WCMV")
 	}
 	r = memory.ReadByte(200, false)
@@ -243,8 +240,7 @@ func TestWCMV(t *testing.T) {
 }
 
 func TestWLDB(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var twoAcc1Word twoAcc1WordT
 	iPtr.ix = instrWLDB
@@ -253,29 +249,28 @@ func TestWLDB(t *testing.T) {
 	memory.WriteByte(100, true, 'B')
 	twoAcc1Word.acs = 1
 	twoAcc1Word.acd = 2
-	cpuPtr.ac[1] = 100 << 1
+	cpu.ac[1] = 100 << 1
 	iPtr.variant = twoAcc1Word
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WLDB")
 	}
-	if cpuPtr.ac[2] != 'A' {
-		t.Errorf("Expected %d, got %d", 'A', cpuPtr.ac[2])
+	if cpu.ac[2] != 'A' {
+		t.Errorf("Expected %d, got %d", 'A', cpu.ac[2])
 	}
 	twoAcc1Word.acs = 1
 	twoAcc1Word.acd = 2
-	cpuPtr.ac[1] = 100<<1 + 1
+	cpu.ac[1] = 100<<1 + 1
 	iPtr.variant = twoAcc1Word
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute WLDB")
 	}
-	if cpuPtr.ac[2] != 'B' {
-		t.Errorf("Expected %d, got %d", 'B', cpuPtr.ac[2])
+	if cpu.ac[2] != 'B' {
+		t.Errorf("Expected %d, got %d", 'B', cpu.ac[2])
 	}
 }
 
 func TestXLDB(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var oneAccMode2Word oneAccMode2WordT
 	iPtr.ix = instrXLDB
@@ -284,47 +279,46 @@ func TestXLDB(t *testing.T) {
 	memory.WriteByte(100, true, 'B')
 	oneAccMode2Word.acd = 2
 	oneAccMode2Word.mode = absoluteMode
-	cpuPtr.ac[2] = 400 << 1 // should not be used in absolute mode
+	cpu.ac[2] = 400 << 1 // should not be used in absolute mode
 	oneAccMode2Word.disp16 = 100 << 1
 	oneAccMode2Word.bitLow = false // get high byte 'A'
 	iPtr.variant = oneAccMode2Word
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute XLDB [1]")
 	}
-	if cpuPtr.ac[2] != 'A' {
-		t.Errorf("[1] Expected %d, got %d", 'A', cpuPtr.ac[2])
+	if cpu.ac[2] != 'A' {
+		t.Errorf("[1] Expected %d, got %d", 'A', cpu.ac[2])
 	}
 
 	oneAccMode2Word.acd = 2
 	oneAccMode2Word.mode = absoluteMode
-	cpuPtr.ac[2] = 400 << 1 // should not be used in absolute mode
+	cpu.ac[2] = 400 << 1 // should not be used in absolute mode
 	oneAccMode2Word.disp16 = 100 << 1
 	oneAccMode2Word.bitLow = true // get low byte 'B'
 	iPtr.variant = oneAccMode2Word
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute XLDB [2]")
 	}
-	if cpuPtr.ac[2] != 'B' {
-		t.Errorf("[2] Expected %d, got %d", 'B', cpuPtr.ac[2])
+	if cpu.ac[2] != 'B' {
+		t.Errorf("[2] Expected %d, got %d", 'B', cpu.ac[2])
 	}
 
 	oneAccMode2Word.acd = 3
 	oneAccMode2Word.mode = ac3Mode
-	cpuPtr.ac[3] = 100
+	cpu.ac[3] = 100
 	oneAccMode2Word.disp16 = 0
 	oneAccMode2Word.bitLow = true // get low byte 'B'
 	iPtr.variant = oneAccMode2Word
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute XLDB [3]")
 	}
-	if cpuPtr.ac[3] != 'B' {
-		t.Errorf("[3] Expected %d, got %d", 'B', cpuPtr.ac[3])
+	if cpu.ac[3] != 'B' {
+		t.Errorf("[3] Expected %d, got %d", 'B', cpu.ac[3])
 	}
 }
 
 func TestXSTB(t *testing.T) {
-	var cpu CPUT
-	cpuPtr := &cpu
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var oneAccMode2Word oneAccMode2WordT
 	iPtr.ix = instrXSTB
@@ -337,8 +331,8 @@ func TestXSTB(t *testing.T) {
 	oneAccMode2Word.bitLow = false
 	oneAccMode2Word.acd = 1
 	iPtr.variant = oneAccMode2Word
-	cpuPtr.ac[1] = 0x11223344
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[1] = 0x11223344
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute XSTB")
 	}
 	w := memory.ReadWord(7)
@@ -353,8 +347,8 @@ func TestXSTB(t *testing.T) {
 	oneAccMode2Word.bitLow = true
 	oneAccMode2Word.acd = 1
 	iPtr.variant = oneAccMode2Word
-	cpuPtr.ac[1] = 0x11223344
-	if !eagleMemRef(cpuPtr, &iPtr) {
+	cpu.ac[1] = 0x11223344
+	if !eagleMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute XSTB")
 	}
 	w = memory.ReadWord(7)

@@ -24,61 +24,61 @@ package mvcpu
 import "testing"
 
 func TestDIV(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	iPtr.ix = instrDIV
-	cpuPtr.ac[0] = 0 // hi dividend
-	cpuPtr.ac[1] = 6 // lo dividend
-	cpuPtr.ac[2] = 2 // divisor
-	if !novaMath(cpuPtr, &iPtr) {
+	cpu.ac[0] = 0 // hi dividend
+	cpu.ac[1] = 6 // lo dividend
+	cpu.ac[2] = 2 // divisor
+	if !novaMath(cpu, &iPtr) {
 		t.Error("Failed to execute DIV")
 	}
-	if cpuPtr.ac[1] != 3 || cpuPtr.ac[0] != 0 || cpuPtr.ac[2] != 2 {
+	if cpu.ac[1] != 3 || cpu.ac[0] != 0 || cpu.ac[2] != 2 {
 		t.Errorf("Expected 3, 0, 2, got: %d, %d, %d",
-			cpuPtr.ac[1], cpuPtr.ac[0], cpuPtr.ac[2])
+			cpu.ac[1], cpu.ac[0], cpu.ac[2])
 	}
 
-	cpuPtr.ac[0] = 0 // hi dividend
-	cpuPtr.ac[1] = 6 // lo dividend
-	cpuPtr.ac[2] = 4 // divisor
-	if !novaMath(cpuPtr, &iPtr) {
+	cpu.ac[0] = 0 // hi dividend
+	cpu.ac[1] = 6 // lo dividend
+	cpu.ac[2] = 4 // divisor
+	if !novaMath(cpu, &iPtr) {
 		t.Error("Failed to execute DIV")
 	}
-	if cpuPtr.ac[1] != 1 || cpuPtr.ac[0] != 2 || cpuPtr.ac[2] != 4 {
+	if cpu.ac[1] != 1 || cpu.ac[0] != 2 || cpu.ac[2] != 4 {
 		t.Errorf("Expected 1, 2, 4, got: %d, %d, %d",
-			cpuPtr.ac[1], cpuPtr.ac[0], cpuPtr.ac[2])
+			cpu.ac[1], cpu.ac[0], cpu.ac[2])
 	}
 
-	cpuPtr.ac[0] = 0      // hi dividend
-	cpuPtr.ac[1] = 0xf000 // lo dividend
-	cpuPtr.ac[2] = 2      // divisor
-	if !novaMath(cpuPtr, &iPtr) {
+	cpu.ac[0] = 0      // hi dividend
+	cpu.ac[1] = 0xf000 // lo dividend
+	cpu.ac[2] = 2      // divisor
+	if !novaMath(cpu, &iPtr) {
 		t.Error("Failed to execute DIV")
 	}
-	if cpuPtr.ac[1] != 0x7800 || cpuPtr.ac[0] != 0 || cpuPtr.ac[2] != 2 {
+	if cpu.ac[1] != 0x7800 || cpu.ac[0] != 0 || cpu.ac[2] != 2 {
 		t.Errorf("Expected 30720, 0, 2, got: %d, %d, %d",
-			cpuPtr.ac[1], cpuPtr.ac[0], cpuPtr.ac[2])
+			cpu.ac[1], cpu.ac[0], cpu.ac[2])
 	}
 
-	cpuPtr.ac[0] = 1      // hi dividend
-	cpuPtr.ac[1] = 0xf000 // lo dividend
-	cpuPtr.ac[2] = 2      // divisor
-	if !novaMath(cpuPtr, &iPtr) {
+	cpu.ac[0] = 1      // hi dividend
+	cpu.ac[1] = 0xf000 // lo dividend
+	cpu.ac[2] = 2      // divisor
+	if !novaMath(cpu, &iPtr) {
 		t.Error("Failed to execute DIV")
 	}
-	if cpuPtr.ac[1] != 0xf800 || cpuPtr.ac[0] != 0 || cpuPtr.ac[2] != 2 {
+	if cpu.ac[1] != 0xf800 || cpu.ac[0] != 0 || cpu.ac[2] != 2 {
 		t.Errorf("Expected 63488, 0, 2, got: %d, %d, %d",
-			cpuPtr.ac[1], cpuPtr.ac[0], cpuPtr.ac[2])
+			cpu.ac[1], cpu.ac[0], cpu.ac[2])
 	}
 
-	cpuPtr.ac[0] = 0xf000 // hi dividends- SHOULD CAUSE EXCEPTION
-	cpuPtr.ac[1] = 0xf000 // lo dividend
-	cpuPtr.ac[2] = 512    // divisor
-	if !novaMath(cpuPtr, &iPtr) {
+	cpu.ac[0] = 0xf000 // hi dividends- SHOULD CAUSE EXCEPTION
+	cpu.ac[1] = 0xf000 // lo dividend
+	cpu.ac[2] = 512    // divisor
+	if !novaMath(cpu, &iPtr) {
 		t.Error("Failed to execute DIV")
 	}
-	if cpuPtr.ac[1] != 61440 || cpuPtr.ac[0] != 61440 || cpuPtr.ac[2] != 512 {
+	if cpu.ac[1] != 61440 || cpu.ac[0] != 61440 || cpu.ac[2] != 512 {
 		t.Errorf("Expected 61440, 61440, 512, got: %d, %d, %d",
-			cpuPtr.ac[1], cpuPtr.ac[0], cpuPtr.ac[2])
+			cpu.ac[1], cpu.ac[0], cpu.ac[2])
 	}
 }

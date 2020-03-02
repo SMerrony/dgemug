@@ -30,21 +30,21 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipseMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
 	case instrBLM:
 		/* AC0 - unused, AC1 - no. wds to move, AC2 - src, AC3 - dest */
-		numWds := memory.DwordGetLowerWord(cpuPtr.ac[1])
+		numWds := memory.DwordGetLowerWord(cpu.ac[1])
 		if numWds == 0 || numWds > 32768 {
 			if debugLogging {
 				logging.DebugPrint(logging.DebugLog, "BLM called with AC1 out-of-bounds, not moving anything\n")
 			}
 			break
 		}
-		src := memory.DwordGetLowerWord(cpuPtr.ac[2])
-		dest := memory.DwordGetLowerWord(cpuPtr.ac[3])
+		src := memory.DwordGetLowerWord(cpu.ac[2])
+		dest := memory.DwordGetLowerWord(cpu.ac[3])
 		if debugLogging {
 			logging.DebugPrint(logging.DebugLog, fmt.Sprintf("BLM moving %d words from %d to %d\n", numWds, src, dest))
 		}
@@ -54,40 +54,40 @@ func eclipseMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			src++
 			dest++
 		}
-		cpuPtr.ac[1] = 0
-		cpuPtr.ac[2] = dg.DwordT(src) // TODO confirm this is right, doc ambiguous
-		cpuPtr.ac[3] = dg.DwordT(dest)
+		cpu.ac[1] = 0
+		cpu.ac[2] = dg.DwordT(src) // TODO confirm this is right, doc ambiguous
+		cpu.ac[3] = dg.DwordT(dest)
 
 	case instrCMP:
-		cmp(cpuPtr)
+		cmp(cpu)
 
 	case instrCMV:
-		cmv(cpuPtr)
+		cmv(cpu)
 
 	case instrELDA:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpuPtr, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset) & 0x7fff
-		cpuPtr.ac[oneAccModeInt2Word.acd] = dg.DwordT(memory.ReadWord(addr))
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset) & 0x7fff
+		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(memory.ReadWord(addr))
 
 	default:
 		log.Printf("ERROR: ECLIPSE_MEMREF instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 
-	cpuPtr.pc += dg.PhysAddrT(iPtr.instrLength)
+	cpu.pc += dg.PhysAddrT(iPtr.instrLength)
 	return true
 }
 
-func cmp(cpuPtr *CPUT) {
+func cmp(cpu *CPUT) {
 	var str1len, str2len int16
-	str2len = int16(memory.DwordGetLowerWord(cpuPtr.ac[0]))
-	str1len = int16(memory.DwordGetLowerWord(cpuPtr.ac[1]))
+	str2len = int16(memory.DwordGetLowerWord(cpu.ac[0]))
+	str1len = int16(memory.DwordGetLowerWord(cpu.ac[1]))
 	if str1len == 0 && str2len == 0 {
-		cpuPtr.ac[1] = 0
+		cpu.ac[1] = 0
 		return
 	}
-	str1bp := memory.DwordGetLowerWord(cpuPtr.ac[3])
-	str2bp := memory.DwordGetLowerWord(cpuPtr.ac[2])
+	str1bp := memory.DwordGetLowerWord(cpu.ac[3])
+	str2bp := memory.DwordGetLowerWord(cpu.ac[2])
 	var byte1, byte2 dg.ByteT
 	res := 0
 	for {
@@ -129,47 +129,47 @@ func cmp(cpuPtr *CPUT) {
 			break
 		}
 	}
-	cpuPtr.ac[0] = dg.DwordT(str2len)
-	cpuPtr.ac[1] = dg.DwordT(res)
-	cpuPtr.ac[2] = dg.DwordT(str2bp)
-	cpuPtr.ac[3] = dg.DwordT(str1bp)
+	cpu.ac[0] = dg.DwordT(str2len)
+	cpu.ac[1] = dg.DwordT(res)
+	cpu.ac[2] = dg.DwordT(str2bp)
+	cpu.ac[3] = dg.DwordT(str1bp)
 }
 
-func cmv(cpuPtr *CPUT) {
+func cmv(cpu *CPUT) {
 	// ACO destCount, AC1 srcCount, AC2 dest byte ptr, AC3 src byte ptr
 	var destAscend, srcAscend bool
-	destCount := int16(memory.DwordGetLowerWord(cpuPtr.ac[0]))
+	destCount := int16(memory.DwordGetLowerWord(cpu.ac[0]))
 	if destCount == 0 {
 		log.Println("INFO: CMV called with AC0 == 0, not moving anything")
-		cpuPtr.carry = false
+		cpu.carry = false
 		return
 	}
 	destAscend = (destCount > 0)
-	srcCount := int16(memory.DwordGetLowerWord(cpuPtr.ac[3]))
+	srcCount := int16(memory.DwordGetLowerWord(cpu.ac[3]))
 	srcAscend = (srcCount > 0)
 	if debugLogging {
 		logging.DebugPrint(logging.DebugLog, "DEBUG: CMV moving %d chars from %d to %d\n",
-			srcCount, cpuPtr.ac[3], cpuPtr.ac[2])
+			srcCount, cpu.ac[3], cpu.ac[2])
 	}
 	// set carry if length of src is greater than length of dest
-	if cpuPtr.ac[1] > cpuPtr.ac[2] {
-		cpuPtr.carry = true
+	if cpu.ac[1] > cpu.ac[2] {
+		cpu.carry = true
 	}
 	// 1st move srcCount bytes
 	for {
-		copyByte(cpuPtr.ac[3], cpuPtr.ac[2])
+		copyByte(cpu.ac[3], cpu.ac[2])
 		if srcAscend {
-			cpuPtr.ac[3]++
+			cpu.ac[3]++
 			srcCount--
 		} else {
-			cpuPtr.ac[3]--
+			cpu.ac[3]--
 			srcCount++
 		}
 		if destAscend {
-			cpuPtr.ac[2]++
+			cpu.ac[2]++
 			destCount--
 		} else {
-			cpuPtr.ac[2]--
+			cpu.ac[2]--
 			destCount++
 		}
 		if srcCount == 0 || destCount == 0 {
@@ -179,12 +179,12 @@ func cmv(cpuPtr *CPUT) {
 	// now fill any excess bytes with ASCII spaces
 	if destCount != 0 {
 		for {
-			memWriteByteBA(asciiSPC, cpuPtr.ac[2])
+			memWriteByteBA(asciiSPC, cpu.ac[2])
 			if destAscend {
-				cpuPtr.ac[2]++
+				cpu.ac[2]++
 				destCount--
 			} else {
-				cpuPtr.ac[2]--
+				cpu.ac[2]--
 				destCount++
 			}
 			if destCount == 0 {
@@ -192,6 +192,6 @@ func cmv(cpuPtr *CPUT) {
 			}
 		}
 	}
-	cpuPtr.ac[0] = 0
-	cpuPtr.ac[1] = dg.DwordT(srcCount)
+	cpu.ac[0] = 0
+	cpu.ac[1] = dg.DwordT(srcCount)
 }

@@ -28,34 +28,34 @@ import (
 )
 
 func TestDSZ(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrDSZ
 	memory.MemInit(10000, false)
 	memory.WriteWord(100, 2)
-	cpuPtr.pc = 10
+	cpu.pc = 10
 	novaNoAccEffAddr.disp15 = 100
 	novaNoAccEffAddr.ind = ' '
 	novaNoAccEffAddr.mode = absoluteMode
 	iPtr.variant = novaNoAccEffAddr
 
-	if !novaMemRef(cpuPtr, &iPtr) {
+	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute DSZ")
 	}
-	if cpuPtr.pc != 11 {
-		t.Errorf("Expected PC 11, got %d.", cpuPtr.pc)
+	if cpu.pc != 11 {
+		t.Errorf("Expected PC 11, got %d.", cpu.pc)
 	}
 	w := memory.ReadWord(100)
 	if w != 1 {
 		t.Errorf("Expected loc 100 to contain 1, got: %x", w)
 	}
 
-	if !novaMemRef(cpuPtr, &iPtr) {
+	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute DSZ")
 	}
-	if cpuPtr.pc != 13 {
-		t.Errorf("Expected PC 13, got %d.", cpuPtr.pc)
+	if cpu.pc != 13 {
+		t.Errorf("Expected PC 13, got %d.", cpu.pc)
 	}
 	w = memory.ReadWord(100)
 	if w != 0 {
@@ -64,34 +64,34 @@ func TestDSZ(t *testing.T) {
 }
 
 func TestISZ(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrISZ
 	memory.MemInit(10000, false)
 	memory.WriteWord(100, 0xfffe)
-	cpuPtr.pc = 10
+	cpu.pc = 10
 	novaNoAccEffAddr.disp15 = 100
 	novaNoAccEffAddr.ind = ' '
 	novaNoAccEffAddr.mode = absoluteMode
 	iPtr.variant = novaNoAccEffAddr
 
-	if !novaMemRef(cpuPtr, &iPtr) {
+	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute ISZ")
 	}
-	if cpuPtr.pc != 11 {
-		t.Errorf("Expected PC 11, got %d.", cpuPtr.pc)
+	if cpu.pc != 11 {
+		t.Errorf("Expected PC 11, got %d.", cpu.pc)
 	}
 	w := memory.ReadWord(100)
 	if w != 0xffff {
 		t.Errorf("Expected loc 100 to contain 0xffff, got: %x", w)
 	}
 
-	if !novaMemRef(cpuPtr, &iPtr) {
+	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute ISZ")
 	}
-	if cpuPtr.pc != 13 {
-		t.Errorf("Expected PC 13, got %d.", cpuPtr.pc)
+	if cpu.pc != 13 {
+		t.Errorf("Expected PC 13, got %d.", cpu.pc)
 	}
 	w = memory.ReadWord(100)
 	if w != 0 {
@@ -100,11 +100,11 @@ func TestISZ(t *testing.T) {
 }
 
 func TestSTA(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var novaOneAccEffAddr novaOneAccEffAddrT
 	iPtr.ix = instrSTA
-	cpuPtr.ac[1] = 0x12345678
+	cpu.ac[1] = 0x12345678
 	novaOneAccEffAddr.acd = 1
 	novaOneAccEffAddr.disp15 = 100
 	novaOneAccEffAddr.ind = ' '
@@ -113,7 +113,7 @@ func TestSTA(t *testing.T) {
 	memory.WriteWord(100, 0xfffe)
 	iPtr.variant = novaOneAccEffAddr
 
-	if !novaMemRef(cpuPtr, &iPtr) {
+	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute STA")
 	}
 	w := memory.ReadWord(100)

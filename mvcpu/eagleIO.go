@@ -29,13 +29,13 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eagleIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func eagleIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
 	case instrCIO:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		word := memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acs])
+		word := memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])
 		mapRegAddr := int(word & 0x0fff)
 		ioChan := memory.GetWbits(word, 1, 3)
 		if debugLogging {
@@ -46,13 +46,13 @@ func eagleIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			log.Fatalf("ERROR: Attempt to use CIO on unsupported IO Channel %d.", ioChan)
 		}
 		if memory.TestWbit(word, 0) { // write command
-			memory.BmcdchWriteReg(mapRegAddr, memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acd]))
+			memory.BmcdchWriteReg(mapRegAddr, memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]))
 			if debugLogging {
-				logging.DebugPrint(logging.MapLog, "CIO write to register %#o with %#o\n", mapRegAddr, memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acd]))
-				logging.DebugPrint(logging.MapLog, "... Written %#o to register %#o\n", memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acd]), mapRegAddr)
+				logging.DebugPrint(logging.MapLog, "CIO write to register %#o with %#o\n", mapRegAddr, memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]))
+				logging.DebugPrint(logging.MapLog, "... Written %#o to register %#o\n", memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]), mapRegAddr)
 			}
 		} else { // read command
-			cpuPtr.ac[twoAcc1Word.acd] = dg.DwordT(memory.BmcdchReadReg(mapRegAddr))
+			cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.BmcdchReadReg(mapRegAddr))
 			if debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... Read %#o from register %#o\n", memory.BmcdchReadReg(mapRegAddr), mapRegAddr)
 			}
@@ -65,62 +65,62 @@ func eagleIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		if twoAccImm2Word.acs == twoAccImm2Word.acd {
 			cmd = twoAccImm2Word.immWord
 		} else {
-			cmd = twoAccImm2Word.immWord | memory.DwordGetLowerWord(cpuPtr.ac[twoAccImm2Word.acs])
+			cmd = twoAccImm2Word.immWord | memory.DwordGetLowerWord(cpu.ac[twoAccImm2Word.acs])
 		}
 		mapRegAddr := int(cmd & 0x0fff)
 		if memory.TestWbit(cmd, 0) { // write command
-			memory.BmcdchWriteReg(mapRegAddr, memory.DwordGetLowerWord(cpuPtr.ac[twoAccImm2Word.acd]))
+			memory.BmcdchWriteReg(mapRegAddr, memory.DwordGetLowerWord(cpu.ac[twoAccImm2Word.acd]))
 			if debugLogging {
-				logging.DebugPrint(logging.MapLog, "CIOI write to register %#o with %#o\n", mapRegAddr, memory.DwordGetLowerWord(cpuPtr.ac[twoAccImm2Word.acd]))
-				logging.DebugPrint(logging.MapLog, "... Written %#o to register %#o\n", memory.DwordGetLowerWord(cpuPtr.ac[twoAccImm2Word.acd]), mapRegAddr)
+				logging.DebugPrint(logging.MapLog, "CIOI write to register %#o with %#o\n", mapRegAddr, memory.DwordGetLowerWord(cpu.ac[twoAccImm2Word.acd]))
+				logging.DebugPrint(logging.MapLog, "... Written %#o to register %#o\n", memory.DwordGetLowerWord(cpu.ac[twoAccImm2Word.acd]), mapRegAddr)
 			}
 		} else { // read command
-			cpuPtr.ac[twoAccImm2Word.acd] = dg.DwordT(memory.BmcdchReadReg(mapRegAddr))
+			cpu.ac[twoAccImm2Word.acd] = dg.DwordT(memory.BmcdchReadReg(mapRegAddr))
 		}
 
 	case instrECLID: // seems to be the same as LCPID
 		dwd := dg.DwordT((cpuModelNo & 0xffff)) << 16
 		dwd |= (ucodeRev & 0x0f) << 8
 		dwd |= MemSizeLCPID & 0x0f
-		cpuPtr.ac[0] = dwd
+		cpu.ac[0] = dwd
 
 	case instrINTDS:
-		return intds(cpuPtr)
+		return intds(cpu)
 
 	case instrINTEN:
-		return inten(cpuPtr)
+		return inten(cpu)
 
 	case instrLCPID: // seems to be the same as ECLID
 		dwd := dg.DwordT((cpuModelNo & 0xffff)) << 16
 		dwd |= (ucodeRev & 0x0f) << 8
 		dwd |= MemSizeLCPID & 0x0f
-		cpuPtr.ac[0] = dwd
+		cpu.ac[0] = dwd
 
 		// MSKO is handled via DOB n,CPU
 
 	case instrNCLID:
-		cpuPtr.ac[0] = cpuModelNo & 0xffff
-		cpuPtr.ac[1] = ucodeRev & 0xffff
-		cpuPtr.ac[2] = MemSizeNCLID & 0x00ff
+		cpu.ac[0] = cpuModelNo & 0xffff
+		cpu.ac[1] = ucodeRev & 0xffff
+		cpu.ac[2] = MemSizeNCLID & 0x00ff
 
 	case instrPRTSEL:
 		if debugLogging {
-			logging.DebugPrint(logging.DebugLog, "INFO: PRTSEL AC0: %d, PC: %d\n", cpuPtr.ac[0], cpuPtr.pc)
+			logging.DebugPrint(logging.DebugLog, "INFO: PRTSEL AC0: %d, PC: %d\n", cpu.ac[0], cpu.pc)
 		}
 		// only handle the query mode, setting is a no-op on this 'single-channel' machine
-		if memory.DwordGetLowerWord(cpuPtr.ac[0]) == 0xffff {
+		if memory.DwordGetLowerWord(cpu.ac[0]) == 0xffff {
 			// return default I/O channel if -1 passed in
-			cpuPtr.ac[0] = 0
+			cpu.ac[0] = 0
 		}
 
 	case instrREADS:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		return reads(cpuPtr, oneAcc1Word.acd)
+		return reads(cpu, oneAcc1Word.acd)
 
 	case instrWLMP:
-		if cpuPtr.ac[1] == 0 {
-			mapRegAddr := int(cpuPtr.ac[0] & 0x7ff)
-			wAddr := dg.PhysAddrT(cpuPtr.ac[2])
+		if cpu.ac[1] == 0 {
+			mapRegAddr := int(cpu.ac[0] & 0x7ff)
+			wAddr := dg.PhysAddrT(cpu.ac[2])
 			if debugLogging {
 				logging.DebugPrint(logging.DebugLog, "WLMP called with AC1 = 0 - MapRegAddr was %#o, 1st DWord was %#o\n",
 					mapRegAddr, memory.ReadDWord(wAddr))
@@ -128,23 +128,23 @@ func eagleIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 					mapRegAddr, memory.ReadDWord(wAddr))
 			}
 			// memory.BmcdchWriteSlot(mapRegAddr, memory.ReadDWord(wAddr))
-			// cpuPtr.ac[0]++
-			// cpuPtr.ac[2] += 2
+			// cpu.ac[0]++
+			// cpu.ac[2] += 2
 		} else {
 			for {
-				dwd, ok := memory.ReadDwordTrap(dg.PhysAddrT(cpuPtr.ac[2]))
+				dwd, ok := memory.ReadDwordTrap(dg.PhysAddrT(cpu.ac[2]))
 				if !ok {
-					log.Fatalf("ERROR: Memory access failed at PC: %#o\n", cpuPtr.pc)
+					log.Fatalf("ERROR: Memory access failed at PC: %#o\n", cpu.pc)
 				}
-				memory.BmcdchWriteSlot(int(cpuPtr.ac[0]&0x07ff), dwd)
+				memory.BmcdchWriteSlot(int(cpu.ac[0]&0x07ff), dwd)
 				if debugLogging {
-					logging.DebugPrint(logging.DebugLog, "WLMP written slot: %#o, data: %#o\n", cpuPtr.ac[0]&0x7ff, dwd)
-					logging.DebugPrint(logging.MapLog, "WLMP written slot: %#o, data: %#o\n", cpuPtr.ac[0]&0x7ff, dwd)
+					logging.DebugPrint(logging.DebugLog, "WLMP written slot: %#o, data: %#o\n", cpu.ac[0]&0x7ff, dwd)
+					logging.DebugPrint(logging.MapLog, "WLMP written slot: %#o, data: %#o\n", cpu.ac[0]&0x7ff, dwd)
 				}
-				cpuPtr.ac[2] += 2
-				cpuPtr.ac[0]++
-				cpuPtr.ac[1]--
-				if cpuPtr.ac[1] == 0 {
+				cpu.ac[2] += 2
+				cpu.ac[0]++
+				cpu.ac[1]--
+				if cpu.ac[1] == 0 {
 					break
 				}
 			}
@@ -155,6 +155,6 @@ func eagleIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		return false
 	}
 
-	cpuPtr.pc += dg.PhysAddrT(iPtr.instrLength)
+	cpu.pc += dg.PhysAddrT(iPtr.instrLength)
 	return true
 }

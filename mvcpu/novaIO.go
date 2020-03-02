@@ -29,12 +29,12 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	// The Eclipse LEF instruction is handled funkily...
-	if cpuPtr.atu && cpuPtr.sbr[memory.GetSegment(cpuPtr.pc)].lef {
+	if cpu.atu && cpu.sbr[memory.GetSegment(cpu.pc)].lef {
 		iPtr.ix = instrLEF
-		log.Fatalf("ERROR: LEF not yet implemented, location %d\n", cpuPtr.pc)
+		log.Fatalf("ERROR: LEF not yet implemented, location %d\n", cpu.pc)
 	}
 
 	switch iPtr.ix {
@@ -43,33 +43,33 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		novaDataIo := iPtr.variant.(novaDataIoT)
 
 		// catch CPU I/O instructions
-		if novaDataIo.ioDev == cpuPtr.devNum {
+		if novaDataIo.ioDev == cpu.devNum {
 			switch iPtr.ix {
 			case instrDIA: // READS
 				logging.DebugPrint(logging.DebugLog, "INFO: Interpreting DIA n,CPU as READS n instruction\n")
-				return reads(cpuPtr, novaDataIo.acd)
+				return reads(cpu, novaDataIo.acd)
 			case instrDIB: // INTA
 				logging.DebugPrint(logging.DebugLog, "INFO: Interpreting DIB n,CPU as INTA n instruction\n")
-				inta(cpuPtr, novaDataIo.acd)
+				inta(cpu, novaDataIo.acd)
 				switch novaDataIo.f {
 				case 'S':
-					cpuPtr.ion = true
+					cpu.ion = true
 				case 'C':
-					cpuPtr.ion = false
+					cpu.ion = false
 				}
 				return true
 			case instrDIC: // IORST
 				logging.DebugPrint(logging.DebugLog, "INFO: I/O Reset due to DIC 0,CPU instruction\n")
-				return iorst(cpuPtr)
+				return iorst(cpu)
 			case instrDOB: // MKSO
 				novaDataIo := iPtr.variant.(novaDataIoT)
 				logging.DebugPrint(logging.DebugLog, "INFO: Handling DOB %d, CPU instruction as MSKO with flags\n", novaDataIo.acd)
-				msko(cpuPtr, novaDataIo.acd)
+				msko(cpu, novaDataIo.acd)
 				switch novaDataIo.f {
 				case 'S':
-					cpuPtr.ion = true
+					cpu.ion = true
 				case 'C':
-					cpuPtr.ion = false
+					cpu.ion = false
 				}
 				return true
 			case instrDOC: // HALT
@@ -78,7 +78,7 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			}
 		}
 
-		if cpuPtr.bus.IsAttached(novaDataIo.ioDev) && cpuPtr.bus.IsIODevice(novaDataIo.ioDev) {
+		if cpu.bus.IsAttached(novaDataIo.ioDev) && cpu.bus.IsIODevice(novaDataIo.ioDev) {
 			var abc byte
 			switch iPtr.ix {
 			case instrDOA, instrDIA:
@@ -90,11 +90,11 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			}
 			switch iPtr.ix {
 			case instrDIA, instrDIB, instrDIC:
-				cpuPtr.ac[novaDataIo.acd] = dg.DwordT(cpuPtr.bus.DataIn(novaDataIo.ioDev, abc, novaDataIo.f))
-				//busDataIn(cpuPtr, &novaDataIo, abc)
+				cpu.ac[novaDataIo.acd] = dg.DwordT(cpu.bus.DataIn(novaDataIo.ioDev, abc, novaDataIo.f))
+				//busDataIn(cpu, &novaDataIo, abc)
 			case instrDOA, instrDOB, instrDOC:
-				cpuPtr.bus.DataOut(novaDataIo.ioDev, memory.DwordGetLowerWord(cpuPtr.ac[novaDataIo.acd]), abc, novaDataIo.f)
-				//busDataOut(cpuPtr, &novaDataIo, abc)
+				cpu.bus.DataOut(novaDataIo.ioDev, memory.DwordGetLowerWord(cpu.ac[novaDataIo.acd]), abc, novaDataIo.f)
+				//busDataOut(cpu, &novaDataIo, abc)
 			}
 		} else {
 			logging.DebugPrint(logging.DebugLog, "WARN: I/O attempted to unattached or non-I/O capable device 0%o\n", novaDataIo.ioDev)
@@ -102,9 +102,9 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			// case 0:
 			// 	switch iPtr.ix {
 			// 	case instrDIA:
-			// 		cpuPtr.ac[0] = 056
+			// 		cpu.ac[0] = 056
 			// 	case instrDIB:
-			// 		cpuPtr.ac[0] = 0xffff
+			// 		cpu.ac[0] = 0xffff
 			// 	}
 			case 2, 012, 013: // TODO - ignore for now
 			default:
@@ -118,29 +118,29 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrINTA:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		return inta(cpuPtr, oneAcc1Word.acd)
+		return inta(cpu, oneAcc1Word.acd)
 
 	case instrINTDS:
-		return intds(cpuPtr)
+		return intds(cpu)
 
 	case instrINTEN:
-		return inten(cpuPtr)
+		return inten(cpu)
 
 	case instrIORST:
 		// oneAcc1Word := iPtr.variant.(oneAcc1WordT) // <== this is just an assertion really
-		cpuPtr.bus.ResetAllIODevices()
-		cpuPtr.ion = false
+		cpu.bus.ResetAllIODevices()
+		cpu.ion = false
 		// TODO More to do for SMP support - HaHa!
 
 	case instrNIO:
 		ioFlagsDev := iPtr.variant.(ioFlagsDevT)
 
-		if ioFlagsDev.ioDev == cpuPtr.devNum {
+		if ioFlagsDev.ioDev == cpu.devNum {
 			switch ioFlagsDev.f {
 			case 'C': // INTDS
-				return intds(cpuPtr)
+				return intds(cpu)
 			case 'S': // INTEN
-				return inten(cpuPtr)
+				return inten(cpu)
 			}
 
 		}
@@ -150,38 +150,38 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		var novaDataIo novaDataIoT
 		novaDataIo.f = ioFlagsDev.f
 		novaDataIo.ioDev = ioFlagsDev.ioDev
-		cpuPtr.bus.DataOut(novaDataIo.ioDev, memory.DwordGetLowerWord(cpuPtr.ac[novaDataIo.acd]), 'N', novaDataIo.f) // DUMMY FLAG
+		cpu.bus.DataOut(novaDataIo.ioDev, memory.DwordGetLowerWord(cpu.ac[novaDataIo.acd]), 'N', novaDataIo.f) // DUMMY FLAG
 
 	case instrSKP:
 		var busy, done bool
 		ioTestDev := iPtr.variant.(ioTestDevT)
 		switch ioTestDev.ioDev {
-		case cpuPtr.devNum:
-			busy = cpuPtr.ion
-			done = cpuPtr.pfflag
+		case cpu.devNum:
+			busy = cpu.ion
+			done = cpu.pfflag
 		case 012, 013: // TODO - ignore for now
-			cpuPtr.pc += 2
+			cpu.pc += 2
 			return true
 		default:
-			busy = cpuPtr.bus.GetBusy(ioTestDev.ioDev)
-			done = cpuPtr.bus.GetDone(ioTestDev.ioDev)
+			busy = cpu.bus.GetBusy(ioTestDev.ioDev)
+			done = cpu.bus.GetDone(ioTestDev.ioDev)
 		}
 		switch ioTestDev.t {
 		case bnTest:
 			if busy {
-				cpuPtr.pc++
+				cpu.pc++
 			}
 		case bzTest:
 			if !busy {
-				cpuPtr.pc++
+				cpu.pc++
 			}
 		case dnTest:
 			if done {
-				cpuPtr.pc++
+				cpu.pc++
 			}
 		case dzTest:
 			if !done {
-				cpuPtr.pc++
+				cpu.pc++
 			}
 		}
 
@@ -190,7 +190,7 @@ func novaIO(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		return false
 	}
 
-	cpuPtr.pc++
+	cpu.pc++
 	return true
 }
 
@@ -199,44 +199,44 @@ func halt() bool {
 	return false // stop processing
 }
 
-func intds(cpuPtr *CPUT) bool {
-	cpuPtr.ion = false
-	cpuPtr.pc++
+func intds(cpu *CPUT) bool {
+	cpu.ion = false
+	cpu.pc++
 	return true
 }
 
-func inta(cpuPtr *CPUT, destAc int) bool {
+func inta(cpu *CPUT, destAc int) bool {
 	// load the AC with the device code of the highest priority interrupt
-	intDevNum := cpuPtr.bus.GetHighestPriorityInt()
-	cpuPtr.ac[destAc] = dg.DwordT(intDevNum)
+	intDevNum := cpu.bus.GetHighestPriorityInt()
+	cpu.ac[destAc] = dg.DwordT(intDevNum)
 	// and clear it - I THINK this is the right place to do this...
-	cpuPtr.bus.ClearInterrupt(intDevNum)
-	cpuPtr.pc++
+	cpu.bus.ClearInterrupt(intDevNum)
+	cpu.pc++
 	return true
 }
 
-func inten(cpuPtr *CPUT) bool {
-	cpuPtr.ion = true
-	cpuPtr.pc++
+func inten(cpu *CPUT) bool {
+	cpu.ion = true
+	cpu.pc++
 	return true
 }
 
-func iorst(cpuPtr *CPUT) bool {
-	cpuPtr.bus.ResetAllIODevices()
-	cpuPtr.pc++
+func iorst(cpu *CPUT) bool {
+	cpu.bus.ResetAllIODevices()
+	cpu.pc++
 	return true
 }
 
-func msko(cpuPtr *CPUT, destAc int) bool {
-	//cpuPtr.mask = memory.DwordGetLowerWord(cpuPtr.ac[destAc])
-	cpuPtr.bus.SetIrqMask(memory.DwordGetLowerWord(cpuPtr.ac[destAc]))
-	cpuPtr.pc++
+func msko(cpu *CPUT, destAc int) bool {
+	//cpu.mask = memory.DwordGetLowerWord(cpu.ac[destAc])
+	cpu.bus.SetIrqMask(memory.DwordGetLowerWord(cpu.ac[destAc]))
+	cpu.pc++
 	return true
 }
 
-func reads(cpuPtr *CPUT, destAc int) bool {
+func reads(cpu *CPUT, destAc int) bool {
 	// load the AC with the contents of the dummy CPU register 'SR'
-	cpuPtr.ac[destAc] = dg.DwordT(cpuPtr.sr)
-	cpuPtr.pc++
+	cpu.ac[destAc] = dg.DwordT(cpu.sr)
+	cpu.pc++
 	return true
 }

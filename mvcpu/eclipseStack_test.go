@@ -25,7 +25,7 @@ import "testing"
 import "github.com/SMerrony/dgemug/memory"
 
 func TestSave(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	var iPtr decodedInstrT
 	var unique2Word unique2WordT
 	memory.MemInit(10000, false)
@@ -34,12 +34,12 @@ func TestSave(t *testing.T) {
 	memory.WriteWord(memory.NfpLoc, 256)
 	iPtr.ix = instrSAVE
 	unique2Word.immU16 = 0 // "SAVE 0"
-	cpuPtr.ac[0] = 0
-	cpuPtr.ac[1] = 1
-	cpuPtr.ac[2] = 2
-	cpuPtr.ac[3] = 3
+	cpu.ac[0] = 0
+	cpu.ac[1] = 1
+	cpu.ac[2] = 2
+	cpu.ac[3] = 3
 	iPtr.variant = unique2Word
-	if !eclipseStack(cpuPtr, &iPtr) {
+	if !eclipseStack(cpu, &iPtr) {
 		t.Error("Failed to execute SAVE")
 	}
 	newSP := memory.ReadWord(memory.NspLoc)
@@ -50,8 +50,8 @@ func TestSave(t *testing.T) {
 	if ac2 != 2 {
 		t.Errorf("Expected 2 from ac2 in NSP-3, got %d", ac2)
 	}
-	if cpuPtr.ac[3] != 256+5 {
-		t.Errorf("Expected AC3 to contain 261, got %d", cpuPtr.ac[3])
+	if cpu.ac[3] != 256+5 {
+		t.Errorf("Expected AC3 to contain 261, got %d", cpu.ac[3])
 	}
 	newFP := memory.ReadWord(memory.NfpLoc)
 	if newFP != 256+5 {
@@ -63,12 +63,12 @@ func TestSave(t *testing.T) {
 	memory.WriteWord(memory.NfpLoc, 256)
 	iPtr.ix = instrSAVE
 	unique2Word.immU16 = 5 // "SAVE 5"
-	cpuPtr.ac[0] = 0
-	cpuPtr.ac[1] = 1
-	cpuPtr.ac[2] = 2
-	cpuPtr.ac[3] = 3
+	cpu.ac[0] = 0
+	cpu.ac[1] = 1
+	cpu.ac[2] = 2
+	cpu.ac[3] = 3
 	iPtr.variant = unique2Word
-	if !eclipseStack(cpuPtr, &iPtr) {
+	if !eclipseStack(cpu, &iPtr) {
 		t.Error("Failed to execute SAVE")
 	}
 	newSP = memory.ReadWord(memory.NspLoc)
@@ -79,8 +79,8 @@ func TestSave(t *testing.T) {
 	if ac2 != 2 {
 		t.Errorf("Expected 2 from ac2 in NSP-3, got %d", ac2)
 	}
-	if cpuPtr.ac[3] != 256+5 {
-		t.Errorf("Expected AC3 to contain 261, got %d", cpuPtr.ac[3])
+	if cpu.ac[3] != 256+5 {
+		t.Errorf("Expected AC3 to contain 261, got %d", cpu.ac[3])
 	}
 	newFP = memory.ReadWord(memory.NfpLoc)
 	if newFP != 256+5 {

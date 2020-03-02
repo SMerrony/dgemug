@@ -28,7 +28,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func novaOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	var (
 		shifter          dg.WordT
@@ -41,18 +41,18 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	novaTwoAccMultOp = iPtr.variant.(novaTwoAccMultOpT)
 
-	tmpAcS = memory.DwordGetLowerWord(cpuPtr.ac[novaTwoAccMultOp.acs])
-	tmpAcD = memory.DwordGetLowerWord(cpuPtr.ac[novaTwoAccMultOp.acd])
-	savedCry = cpuPtr.carry
+	tmpAcS = memory.DwordGetLowerWord(cpu.ac[novaTwoAccMultOp.acs])
+	tmpAcD = memory.DwordGetLowerWord(cpu.ac[novaTwoAccMultOp.acd])
+	savedCry = cpu.carry
 
 	// Preset Carry if required
 	switch novaTwoAccMultOp.c {
 	case 'Z': // zero
-		cpuPtr.carry = false
+		cpu.carry = false
 	case 'O': // One
-		cpuPtr.carry = true
+		cpu.carry = true
 	case 'C': // Complement
-		cpuPtr.carry = !cpuPtr.carry
+		cpu.carry = !cpu.carry
 	}
 
 	// perform the operation
@@ -61,14 +61,14 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		wideShifter = dg.DwordT(tmpAcD) + dg.DwordT(^tmpAcS)
 		shifter = memory.DwordGetLowerWord(wideShifter)
 		if wideShifter > 65535 {
-			cpuPtr.carry = !cpuPtr.carry
+			cpu.carry = !cpu.carry
 		}
 
 	case instrADD: // unsigned
 		wideShifter = dg.DwordT(tmpAcD) + dg.DwordT(tmpAcS)
 		shifter = memory.DwordGetLowerWord(wideShifter)
 		if wideShifter > 65535 {
-			cpuPtr.carry = !cpuPtr.carry
+			cpu.carry = !cpu.carry
 		}
 
 	case instrAND:
@@ -80,7 +80,7 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	case instrINC:
 		shifter = tmpAcS + 1
 		if tmpAcS == 0xffff {
-			cpuPtr.carry = !cpuPtr.carry
+			cpu.carry = !cpu.carry
 		}
 
 	case instrMOV:
@@ -89,13 +89,13 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	case instrNEG:
 		shifter = dg.WordT(-int16(tmpAcS))
 		if tmpAcS == 0 {
-			cpuPtr.carry = !cpuPtr.carry
+			cpu.carry = !cpu.carry
 		}
 
 	case instrSUB:
 		shifter = tmpAcD - tmpAcS
 		if tmpAcS <= tmpAcD {
-			cpuPtr.carry = !cpuPtr.carry
+			cpu.carry = !cpu.carry
 		}
 
 	default:
@@ -105,15 +105,15 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	// shift if required
 	switch novaTwoAccMultOp.sh {
 	case 'L':
-		tmpCry = cpuPtr.carry
-		cpuPtr.carry = memory.TestWbit(shifter, 0)
+		tmpCry = cpu.carry
+		cpu.carry = memory.TestWbit(shifter, 0)
 		shifter <<= 1
 		if tmpCry {
 			shifter |= 0x0001
 		}
 	case 'R':
-		tmpCry = cpuPtr.carry
-		cpuPtr.carry = memory.TestWbit(shifter, 15)
+		tmpCry = cpu.carry
+		cpu.carry = memory.TestWbit(shifter, 15)
 		shifter >>= 1
 		if tmpCry {
 			shifter |= 0x8000
@@ -129,13 +129,13 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	case skpSkip:
 		pcInc = 2
 	case szcSkip:
-		if !cpuPtr.carry {
+		if !cpu.carry {
 			pcInc = 2
 		} else {
 			pcInc = 1
 		}
 	case sncSkip:
-		if cpuPtr.carry {
+		if cpu.carry {
 			pcInc = 2
 		} else {
 			pcInc = 1
@@ -153,13 +153,13 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			pcInc = 1
 		}
 	case sezSkip:
-		if !cpuPtr.carry || shifter == 0 {
+		if !cpu.carry || shifter == 0 {
 			pcInc = 2
 		} else {
 			pcInc = 1
 		}
 	case sbnSkip:
-		if cpuPtr.carry && shifter != 0 {
+		if cpu.carry && shifter != 0 {
 			pcInc = 2
 		} else {
 			pcInc = 1
@@ -171,11 +171,11 @@ func novaOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	// No-Load?
 	if novaTwoAccMultOp.nl == '#' {
 		// don't load the result from the shifter, restore the Carry flag
-		cpuPtr.carry = savedCry
+		cpu.carry = savedCry
 	} else {
-		cpuPtr.ac[novaTwoAccMultOp.acd] = dg.DwordT(shifter) & 0x0000ffff
+		cpu.ac[novaTwoAccMultOp.acd] = dg.DwordT(shifter) & 0x0000ffff
 	}
 
-	cpuPtr.pc += pcInc
+	cpu.pc += pcInc
 	return true
 }

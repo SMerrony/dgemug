@@ -28,7 +28,7 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func novaMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	var (
 		shifter dg.WordT
@@ -39,8 +39,8 @@ func novaMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrDSZ:
 		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
-		// effAddr = resolve16bitEffAddr(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
 		// if effAddr != effAddrNew {
 		// 	runtime.Breakpoint()
 		// }
@@ -48,38 +48,38 @@ func novaMemRef(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		shifter--
 		memory.WriteWord(effAddr, shifter)
 		if shifter == 0 {
-			cpuPtr.pc++
+			cpu.pc++
 		}
 
 	case instrISZ:
 		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
-		// effAddr = resolve16bitEffAddr(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpuPtr, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
 		shifter = memory.ReadWord(effAddr)
 		shifter++
 		memory.WriteWord(effAddr, shifter)
 		if shifter == 0 {
-			cpuPtr.pc++
+			cpu.pc++
 		}
 
 	case instrLDA:
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
-		// effAddr = resolve16bitEffAddr(cpuPtr, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpuPtr, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
+		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
 		shifter = memory.ReadWord(effAddr)
-		cpuPtr.ac[novaOneAccEffAddr.acd] = 0x0000ffff & dg.DwordT(shifter)
+		cpu.ac[novaOneAccEffAddr.acd] = 0x0000ffff & dg.DwordT(shifter)
 
 	case instrSTA:
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
-		shifter = memory.DwordGetLowerWord(cpuPtr.ac[novaOneAccEffAddr.acd])
-		// effAddr = resolve16bitEffAddr(cpuPtr, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpuPtr, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
+		shifter = memory.DwordGetLowerWord(cpu.ac[novaOneAccEffAddr.acd])
+		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
 		memory.WriteWord(effAddr, shifter)
 
 	default:
-		log.Printf("ERROR: NOVA_MEMREF instruction <%s> not yet implemented at PC=%#o\n", iPtr.mnemonic, cpuPtr.pc)
+		log.Printf("ERROR: NOVA_MEMREF instruction <%s> not yet implemented at PC=%#o\n", iPtr.mnemonic, cpu.pc)
 		return false
 	}
-	cpuPtr.pc++
+	cpu.pc++
 	return true
 }

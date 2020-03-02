@@ -28,37 +28,37 @@ import (
 )
 
 func TestAdvanceWSP(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	memory.MemInit(1000, false)
-	wsp1 := cpuPtr.wsp
-	advanceWSP(cpuPtr, 1)
-	wsp2 := cpuPtr.wsp
+	wsp1 := cpu.wsp
+	advanceWSP(cpu, 1)
+	wsp2 := cpu.wsp
 	if wsp2-wsp1 != 2 {
 		t.Errorf("Expected %d, got %d", 2, wsp2-wsp1)
 	}
 }
 
 func TestWsPushAndPop(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	memory.MemInit(1000, false)
-	wsPush(cpuPtr, 0, 1)
-	wsp := cpuPtr.wsp
+	wsPush(cpu, 0, 1)
+	wsp := cpu.wsp
 	dw := memory.ReadDWord(wsp)
 	if dw != 1 {
 		t.Errorf("Expected WspLoc+1 to contain 1, contains %x", dw)
 	}
-	dw = wsPop(cpuPtr, 0)
+	dw = wsPop(cpu, 0)
 	if dw != 1 {
 		t.Errorf("Expected POP to produce 1, got %x", dw)
 	}
 }
 
 func TestPopQWord(t *testing.T) {
-	cpuPtr := new(CPUT)
+	cpu := new(CPUT)
 	memory.MemInit(1000, false)
-	wsPush(cpuPtr, 0, 0x11112222)
-	wsPush(cpuPtr, 0, 0x33334444)
-	r := wsPopQWord(cpuPtr, 0)
+	wsPush(cpu, 0, 0x11112222)
+	wsPush(cpu, 0, 0x33334444)
+	r := wsPopQWord(cpu, 0)
 	if r != 0x1111222233334444 {
 		t.Errorf("Expected 0x1111222233334444, got %x", r)
 	}

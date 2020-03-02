@@ -40,7 +40,7 @@ const (
 	WsbLoc  = 026 // WSB 22.
 )
 
-func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
@@ -48,33 +48,33 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLDAFP:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpuPtr.ac[oneAcc1Word.acd] = dg.DwordT(cpuPtr.wfp)
-		cpuPtr.CPUSetOVR(false)
+		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wfp)
+		cpu.SetOVR(false)
 
 	case instrLDASB:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpuPtr.ac[oneAcc1Word.acd] = dg.DwordT(cpuPtr.wsb)
-		cpuPtr.CPUSetOVR(false)
+		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsb)
+		cpu.SetOVR(false)
 
 	case instrLDASL:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpuPtr.ac[oneAcc1Word.acd] = dg.DwordT(cpuPtr.wsl)
-		cpuPtr.CPUSetOVR(false)
+		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsl)
+		cpu.SetOVR(false)
 
 	case instrLDASP:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpuPtr.ac[oneAcc1Word.acd] = dg.DwordT(cpuPtr.wsp)
-		cpuPtr.CPUSetOVR(false)
+		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsp)
+		cpu.SetOVR(false)
 
 	case instrLDATS:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpuPtr.ac[oneAcc1Word.acd] = memory.ReadDWord(cpuPtr.wsp)
-		cpuPtr.CPUSetOVR(false)
+		cpu.ac[oneAcc1Word.acd] = memory.ReadDWord(cpu.wsp)
+		cpu.SetOVR(false)
 
 	case instrLPEF:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
-		wsPush(cpuPtr, 0, dg.DwordT(resolve32bitEffAddr(cpuPtr, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)))
-		cpuPtr.CPUSetOVR(false)
+		wsPush(cpu, 0, dg.DwordT(resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)))
+		cpu.SetOVR(false)
 
 	case instrLPEFB:
 		noAccMode3Word := iPtr.variant.(noAccMode3WordT)
@@ -82,94 +82,94 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		switch noAccMode3Word.mode {
 		case absoluteMode: // do nothing
 		case pcMode:
-			eff += dg.DwordT(cpuPtr.pc)
+			eff += dg.DwordT(cpu.pc)
 		case ac2Mode:
-			eff += cpuPtr.ac[2]
+			eff += cpu.ac[2]
 		case ac3Mode:
-			eff += cpuPtr.ac[3]
+			eff += cpu.ac[3]
 		}
-		wsPush(cpuPtr, 0, eff)
-		cpuPtr.CPUSetOVR(false)
+		wsPush(cpu, 0, eff)
+		cpu.SetOVR(false)
 
 	case instrSTAFP:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpuPtr.wfp = dg.PhysAddrT(cpuPtr.ac[oneAcc1Word.acd])
+		cpu.wfp = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
 		// according the PoP does not write through to page zero...
-		//memory.WriteDWord(memory.WfpLoc, cpuPtr.ac[oneAcc1Word.acd])
-		cpuPtr.CPUSetOVR(false)
+		//memory.WriteDWord(memory.WfpLoc, cpu.ac[oneAcc1Word.acd])
+		cpu.SetOVR(false)
 
 	case instrSTASB:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpuPtr.wsb = dg.PhysAddrT(cpuPtr.ac[oneAcc1Word.acd])
-		memory.WriteDWord(WsbLoc, cpuPtr.ac[oneAcc1Word.acd]) // write-through to p.0
-		cpuPtr.CPUSetOVR(false)
+		cpu.wsb = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
+		memory.WriteDWord(WsbLoc, cpu.ac[oneAcc1Word.acd]) // write-through to p.0
+		cpu.SetOVR(false)
 
 	case instrSTASL:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpuPtr.wsl = dg.PhysAddrT(cpuPtr.ac[oneAcc1Word.acd])
-		memory.WriteDWord(WslLoc, cpuPtr.ac[oneAcc1Word.acd]) // write-through to p.0
-		cpuPtr.CPUSetOVR(false)
+		cpu.wsl = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
+		memory.WriteDWord(WslLoc, cpu.ac[oneAcc1Word.acd]) // write-through to p.0
+		cpu.SetOVR(false)
 
 	case instrSTASP:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpuPtr.wsp = dg.PhysAddrT(cpuPtr.ac[oneAcc1Word.acd])
+		cpu.wsp = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
 		// according the PoP does not write through to page zero...
-		// memory.WriteDWord(memory.WspLoc, cpuPtr.ac[oneAcc1Word.acd])
-		cpuPtr.CPUSetOVR(false)
+		// memory.WriteDWord(memory.WspLoc, cpu.ac[oneAcc1Word.acd])
+		cpu.SetOVR(false)
 		if debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpuPtr.ac[oneAcc1Word.acd])
+			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpu.ac[oneAcc1Word.acd])
 		}
 
 	case instrSTATS:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		memory.WriteDWord(dg.PhysAddrT(memory.ReadDWord(cpuPtr.wsp)), cpuPtr.ac[oneAcc1Word.acd])
-		cpuPtr.CPUSetOVR(false)
+		memory.WriteDWord(dg.PhysAddrT(memory.ReadDWord(cpu.wsp)), cpu.ac[oneAcc1Word.acd])
+		cpu.SetOVR(false)
 
 	case instrWFPOP:
-		cpuPtr.fpac[3] = wsPopQWord(cpuPtr, 0)
-		cpuPtr.fpac[2] = wsPopQWord(cpuPtr, 0)
-		cpuPtr.fpac[1] = wsPopQWord(cpuPtr, 0)
-		cpuPtr.fpac[0] = wsPopQWord(cpuPtr, 0)
-		tmpQwd := wsPopQWord(cpuPtr, 0)
-		cpuPtr.fpsr = 0
+		cpu.fpac[3] = wsPopQWord(cpu, 0)
+		cpu.fpac[2] = wsPopQWord(cpu, 0)
+		cpu.fpac[1] = wsPopQWord(cpu, 0)
+		cpu.fpac[0] = wsPopQWord(cpu, 0)
+		tmpQwd := wsPopQWord(cpu, 0)
+		cpu.fpsr = 0
 		any := false
 		// set the ANY bit?
 		if memory.GetQwbits(tmpQwd, 1, 4) != 0 {
-			memory.SetQwbit(&cpuPtr.fpsr, 0)
+			memory.SetQwbit(&cpu.fpsr, 0)
 			any = true
 		}
 		// copy bits 1-11
 		for b := 1; b <= 11; b++ {
 			if memory.TestQwbit(tmpQwd, b) {
-				memory.SetQwbit(&cpuPtr.fpsr, uint(b))
+				memory.SetQwbit(&cpu.fpsr, uint(b))
 			}
 		}
 		// bits 28-31
 		if any {
 			for b := 28; b <= 31; b++ {
 				if memory.TestQwbit(tmpQwd, b) {
-					memory.SetQwbit(&cpuPtr.fpsr, uint(b))
+					memory.SetQwbit(&cpu.fpsr, uint(b))
 				}
 			}
 			for b := 33; b <= 63; b++ {
 				if memory.TestQwbit(tmpQwd, b) {
-					memory.SetQwbit(&cpuPtr.fpsr, uint(b))
+					memory.SetQwbit(&cpu.fpsr, uint(b))
 				}
 			}
 		}
 
 	case instrWMSP:
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		tmpDwd := cpuPtr.ac[oneAcc1Word.acd] << 1
-		tmpDwd += dg.DwordT(cpuPtr.wsp) // memory.WspLoc)
+		tmpDwd := cpu.ac[oneAcc1Word.acd] << 1
+		tmpDwd += dg.DwordT(cpu.wsp) // memory.WspLoc)
 		// FIXME - handle overflow
-		cpuPtr.wsp = dg.PhysAddrT(tmpDwd)
-		cpuPtr.CPUSetOVR(false)
+		cpu.wsp = dg.PhysAddrT(tmpDwd)
+		cpu.SetOVR(false)
 
 	case instrWPOP:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -183,9 +183,9 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			if debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... wide popping AC%d\n", acsUp[thisAc])
 			}
-			cpuPtr.ac[acsUp[thisAc]] = wsPop(cpuPtr, 0)
+			cpu.ac[acsUp[thisAc]] = wsPop(cpu, 0)
 		}
-		cpuPtr.CPUSetOVR(false)
+		cpu.SetOVR(false)
 
 	case instrWPSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -199,31 +199,31 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 			if debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... wide pushing AC%d\n", acsUp[thisAc])
 			}
-			wsPush(cpuPtr, 0, cpuPtr.ac[acsUp[thisAc]])
+			wsPush(cpu, 0, cpu.ac[acsUp[thisAc]])
 		}
-		cpuPtr.CPUSetOVR(false)
+		cpu.SetOVR(false)
 
 	// N.B. WRTN is in eaglePC
 
 	case instrWSAVR:
 		unique2Word := iPtr.variant.(unique2WordT)
-		wsav(cpuPtr, &unique2Word)
-		cpuPtr.CPUSetOVK(false)
+		wsav(cpu, &unique2Word)
+		cpu.SetOVK(false)
 
 	case instrWSAVS:
 		unique2Word := iPtr.variant.(unique2WordT)
-		wsav(cpuPtr, &unique2Word)
-		cpuPtr.CPUSetOVK(true)
+		wsav(cpu, &unique2Word)
+		cpu.SetOVK(true)
 
 	case instrWSSVR:
 		unique2Word := iPtr.variant.(unique2WordT)
-		wssav(cpuPtr, &unique2Word)
-		cpuPtr.CPUSetOVK(false)
-		cpuPtr.CPUSetOVR(false)
+		wssav(cpu, &unique2Word)
+		cpu.SetOVK(false)
+		cpu.SetOVR(false)
 
 	case instrXPEF:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		wsPush(cpuPtr, 0, dg.DwordT(resolve15bitDisplacement(cpuPtr, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)))
+		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)))
 
 	case instrXPEFB:
 		noAccMode2Word := iPtr.variant.(noAccMode2WordT)
@@ -232,19 +232,19 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		switch noAccMode2Word.mode {
 		case absoluteMode: // do nothing
 		case pcMode:
-			eff += dg.DwordT(cpuPtr.pc)
+			eff += dg.DwordT(cpu.pc)
 		case ac2Mode:
-			eff += cpuPtr.ac[2]
+			eff += cpu.ac[2]
 		case ac3Mode:
-			eff += cpuPtr.ac[3]
+			eff += cpu.ac[3]
 		}
-		wsPush(cpuPtr, 0, eff)
+		wsPush(cpu, 0, eff)
 
 	case instrXPSHJ:
 		// FIXME check for overflow
 		immMode2Word := iPtr.variant.(immMode2WordT)
-		wsPush(cpuPtr, 0, dg.DwordT(cpuPtr.pc+2))
-		cpuPtr.pc = resolve32bitEffAddr(cpuPtr, immMode2Word.ind, immMode2Word.mode, int32(immMode2Word.disp15), iPtr.dispOffset)
+		wsPush(cpu, 0, dg.DwordT(cpu.pc+2))
+		cpu.pc = resolve32bitEffAddr(cpu, immMode2Word.ind, immMode2Word.mode, int32(immMode2Word.disp15), iPtr.dispOffset)
 		return true
 
 	default:
@@ -252,101 +252,101 @@ func eagleStack(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		return false
 	}
 
-	cpuPtr.pc += dg.PhysAddrT(iPtr.instrLength)
+	cpu.pc += dg.PhysAddrT(iPtr.instrLength)
 	return true
 }
 
 // wsav is common to WSAVR and WSAVS
-func wsav(cpuPtr *CPUT, u2wd *unique2WordT) {
-	wfpSav := dg.DwordT(cpuPtr.wfp)
-	wsPush(cpuPtr, 0, cpuPtr.ac[0]) // 1
-	wsPush(cpuPtr, 0, cpuPtr.ac[1]) // 2
-	wsPush(cpuPtr, 0, cpuPtr.ac[2]) // 3
-	wsPush(cpuPtr, 0, wfpSav)       // 4
-	dwd := cpuPtr.ac[3] & 0x7fffffff
-	if cpuPtr.carry {
+func wsav(cpu *CPUT, u2wd *unique2WordT) {
+	wfpSav := dg.DwordT(cpu.wfp)
+	wsPush(cpu, 0, cpu.ac[0]) // 1
+	wsPush(cpu, 0, cpu.ac[1]) // 2
+	wsPush(cpu, 0, cpu.ac[2]) // 3
+	wsPush(cpu, 0, wfpSav)       // 4
+	dwd := cpu.ac[3] & 0x7fffffff
+	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpuPtr, 0, dwd) // 5
-	cpuPtr.wfp = cpuPtr.wsp
-	cpuPtr.ac[3] = dg.DwordT(cpuPtr.wsp)
+	wsPush(cpu, 0, dwd) // 5
+	cpu.wfp = cpu.wsp
+	cpu.ac[3] = dg.DwordT(cpu.wsp)
 	dwdCnt := uint(u2wd.immU16)
 	if dwdCnt > 0 {
-		advanceWSP(cpuPtr, dwdCnt)
+		advanceWSP(cpu, dwdCnt)
 	}
 }
 
 // wssav is common to WSSVR and WSSVS
-func wssav(cpuPtr *CPUT, u2wd *unique2WordT) {
-	wfpSav := dg.DwordT(cpuPtr.wfp)
-	wsPush(cpuPtr, 0, memory.DwordFromTwoWords(cpuPtr.psr, 0)) // 1
-	wsPush(cpuPtr, 0, cpuPtr.ac[0])                            // 2
-	wsPush(cpuPtr, 0, cpuPtr.ac[1])                            // 3
-	wsPush(cpuPtr, 0, cpuPtr.ac[2])                            // 4
-	wsPush(cpuPtr, 0, wfpSav)                                  // 5
-	dwd := cpuPtr.ac[3] & 0x7fffffff
-	if cpuPtr.carry {
+func wssav(cpu *CPUT, u2wd *unique2WordT) {
+	wfpSav := dg.DwordT(cpu.wfp)
+	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
+	wsPush(cpu, 0, cpu.ac[0])                            // 2
+	wsPush(cpu, 0, cpu.ac[1])                            // 3
+	wsPush(cpu, 0, cpu.ac[2])                            // 4
+	wsPush(cpu, 0, wfpSav)                                  // 5
+	dwd := cpu.ac[3] & 0x7fffffff
+	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpuPtr, 0, dwd) // 6
-	cpuPtr.wfp = cpuPtr.wsp
-	cpuPtr.ac[3] = dg.DwordT(cpuPtr.wsp)
+	wsPush(cpu, 0, dwd) // 6
+	cpu.wfp = cpu.wsp
+	cpu.ac[3] = dg.DwordT(cpu.wsp)
 	dwdCnt := uint(u2wd.immU16)
 	if dwdCnt > 0 {
-		advanceWSP(cpuPtr, dwdCnt)
+		advanceWSP(cpu, dwdCnt)
 	}
 }
 
 // wsPush - PUSH a doubleword onto the Wide Stack
-func wsPush(cpuPtr *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
+func wsPush(cpu *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
-	cpuPtr.wsp += 2
-	memory.WriteDWord(cpuPtr.wsp, data)
-	logging.DebugPrint(logging.DebugLog, "... wsPush pushed %#o onto the Wide Stack at location: %#o\n", data, cpuPtr.wsp)
+	cpu.wsp += 2
+	memory.WriteDWord(cpu.wsp, data)
+	logging.DebugPrint(logging.DebugLog, "... wsPush pushed %#o onto the Wide Stack at location: %#o\n", data, cpu.wsp)
 }
 
 // WsPop - POP a doubleword off the Wide Stack
-func wsPop(cpuPtr *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
+func wsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 	// TODO segment handling
-	dword = memory.ReadDWord(cpuPtr.wsp)
-	cpuPtr.wsp -= 2
-	logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpuPtr.wsp+2)
+	dword = memory.ReadDWord(cpu.wsp)
+	cpu.wsp -= 2
+	logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
 	return dword
 }
 
 // used by WPOPB, WRTN
-func wpopb(cpuPtr *CPUT) {
-	wspSav := cpuPtr.wsp
+func wpopb(cpu *CPUT) {
+	wspSav := cpu.wsp
 	// pop off 6 double words
-	dwd := wsPop(cpuPtr, 0) // 1
-	cpuPtr.carry = memory.TestDwbit(dwd, 0)
-	cpuPtr.pc = dg.PhysAddrT(dwd & 0x7fffffff)
-	cpuPtr.ac[3] = wsPop(cpuPtr, 0) // 2
+	dwd := wsPop(cpu, 0) // 1
+	cpu.carry = memory.TestDwbit(dwd, 0)
+	cpu.pc = dg.PhysAddrT(dwd & 0x7fffffff)
+	cpu.ac[3] = wsPop(cpu, 0) // 2
 	// replace WFP with popped value of AC3
-	cpuPtr.wfp = dg.PhysAddrT(cpuPtr.ac[3])
-	cpuPtr.ac[2] = wsPop(cpuPtr, 0) // 3
-	cpuPtr.ac[1] = wsPop(cpuPtr, 0) // 4
-	cpuPtr.ac[0] = wsPop(cpuPtr, 0) // 5
-	dwd = wsPop(cpuPtr, 0)          // 6
-	cpuPtr.psr = memory.DwordGetUpperWord(dwd)
+	cpu.wfp = dg.PhysAddrT(cpu.ac[3])
+	cpu.ac[2] = wsPop(cpu, 0) // 3
+	cpu.ac[1] = wsPop(cpu, 0) // 4
+	cpu.ac[0] = wsPop(cpu, 0) // 5
+	dwd = wsPop(cpu, 0)          // 6
+	cpu.psr = memory.DwordGetUpperWord(dwd)
 	// TODO Set WFP is crossing rings
 	wsFramSz2 := (int(dwd&0x00007fff) * 2) + 12
-	cpuPtr.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
+	cpu.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
 }
 
 // wsPopQWord - POP a Quad-word off the Wide Stack
-func wsPopQWord(cpuPtr *CPUT, seg dg.PhysAddrT) dg.QwordT {
+func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
 	// TODO segment handling
 	var qw dg.QwordT
-	rhDWord := wsPop(cpuPtr, seg)
-	lhDWord := wsPop(cpuPtr, seg)
+	rhDWord := wsPop(cpu, seg)
+	lhDWord := wsPop(cpu, seg)
 	qw = dg.QwordT(lhDWord)<<32 | dg.QwordT(rhDWord)
 	return qw
 }
 
 // advanceWSP increases the WSP by the given amount of DWords
-func advanceWSP(cpuPtr *CPUT, dwdCnt uint) {
-	cpuPtr.wsp += dg.PhysAddrT(dwdCnt * 2)
-	logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpuPtr.wsp)
+func advanceWSP(cpu *CPUT, dwdCnt uint) {
+	cpu.wsp += dg.PhysAddrT(dwdCnt * 2)
+	logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpu.wsp)
 }

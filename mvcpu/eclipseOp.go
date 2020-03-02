@@ -29,32 +29,32 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eclipseOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
+func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
 	case instrADDI:
 		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
 		// signed 16-bit add immediate
-		s16 := int16(memory.DwordGetLowerWord(cpuPtr.ac[oneAccImm2Word.acd]))
+		s16 := int16(memory.DwordGetLowerWord(cpu.ac[oneAccImm2Word.acd]))
 		s16 += oneAccImm2Word.immS16
-		cpuPtr.ac[oneAccImm2Word.acd] = dg.DwordT(s16) & 0X0000FFFF
+		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(s16) & 0X0000FFFF
 
 	case instrANDI:
 		oneAccImmWd2Word := iPtr.variant.(oneAccImmWd2WordT)
-		wd := memory.DwordGetLowerWord(cpuPtr.ac[oneAccImmWd2Word.acd])
-		cpuPtr.ac[oneAccImmWd2Word.acd] = dg.DwordT(wd&oneAccImmWd2Word.immWord) & 0x0000ffff
+		wd := memory.DwordGetLowerWord(cpu.ac[oneAccImmWd2Word.acd])
+		cpu.ac[oneAccImmWd2Word.acd] = dg.DwordT(wd&oneAccImmWd2Word.immWord) & 0x0000ffff
 
 	case instrADI: // 16-bit unsigned Add Immediate
 		immOneAcc := iPtr.variant.(immOneAccT)
-		wd := memory.DwordGetLowerWord(cpuPtr.ac[immOneAcc.acd])
+		wd := memory.DwordGetLowerWord(cpu.ac[immOneAcc.acd])
 		wd += dg.WordT(immOneAcc.immU16) // unsigned arithmetic does wraparound in Go
-		cpuPtr.ac[immOneAcc.acd] = dg.DwordT(wd)
+		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
 
 	case instrBTO:
 		// TODO Handle segment and indirection...
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		addr, bitNum := resolveEclipseBitAddr(cpuPtr, &twoAcc1Word)
+		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
 		wd := memory.ReadWord(addr)
 		if debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTO Addr: %d, Bit: %d, Before: %s\n",
@@ -69,7 +69,7 @@ func eclipseOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 	case instrBTZ:
 		// TODO Handle segment and indirection...
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		addr, bitNum := resolveEclipseBitAddr(cpuPtr, &twoAcc1Word)
+		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
 		wd := memory.ReadWord(addr)
 		if debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTZ Addr: %d, Bit: %d, Before: %s\n", addr, bitNum, memory.WordToBinStr(wd))
@@ -87,10 +87,10 @@ func eclipseOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		if dplus1 == 4 {
 			dplus1 = 0
 		}
-		dwd := memory.DwordFromTwoWords(memory.DwordGetLowerWord(cpuPtr.ac[immOneAcc.acd]), memory.DwordGetLowerWord(cpuPtr.ac[dplus1]))
+		dwd := memory.DwordFromTwoWords(memory.DwordGetLowerWord(cpu.ac[immOneAcc.acd]), memory.DwordGetLowerWord(cpu.ac[dplus1]))
 		dwd <<= (immOneAcc.immU16 * 4)
-		cpuPtr.ac[immOneAcc.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
-		cpuPtr.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
+		cpu.ac[immOneAcc.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
+		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
 
 	case instrDLSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -98,78 +98,78 @@ func eclipseOp(cpuPtr *CPUT, iPtr *decodedInstrT) bool {
 		if dplus1 == 4 {
 			dplus1 = 0
 		}
-		dwd := dlsh(cpuPtr.ac[twoAcc1Word.acs], cpuPtr.ac[twoAcc1Word.acd], cpuPtr.ac[dplus1])
-		cpuPtr.ac[twoAcc1Word.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
-		cpuPtr.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
+		dwd := dlsh(cpu.ac[twoAcc1Word.acs], cpu.ac[twoAcc1Word.acd], cpu.ac[dplus1])
+		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
+		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
 
 	case instrELEF:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpuPtr, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
-		//cpuPtr.ac[oneAccModeInt2Word.acd] = dg.DwordT(resolve16bitEffAddr(cpuPtr, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset))
-		cpuPtr.ac[oneAccModeInt2Word.acd] = dg.DwordT(addr & 0x7fff)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		//cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset))
+		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(addr & 0x7fff)
 
 	case instrESTA:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		// addr := resolve16bitEffAddr(cpuPtr, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset)
-		addr := resolve15bitDisplacement(cpuPtr, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
-		memory.WriteWord(addr&0x7fff, memory.DwordGetLowerWord(cpuPtr.ac[oneAccModeInt2Word.acd]))
+		// addr := resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		memory.WriteWord(addr&0x7fff, memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd]))
 
 	case instrHXL:
 		immOneAcc := iPtr.variant.(immOneAccT)
-		dwd := cpuPtr.ac[immOneAcc.acd] << (uint32(immOneAcc.immU16) * 4)
-		cpuPtr.ac[immOneAcc.acd] = dwd & 0x0ffff
+		dwd := cpu.ac[immOneAcc.acd] << (uint32(immOneAcc.immU16) * 4)
+		cpu.ac[immOneAcc.acd] = dwd & 0x0ffff
 
 	case instrHXR:
 		immOneAcc := iPtr.variant.(immOneAccT)
-		dwd := cpuPtr.ac[immOneAcc.acd] >> (uint32(immOneAcc.immU16) * 4)
-		cpuPtr.ac[immOneAcc.acd] = dwd & 0x0ffff
+		dwd := cpu.ac[immOneAcc.acd] >> (uint32(immOneAcc.immU16) * 4)
+		cpu.ac[immOneAcc.acd] = dwd & 0x0ffff
 
 	case instrIOR:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		wd := memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acd]) | memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acs])
-		cpuPtr.ac[twoAcc1Word.acd] = dg.DwordT(wd)
+		wd := memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]) | memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])
+		cpu.ac[twoAcc1Word.acd] = dg.DwordT(wd)
 
 	case instrIORI:
 		oneAccImmWd2Word := iPtr.variant.(oneAccImmWd2WordT)
-		wd := memory.DwordGetLowerWord(cpuPtr.ac[oneAccImmWd2Word.acd]) | oneAccImmWd2Word.immWord
-		cpuPtr.ac[oneAccImmWd2Word.acd] = dg.DwordT(wd)
+		wd := memory.DwordGetLowerWord(cpu.ac[oneAccImmWd2Word.acd]) | oneAccImmWd2Word.immWord
+		cpu.ac[oneAccImmWd2Word.acd] = dg.DwordT(wd)
 
 	case instrLDB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpuPtr.ac[twoAcc1Word.acd] = dg.DwordT(memory.ReadByteEclipseBA(memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acs])))
+		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.ReadByteEclipseBA(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])))
 
 	case instrLSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpuPtr.ac[twoAcc1Word.acd] = lsh(cpuPtr.ac[twoAcc1Word.acs], cpuPtr.ac[twoAcc1Word.acd])
+		cpu.ac[twoAcc1Word.acd] = lsh(cpu.ac[twoAcc1Word.acs], cpu.ac[twoAcc1Word.acd])
 
 	case instrSBI: // unsigned
 		immOneAcc := iPtr.variant.(immOneAccT)
-		wd := memory.DwordGetLowerWord(cpuPtr.ac[immOneAcc.acd])
+		wd := memory.DwordGetLowerWord(cpu.ac[immOneAcc.acd])
 		if immOneAcc.immU16 < 1 || immOneAcc.immU16 > 4 {
 			log.Fatal("Invalid immediate value in SBI")
 		}
 		wd -= dg.WordT(immOneAcc.immU16)
-		cpuPtr.ac[immOneAcc.acd] = dg.DwordT(wd)
+		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
 
 	case instrSTB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		hiLo := memory.TestDwbit(cpuPtr.ac[twoAcc1Word.acs], 31)
-		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpuPtr.ac[twoAcc1Word.acs])) >> 1
-		byt := dg.ByteT(cpuPtr.ac[twoAcc1Word.acd])
+		hiLo := memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 31)
+		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])) >> 1
+		byt := dg.ByteT(cpu.ac[twoAcc1Word.acd])
 		memory.WriteByte(addr, hiLo, byt)
 
 	case instrXCH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		dwd := cpuPtr.ac[twoAcc1Word.acs]
-		cpuPtr.ac[twoAcc1Word.acs] = cpuPtr.ac[twoAcc1Word.acd] & 0x0ffff
-		cpuPtr.ac[twoAcc1Word.acd] = dwd & 0x0ffff
+		dwd := cpu.ac[twoAcc1Word.acs]
+		cpu.ac[twoAcc1Word.acs] = cpu.ac[twoAcc1Word.acd] & 0x0ffff
+		cpu.ac[twoAcc1Word.acd] = dwd & 0x0ffff
 
 	default:
 		log.Fatalf("ERROR: ECLIPSE_OP instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 
-	cpuPtr.pc += dg.PhysAddrT(iPtr.instrLength)
+	cpu.pc += dg.PhysAddrT(iPtr.instrLength)
 	return true
 }
 
