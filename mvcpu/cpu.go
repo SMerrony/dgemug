@@ -87,8 +87,9 @@ type CPUT struct {
 	bus    *devices.BusT
 
 	// emulator internals
-	instrCount uint64 // how many instructions executed during the current run, running at 2 MIPS this will loop round roughly every 100 million years!
-	scpIO      bool   // true if console I/O is directed to the SCP
+	debugLogging bool
+	instrCount   uint64 // how many instructions executed during the current run, running at 2 MIPS this will loop round roughly every 100 million years!
+	scpIO        bool   // true if console I/O is directed to the SCP
 }
 
 // CPUStatT defines the data we will send to the statusCollector monitor
@@ -104,8 +105,6 @@ type CPUStatT struct {
 }
 
 const cpuStatPeriodMs = 333 // 125 // i.e. we send stats every 1/8th of a second
-
-var debugLogging bool
 
 // CPUInit sets up an MV-Class CPU
 func (cpu *CPUT) CPUInit(devNum int, bus *devices.BusT, statsChan chan CPUStatT) {
@@ -198,6 +197,13 @@ func (cpu *CPUT) GetAtu() (atu bool) {
 	atu = cpu.atu
 	cpu.cpuMu.RUnlock()
 	return atu
+}
+
+// SetDebugLogging is a setter for debug logging
+func (cpu *CPUT) SetDebugLogging(logging bool) {
+	cpu.cpuMu.Lock()
+	cpu.debugLogging = logging
+	cpu.cpuMu.Unlock()
 }
 
 // GetLef returns the current LEF mode bit
@@ -355,7 +361,7 @@ RunLoop: // performance-critical section starts here
 			break
 		}
 
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
@@ -368,7 +374,7 @@ RunLoop: // performance-critical section starts here
 		// INTERRUPT?
 		cpu.cpuMu.Lock()
 		if cpu.ion && cpu.bus.GetIRQ() {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "<<< Interrupt >>>\n")
 			}
 			// disable further interrupts, reset the irq

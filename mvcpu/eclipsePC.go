@@ -57,7 +57,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 				inc = 2
 			}
 		}
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "CLM compared %d with limits %d and %d, moving PC by %d\n", acs, l, h, inc)
 		}
 		cpu.pc += inc
@@ -69,7 +69,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		offset := memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd])
 		lowLimit := memory.ReadWord(tableStart - 2)
 		hiLimit := memory.ReadWord(tableStart - 1)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "DSPA called with table at %d, offset %d, lo %d hi %d\n",
 				tableStart, offset, lowLimit, hiLimit)
 		}
@@ -133,7 +133,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc++
 		}
 		cpu.pc &= 0x7fff
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SNB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
 
@@ -147,7 +147,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc++
 		}
 		cpu.pc &= 0x7fff
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SZB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
 

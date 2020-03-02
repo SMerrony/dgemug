@@ -56,13 +56,13 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
 		wd := memory.ReadWord(addr)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTO Addr: %d, Bit: %d, Before: %s\n",
 				addr, bitNum, memory.WordToBinStr(wd))
 		}
 		memory.SetWbit(&wd, bitNum)
 		memory.WriteWord(addr, wd)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTO                     Result: %s\n", memory.WordToBinStr(wd))
 		}
 
@@ -71,12 +71,12 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
 		wd := memory.ReadWord(addr)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTZ Addr: %d, Bit: %d, Before: %s\n", addr, bitNum, memory.WordToBinStr(wd))
 		}
 		memory.ClearWbit(&wd, bitNum)
 		memory.WriteWord(addr, wd)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTZ                     Result: %s\n",
 				memory.WordToBinStr(wd))
 		}

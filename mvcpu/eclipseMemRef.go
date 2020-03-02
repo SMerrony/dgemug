@@ -38,14 +38,14 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		/* AC0 - unused, AC1 - no. wds to move, AC2 - src, AC3 - dest */
 		numWds := memory.DwordGetLowerWord(cpu.ac[1])
 		if numWds == 0 || numWds > 32768 {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "BLM called with AC1 out-of-bounds, not moving anything\n")
 			}
 			break
 		}
 		src := memory.DwordGetLowerWord(cpu.ac[2])
 		dest := memory.DwordGetLowerWord(cpu.ac[3])
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, fmt.Sprintf("BLM moving %d words from %d to %d\n", numWds, src, dest))
 		}
 		for numWds != 0 {
@@ -147,7 +147,7 @@ func cmv(cpu *CPUT) {
 	destAscend = (destCount > 0)
 	srcCount := int16(memory.DwordGetLowerWord(cpu.ac[3]))
 	srcAscend = (srcCount > 0)
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "DEBUG: CMV moving %d chars from %d to %d\n",
 			srcCount, cpu.ac[3], cpu.ac[2])
 	}

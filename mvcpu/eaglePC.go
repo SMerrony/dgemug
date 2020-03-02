@@ -49,7 +49,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "..... wrote %d to %d\n", dwd, tmpAddr)
 		}
 
@@ -314,7 +314,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, ".... Wd Addr: %d., word: %0X, bit #: %d\n", tmpAddr, wd, bit)
 		}
 
@@ -350,7 +350,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, ".... Wd Addr: %d., word: %0X, bit #: %d\n", tmpAddr, wd, bit)
 		}
 

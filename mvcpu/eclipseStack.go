@@ -42,15 +42,15 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		acsUp := [8]int{0, 1, 2, 3, 0, 1, 2, 3}
 		for thisAc := first; thisAc >= last; thisAc-- {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... narrow popping AC%d\n", acsUp[thisAc])
 			}
 
-			cpu.ac[acsUp[thisAc]] = dg.DwordT(memory.NsPop(0, debugLogging))
+			cpu.ac[acsUp[thisAc]] = dg.DwordT(memory.NsPop(0, cpu.debugLogging))
 		}
 
 	case instrPOPJ:
-		addr := dg.PhysAddrT(memory.NsPop(0, debugLogging))
+		addr := dg.PhysAddrT(memory.NsPop(0, cpu.debugLogging))
 		cpu.pc = addr & 0x7fff
 		return true // because PC set
 
@@ -63,15 +63,15 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		acsUp := [8]int{0, 1, 2, 3, 0, 1, 2, 3}
 		for thisAc := first; thisAc <= last; thisAc++ {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... narrow pushing AC%d\n", acsUp[thisAc])
 			}
-			memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[acsUp[thisAc]]), debugLogging)
+			memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[acsUp[thisAc]]), cpu.debugLogging)
 		}
 
 	case instrPSHJ:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		memory.NsPush(0, dg.WordT(cpu.pc)+2, debugLogging)
+		memory.NsPush(0, dg.WordT(cpu.pc)+2, cpu.debugLogging)
 		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset) & 0X7FFF
 		cpu.pc = addr & 0x7fff
 		return true // because PC set
@@ -80,26 +80,26 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// // complement of SAVE
 		// memory.WriteWord(memory.NspLoc, memory.ReadWord(memory.NfpLoc)) // ???
 		// //memory.WriteWord(memory.NfpLoc, memory.ReadWord(memory.NspLoc)) // ???
-		// word := memory.NsPop(0, debugLogging)
+		// word := memory.NsPop(0, cpu.debugLogging)
 		// cpu.carry = memory.TestWbit(word, 0)
 		// cpu.pc = dg.PhysAddrT(word) & 0x7fff
 		// //nfpSave := memory.NsPop(0)               // 1
-		// cpu.ac[3] = dg.DwordT(memory.NsPop(0, debugLogging)) // 2
-		// cpu.ac[2] = dg.DwordT(memory.NsPop(0, debugLogging)) // 3
-		// cpu.ac[1] = dg.DwordT(memory.NsPop(0, debugLogging)) // 4
-		// cpu.ac[0] = dg.DwordT(memory.NsPop(0, debugLogging)) // 5
+		// cpu.ac[3] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 2
+		// cpu.ac[2] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 3
+		// cpu.ac[1] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 4
+		// cpu.ac[0] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 5
 		// memory.WriteWord(memory.NfpLoc, memory.DWordGetLowerWord(cpu.ac[3]))
 		// return true // because PC set
 
 		nfpSav := memory.ReadWord(memory.NfpLoc)
 		memory.WriteWord(memory.NspLoc, nfpSav)
-		pwd1 := memory.NsPop(0, debugLogging) // 1
+		pwd1 := memory.NsPop(0, cpu.debugLogging) // 1
 		cpu.carry = memory.TestWbit(pwd1, 0)
 		cpu.pc = dg.PhysAddrT(pwd1 & 0x07fff)
-		cpu.ac[3] = dg.DwordT(memory.NsPop(0, debugLogging)) // 2
-		cpu.ac[2] = dg.DwordT(memory.NsPop(0, debugLogging)) // 3
-		cpu.ac[1] = dg.DwordT(memory.NsPop(0, debugLogging)) // 4
-		cpu.ac[0] = dg.DwordT(memory.NsPop(0, debugLogging)) // 5
+		cpu.ac[3] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 2
+		cpu.ac[2] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 3
+		cpu.ac[1] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 4
+		cpu.ac[0] = dg.DwordT(memory.NsPop(0, cpu.debugLogging)) // 5
 		//memory.WriteWord(memory.NspLoc, nfpSav-5)
 		memory.WriteWord(memory.NfpLoc, memory.DwordGetLowerWord(cpu.ac[3]))
 
@@ -113,32 +113,32 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 		// // version based in simH Nova SAVn
 		// memory.WriteWord(memory.NspLoc, nspSav+i)
-		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[0]), debugLogging) // 1
-		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[1]), debugLogging) // 2
-		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[2]), debugLogging) // 3
-		// memory.NsPush(0, nfpSav, debugLogging)                               // 4
+		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[0]), cpu.debugLogging) // 1
+		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[1]), cpu.debugLogging) // 2
+		// memory.NsPush(0, memory.DWordGetLowerWord(cpu.ac[2]), cpu.debugLogging) // 3
+		// memory.NsPush(0, nfpSav, cpu.debugLogging)                               // 4
 		// word := memory.DWordGetLowerWord(cpu.ac[3])
 		// if cpu.carry {
 		// 	word |= 0x8000
 		// } else {
 		// 	word &= 0x7fff
 		// }
-		// memory.NsPush(0, word, debugLogging) // 5
+		// memory.NsPush(0, word, cpu.debugLogging) // 5
 		// cpu.ac[3] = dg.DwordT(memory.ReadWord(memory.NspLoc))
 		// memory.WriteWord(memory.NfpLoc, memory.DWordGetLowerWord(cpu.ac[3]))
 
 		// version based on 32-bit PoP
-		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[0]), debugLogging) // 1
-		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[1]), debugLogging) // 2
-		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[2]), debugLogging) // 3
-		memory.NsPush(0, nfpSav, debugLogging)                                 // 4
+		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[0]), cpu.debugLogging) // 1
+		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[1]), cpu.debugLogging) // 2
+		memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[2]), cpu.debugLogging) // 3
+		memory.NsPush(0, nfpSav, cpu.debugLogging)                              // 4
 		word := memory.DwordGetLowerWord(cpu.ac[3])
 		if cpu.carry {
 			word |= 0x8000
 		} else {
 			word &= 0x7fff
 		}
-		memory.NsPush(0, word, debugLogging) // 5
+		memory.NsPush(0, word, cpu.debugLogging) // 5
 		memory.WriteWord(memory.NspLoc, nspSav+5+i)
 		memory.WriteWord(memory.NfpLoc, nspSav+5)
 		cpu.ac[3] = dg.DwordT(nspSav + 5)

@@ -366,7 +366,7 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 		}
 	case NOACC_MODE_IND_2_WORD_E_FMT, NOACC_MODE_IND_2_WORD_X_FMT:
 		var noAccModeInd2Word noAccModeInd2WordT
-		// if debugLogging {
+		// if cpu.debugLogging {
 		// 	logging.DebugPrint(logging.DebugLog, "X_FMT: Mnemonic is <%s>\n", decodedInstr.mnemonic)
 		// }
 		switch ix {
@@ -698,18 +698,18 @@ func decode15bitDisp(d15 dg.WordT, mode int) (disp16 int16) {
 			disp16 = int16(d15 & 0x7fff) // zero extend
 		}
 	}
-	if debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... decode15bitDisp got: %#o, returning: %#o\n", d15, disp16)
-	}
+	// if cpu.debugLogging {
+	// 	logging.DebugPrint(logging.DebugLog, "... decode15bitDisp got: %#o, returning: %#o\n", d15, disp16)
+	// }
 	return disp16
 }
 
 func decode16bitByteDisp(d16 dg.WordT) (disp16 int16, loHi bool) {
 	loHi = memory.TestWbit(d16, 15)
 	disp16 = int16(d16 >> 1)
-	if debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... decode16bitByteDisp got: %#o, returning %#o\n", d16, disp16)
-	}
+	// if cpu.debugLogging {
+	// 	logging.DebugPrint(logging.DebugLog, "... decode16bitByteDisp got: %#o, returning %#o\n", d16, disp16)
+	// }
 	return disp16, loHi
 }
 

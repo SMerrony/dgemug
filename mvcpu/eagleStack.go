@@ -120,7 +120,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// according the PoP does not write through to page zero...
 		// memory.WriteDWord(memory.WspLoc, cpu.ac[oneAcc1Word.acd])
 		cpu.SetOVR(false)
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpu.ac[oneAcc1Word.acd])
 		}
 
@@ -180,7 +180,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
 		for thisAc := firstAc; thisAc >= lastAc; thisAc-- {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... wide popping AC%d\n", acsUp[thisAc])
 			}
 			cpu.ac[acsUp[thisAc]] = wsPop(cpu, 0)
@@ -196,7 +196,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
 		for thisAc := firstAc; thisAc <= lastAc; thisAc++ {
-			if debugLogging {
+			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... wide pushing AC%d\n", acsUp[thisAc])
 			}
 			wsPush(cpu, 0, cpu.ac[acsUp[thisAc]])

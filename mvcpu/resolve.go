@@ -73,7 +73,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve15bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
 	return eff
@@ -118,7 +118,7 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve8bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
 	return eff
@@ -168,7 +168,7 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 		eff &= 0x1ff_ffff
 	}
 
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve32bitEffAddr got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
 	return eff

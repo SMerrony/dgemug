@@ -144,7 +144,7 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 
 		}
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "Sending NIO to device #%d.\n", ioFlagsDev.ioDev)
 		}
 		var novaDataIo novaDataIoT

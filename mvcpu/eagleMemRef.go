@@ -221,7 +221,7 @@ func readByteBA(ba dg.DwordT) dg.ByteT {
 func memWriteByteBA(b dg.ByteT, ba dg.DwordT) {
 	wordAddr, lowByte := resolve32bitByteAddr(ba)
 	memory.WriteByte(wordAddr, lowByte, b)
-	// if debugLogging {
+	// if cpu.debugLogging {
 	// 	logging.DebugPrint(logging.DebugLog, "DEBUG: memWriteByte wrote %c to word addr: %#o\n", b, wordAddr)
 	// }
 }
@@ -236,7 +236,7 @@ func wblm(cpu *CPUT) {
 		log.Println("INFO: WBLM called with AC1 == 0, not moving anything")
 		return
 	}
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "DEBUG: WBLM moving %#o words from %#o to %#o\n",
 			int32(cpu.ac[1]), cpu.ac[2], cpu.ac[3])
 	}
@@ -258,7 +258,7 @@ func wcmv(cpu *CPUT) {
 	// ACO destCount, AC1 srcCount, AC2 dest byte ptr, AC3 src byte ptr
 	destCount := int32(cpu.ac[0])
 	if destCount == 0 {
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, ".... WCMV called with AC0 == 0, not moving anything\n")
 		}
 		return
@@ -266,7 +266,7 @@ func wcmv(cpu *CPUT) {
 	destAscend := (destCount > 0)
 	srcCount := int32(cpu.ac[1])
 	srcAscend := (srcCount > 0)
-	if debugLogging {
+	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, ".... WCMV moving %#o chars from %#o to %#o chars at %#o\n",
 			srcCount, cpu.ac[3], destCount, cpu.ac[2])
 	}
@@ -372,7 +372,7 @@ func wcmp(cpu *CPUT) {
 func wcst(cpu *CPUT) {
 	strLenDir := int(int32(cpu.ac[1]))
 	if strLenDir == 0 {
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, ".... WCST called with AC1 == 0, not scanning anything\n")
 		}
 		return
@@ -415,7 +415,7 @@ func wctr(cpu *CPUT) {
 	// AC2 destination string ("string2") Byte addr
 	// AC3 source string ("string1") byte addr
 	if cpu.ac[1] == 0 {
-		if debugLogging {
+		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "INFO: WCTR called with AC1 == 0, not translating anything\n")
 		}
 		return
