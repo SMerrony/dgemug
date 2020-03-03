@@ -179,7 +179,7 @@ func cmv(cpu *CPUT) {
 	// now fill any excess bytes with ASCII spaces
 	if destCount != 0 {
 		for {
-			memWriteByteBA(asciiSPC, cpu.ac[2])
+			memWriteByteBA(dg.ASCIISPC, cpu.ac[2])
 			if destAscend {
 				cpu.ac[2]++
 				destCount--

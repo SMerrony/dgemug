@@ -1,6 +1,6 @@
 //  - console output
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,6 @@ import (
 	"sync"
 
 	dg "github.com/SMerrony/dgemug/dg"
-)
-
-const (
-	asciiNL = 0x0a
-	asciiFF = 0x0c
 )
 
 // TtoT describes the current state of the TTO device
@@ -71,35 +66,35 @@ func (tto *TtoT) PutString(s string) {
 func (tto *TtoT) PutStringNL(s string) {
 	tto.ttoMu.Lock()
 	tto.conn.Write([]byte(s))
-	tto.conn.Write([]byte{asciiNL})
+	tto.conn.Write([]byte{dg.ASCIINL})
 	tto.ttoMu.Unlock()
 }
 
 // PutNLString outputs a NL followed by a string to TTO
 func (tto *TtoT) PutNLString(s string) {
 	tto.ttoMu.Lock()
-	tto.conn.Write([]byte{asciiNL})
+	tto.conn.Write([]byte{dg.ASCIINL})
 	tto.conn.Write([]byte(s))
 	tto.ttoMu.Unlock()
 }
 
 // Reset simply clears the screen or throws a page
 func (tto *TtoT) Reset() {
-	tto.PutChar(asciiFF)
+	tto.PutChar(dg.ASCIIFF)
 	log.Println("INFO: TTO Reset")
 }
 
 // This is called from Bus to implement DOA to the TTO device
 func (tto *TtoT) dataOut(datum dg.WordT, abc byte, flag byte) {
-	var ascii byte
+	var asciiChar byte
 	switch abc {
 	case 'A':
-		ascii = byte(datum)
+		asciiChar = byte(datum)
 		if flag == 'S' {
 			tto.bus.SetBusy(tto.devNum, true)
 			tto.bus.SetDone(tto.devNum, false)
 		}
-		tto.PutChar(ascii)
+		tto.PutChar(asciiChar)
 		tto.bus.SetBusy(tto.devNum, false)
 		tto.bus.SetDone(tto.devNum, true)
 		// send IRQ if not masked out

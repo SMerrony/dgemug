@@ -56,11 +56,6 @@ const (
 	minNegS32 = -(maxPosS32 + 1)
 )
 
-const (
-	asciiNL  = 0x0A
-	asciiSPC = 0x20
-)
-
 // TODO sbrBits is currently an abstraction of the Segment Base Registers - may need to represent physically
 // via a 32-bit DWord in the future
 type sbrBits struct {
@@ -155,7 +150,7 @@ func (cpu *CPUT) Boot(devNum int, pc dg.PhysAddrT) {
 // PrintableStatus returns a verbose status of the CPU
 func (cpu *CPUT) PrintableStatus() string {
 	cpu.cpuMu.RLock()
-	res := fmt.Sprintf("%c         AC0          AC1         AC2          AC3           PC CRY LEF ATU ION%c", asciiNL, asciiNL)
+	res := fmt.Sprintf("%c         AC0          AC1         AC2          AC3           PC CRY LEF ATU ION%c", dg.ASCIINL, dg.ASCIINL)
 	res += fmt.Sprintf("%#12o %#12o %#12o %#12o %#12o", cpu.ac[0], cpu.ac[1], cpu.ac[2], cpu.ac[3], cpu.pc)
 	res += fmt.Sprintf("  %d   %d   %d   %d",
 		memory.BoolToInt(cpu.carry),
