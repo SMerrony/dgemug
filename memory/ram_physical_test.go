@@ -1,6 +1,8 @@
-// mvemg project ram_test.go
+// +build physical
 
-// Copyright (C) 2017  Steve Merrony
+// TESTS FOR REPRESENTATION OF PHYSICAL MEMORY USED IN THE HARDWARE EMULATOR(S)
+
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

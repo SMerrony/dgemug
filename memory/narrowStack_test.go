@@ -1,6 +1,6 @@
 // narrowStack_test.go
 
-// Copyright (C) 2018  Steve Merrony
+// Copyright ©2018-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ import (
 )
 
 func TestNsPushAndPop(t *testing.T) {
-	MemInit(MemSizeWords, false)
+	MemInit(1000, false)
 	NsPush(0, 1, false)
 	if ram[ram[NspLoc]] != 1 {
 		t.Errorf("Expected NspLoc+1 to contain 1, contains %x", ram[ram[NspLoc]])

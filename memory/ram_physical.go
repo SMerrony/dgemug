@@ -1,4 +1,6 @@
-// ram.go
+// +build physical
+
+// REPRESENTATION OF PHYSICAL MEMORY USED IN THE HARDWARE EMULATOR(S)
 
 // Copyright ©2017-2020  Steve Merrony
 

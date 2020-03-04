@@ -1,6 +1,6 @@
 // narrowStack.go
 
-// Copyright (C) 2017  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,13 +38,12 @@ const (
 func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
-	ramMu.Lock()
-	ram[NspLoc]++ // we allow this direct write to a fixed location for performance
-	addr := dg.PhysAddrT(ram[NspLoc])
-	ramMu.Unlock()
-	WriteWord(addr, data)
+
+	newNsp := ReadWord(NspLoc) + 1
+	WriteWord16(NspLoc, newNsp)
+	WriteWord16(newNsp, data)
 	if debugging {
-		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %#o onto the Narrow Stack at location: %#o\n", data, addr)
+		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %#o onto the Narrow Stack at location: %#o\n", data, newNsp)
 	}
 }
 
@@ -52,15 +51,11 @@ func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 func NsPop(seg dg.PhysAddrT, debugging bool) dg.WordT {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
-	ramMu.RLock()
-	addr := dg.PhysAddrT(ram[NspLoc])
-	ramMu.RUnlock()
-	data := ReadWord(addr)
-	ramMu.Lock()
-	ram[NspLoc]-- // we allow this direct write to a fixed location for performance
-	ramMu.Unlock()
+	oldNSP := ReadWord(NspLoc)
+	data := ReadWord16(oldNSP)
+	WriteWord16(NspLoc, oldNSP-1)
 	if debugging {
-		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %#o off  the Narrow Stack at location: %#o\n", data, addr)
+		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %#o off  the Narrow Stack at location: %#o\n", data, oldNSP)
 	}
 	return data
 }
