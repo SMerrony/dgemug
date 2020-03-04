@@ -22,7 +22,6 @@
 package memory
 
 import (
-	"fmt"
 	"log"
 	"runtime/debug"
 	"sync"
@@ -198,90 +197,4 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
 	WriteWord(wordAddr, DwordGetUpperWord(dwd))
 	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
-}
-
-// BoolToInt converts a bool to 1 or 0
-func BoolToInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-// BoolToYN converts a bool to Y or N
-func BoolToYN(b bool) byte {
-	if b {
-		return 'Y'
-	}
-	return 'N'
-}
-
-// BoolToOnOff converts a bool to "On" or "Off"
-func BoolToOnOff(b bool) string {
-	if b {
-		return "On"
-	}
-	return "Off"
-}
-
-// BoolToOZ converts a boolean to a O(ne) or Z(ero) byte
-func BoolToOZ(b bool) byte {
-	if b {
-		return 'O'
-	}
-	return 'Z'
-}
-
-// DwordGetLowerWord gets the DG-lower word (RHS) of a doubleword
-// Called VERY often, hopefully inlined!
-func DwordGetLowerWord(dwd dg.DwordT) dg.WordT {
-	return dg.WordT(dwd) // & 0x0000ffff mask unneccessary
-}
-
-// DwordGetUpperWord gets the DG-higher word (LHS) of a doubleword
-// Called VERY often, hopefully inlined!
-func DwordGetUpperWord(dwd dg.DwordT) dg.WordT {
-	return dg.WordT(dwd >> 16)
-}
-
-// DwordFromTwoWords - catenate two DG Words into a DG DoubleWord
-func DwordFromTwoWords(hw dg.WordT, lw dg.WordT) dg.DwordT {
-	return dg.DwordT(hw)<<16 | dg.DwordT(lw)
-}
-
-// QwordFromTwoDwords - catenate two DG DoubleWords into a DG QuadWord
-func QwordFromTwoDwords(hdw dg.DwordT, ldw dg.DwordT) dg.QwordT {
-	return dg.QwordT(hdw)<<32 | dg.QwordT(ldw)
-}
-
-// QwordGetLowerDword gets the DG-lower (RHS) of a quadword
-func QwordGetLowerDword(qwd dg.QwordT) dg.DwordT {
-	return dg.DwordT(qwd)
-}
-
-// QwordGetUpperDword gets the DG-upper (LHS) of a quadword
-func QwordGetUpperDword(qwd dg.QwordT) dg.DwordT {
-	return dg.DwordT(qwd >> 32)
-}
-
-// WordToBinStr - get a pretty-printable string of a word
-func WordToBinStr(w dg.WordT) string {
-	return fmt.Sprintf("%08b %08b", w>>8, w&0x0ff)
-}
-
-// SexWordToDword - sign-extend a DG word to a DG DoubleWord
-func SexWordToDword(wd dg.WordT) dg.DwordT {
-	var dwd dg.DwordT
-	if TestWbit(wd, 0) {
-		dwd = dg.DwordT(wd) | 0xffff0000
-	} else {
-		dwd = dg.DwordT(wd) & 0x0000ffff
-	}
-	return dwd
-}
-
-// SwapBytes - swap over the two bytes in a dg_word
-func SwapBytes(wd dg.WordT) (res dg.WordT) {
-	res = (wd >> 8) | ((wd & 0x00ff) << 8)
-	return res
 }

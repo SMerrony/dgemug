@@ -1,6 +1,6 @@
 // bitHandling_test.go
 
-// Copyright (C) 2018  Steve Merrony
+// Copyright ©2018-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -148,5 +148,50 @@ func TestTestQWbit(t *testing.T) {
 	r = TestQwbit(wd, 2)
 	if r {
 		t.Error("Expected false")
+	}
+}
+
+func TestBoolToInt(t *testing.T) {
+	tbool, fbool := true, false
+	tres := BoolToInt(tbool)
+	if tres != 1 {
+		t.Error("Expected 1 got ", tres)
+	}
+	fres := BoolToInt(fbool)
+	if fres != 0 {
+		t.Error("Expected 0 got ", fres)
+	}
+}
+func TestBoolToYN(t *testing.T) {
+	tbool, fbool := true, false
+	tres := BoolToYN(tbool)
+	if tres != 'Y' {
+		t.Error("Expected Y got ", tres)
+	}
+	fres := BoolToYN(fbool)
+	if fres != 'N' {
+		t.Error("Expected N got ", fres)
+	}
+}
+func TestBoolToOnOff(t *testing.T) {
+	tbool, fbool := true, false
+	tres := BoolToOnOff(tbool)
+	if tres != "On" {
+		t.Error("Expected On got ", tres)
+	}
+	fres := BoolToOnOff(fbool)
+	if fres != "Off" {
+		t.Error("Expected Off got ", fres)
+	}
+}
+func TestBoolToOZ(t *testing.T) {
+	tbool, fbool := true, false
+	tres := BoolToOZ(tbool)
+	if tres != 'O' {
+		t.Error("Expected O got ", tres)
+	}
+	fres := BoolToOZ(fbool)
+	if fres != 'Z' {
+		t.Error("Expected Z got ", fres)
 	}
 }

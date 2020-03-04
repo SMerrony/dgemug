@@ -106,3 +106,35 @@ func TestDwbit(dw dg.DwordT, b int) bool {
 func TestQwbit(qw dg.QwordT, b int) bool {
 	return ((qw & (1 << (63 - uint8(b)))) != 0)
 }
+
+// BoolToInt converts a bool to 1 or 0
+func BoolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// BoolToYN converts a bool to Y or N
+func BoolToYN(b bool) byte {
+	if b {
+		return 'Y'
+	}
+	return 'N'
+}
+
+// BoolToOnOff converts a bool to "On" or "Off"
+func BoolToOnOff(b bool) string {
+	if b {
+		return "On"
+	}
+	return "Off"
+}
+
+// BoolToOZ converts a boolean to a O(ne) or Z(ero) byte
+func BoolToOZ(b bool) byte {
+	if b {
+		return 'O'
+	}
+	return 'Z'
+}
