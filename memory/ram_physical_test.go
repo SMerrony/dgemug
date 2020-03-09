@@ -1,4 +1,4 @@
-// +build physical
+// +build physical !virtual
 
 // TESTS FOR REPRESENTATION OF PHYSICAL MEMORY USED IN THE HARDWARE EMULATOR(S)
 

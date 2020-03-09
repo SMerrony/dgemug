@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // narrowStack_test.go
 
 // Copyright ©2018-2020  Steve Merrony

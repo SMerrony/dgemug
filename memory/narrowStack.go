@@ -40,8 +40,8 @@ func NsPush(seg dg.PhysAddrT, data dg.WordT, debugging bool) {
 	// TODO overflow/underflow handling - either here or in instruction?
 
 	newNsp := ReadWord(NspLoc) + 1
-	WriteWord16(NspLoc, newNsp)
-	WriteWord16(newNsp, data)
+	WriteWord(NspLoc, newNsp)
+	WriteWord(dg.PhysAddrT(newNsp), data)
 	if debugging {
 		logging.DebugPrint(logging.DebugLog, "... NsPush pushed %#o onto the Narrow Stack at location: %#o\n", data, newNsp)
 	}
@@ -52,8 +52,8 @@ func NsPop(seg dg.PhysAddrT, debugging bool) dg.WordT {
 	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
 	oldNSP := ReadWord(NspLoc)
-	data := ReadWord16(oldNSP)
-	WriteWord16(NspLoc, oldNSP-1)
+	data := ReadWord(dg.PhysAddrT(oldNSP))
+	WriteWord(NspLoc, oldNSP-1)
 	if debugging {
 		logging.DebugPrint(logging.DebugLog, "... NsPop  popped %#o off  the Narrow Stack at location: %#o\n", data, oldNSP)
 	}
