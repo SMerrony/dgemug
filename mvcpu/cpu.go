@@ -283,6 +283,16 @@ func (cpu *CPUT) SetSCPIO(scp bool) {
 	cpu.cpuMu.Unlock()
 }
 
+// SetupStack is a group-setter for the Wide Stack
+func (cpu *CPUT) SetupStack(wfp, wsp, wsb, wsl dg.PhysAddrT) {
+	cpu.cpuMu.Lock()
+	cpu.wfp = wfp
+	cpu.wsp = wsp
+	cpu.wsb = wsb
+	cpu.wsl = wsl
+	cpu.cpuMu.Unlock()
+}
+
 // Execute runs a single instruction
 // A false return means failure, the VM should stop
 func (cpu *CPUT) Execute(iPtr *decodedInstrT) (rc bool) {
