@@ -88,6 +88,42 @@ func MemInit() {
 	mapPage(ring7page0)
 }
 
+// GetSegment - return the segment number for the supplied address
+func GetSegment(addr dg.PhysAddrT) int {
+	return int((addr & 0x70000000) >> 28)
+}
+
+// ReadByte - read a byte from memory using word address and low-byte flag (true => lower (rightmost) byte)
+func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
+	wd := ReadWord(wordAddr)
+	if !loByte {
+		wd >>= 8
+	}
+	return dg.ByteT(wd)
+}
+
+// ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
+func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
+	var (
+		hiLo bool
+		addr dg.PhysAddrT
+	)
+	hiLo = TestWbit(byteAddr16, 15) // determine which byte to get
+	addr = dg.PhysAddrT(byteAddr16) >> 1
+	return ReadByte(addr, hiLo)
+}
+
+// WriteByte takes a normal word addr, low-byte flag and datum byte
+func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
+	wd := ReadWord(wordAddr)
+	if loByte {
+		wd = (wd & 0xff00) | dg.WordT(b)
+	} else {
+		wd = dg.WordT(b)<<8 | (wd & 0x00ff)
+	}
+	WriteWord(wordAddr, wd)
+}
+
 func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()
 	page, found := virtualRam[int(addr>>10)]
@@ -98,6 +134,14 @@ func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RUnlock()
 
 	return wd
+}
+
+func ReadWordTrap(addr dg.PhysAddrT) (dg.WordT, bool) {
+	if !isAddrMapped(addr) {
+		log.Printf("ERROR: Attempt to read unmapped word at %#x\n", addr)
+		return 0, false
+	}
+	return ReadWord(addr), true
 }
 
 func WriteWord(addr dg.PhysAddrT, datum dg.WordT) {
@@ -116,6 +160,14 @@ func ReadDWord(addr dg.PhysAddrT) dg.DwordT {
 	hiWd = ReadWord(addr)
 	loWd = ReadWord(addr + 1)
 	return DwordFromTwoWords(hiWd, loWd)
+}
+
+func ReadDwordTrap(addr dg.PhysAddrT) (dg.DwordT, bool) {
+	if !isAddrMapped(addr) {
+		log.Printf("ERROR: Attempt to read unmapped doubleword at %#x\n", addr)
+		return 0, false
+	}
+	return ReadDWord(addr), true
 }
 
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
