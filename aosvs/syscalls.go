@@ -1,4 +1,4 @@
-// task.go - abstraction of an AOS/VS task
+// syscalls.go - map of AOS/VS system calls
 
 // Copyright ©2020 Steve Merrony
 
@@ -25,54 +25,32 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
-	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-type taskT struct {
-	pid, tid                              int
-	dir                                   string
-	startAddr                             dg.PhysAddrT
-	wfp, wsp, wsb, wsl, stackFaultHandler dg.PhysAddrT
+type syscallDescT struct {
+	name  string                 // AOS/VS System Call Name
+	alias string                 // AOS/VS 4-char Name Alias
+	fn    func(*mvcpu.CPUT) bool // implementation
 }
 
-func createTask(pid int, tid int, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT) *taskT {
-	var task taskT
-	task.pid = pid
-	task.tid = tid
-	task.startAddr = startAddr
-	task.wfp = wfp
-	task.wsp = wsp
-	task.wsb = wsb
-	task.wsl = wsl
-	task.stackFaultHandler = sfh
-
-	log.Printf("DEBUG: Task %d Created, Initial PC=%#x\n", tid, startAddr)
-
-	return &task
+var syscalls = map[dg.WordT]syscallDescT{
+	0:    {"?CREATE", "?CREA", nil},
+	1:    {"?DELETE", "?DELE", nil},
+	0300: {"?OPEN", "?OPEN", nil},
+	0301: {"?CLOSE", "?CLOS", nil},
+	0302: {"?READ", "?READ", nil},
+	0303: {"?WRITE", "?WRIT", nil},
+	0310: {"?RETURN", "?RETU", nil},
 }
 
-func (task *taskT) run() (errDetail string, instrCounts [750]int) {
-	var (
-		cpu         mvcpu.CPUT
-		syscallTrap bool
-	)
-
-	cpu.CPUInit(077, nil, nil)
-	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl)
-	cpu.SetATU(true)
-	cpu.SetPC(task.startAddr)
-
-	for {
-		syscallTrap, errDetail, instrCounts = cpu.Vrun()
-		if syscallTrap {
-			addr := dg.PhysAddrT(memory.ReadDWord(cpu.GetWSP() - 2))
-			callID := memory.ReadWord(addr)
-			_ = syscall(callID, &cpu)
-		} else {
-			// Vrun has stopped and we're not at a system call
-			break
-		}
+func syscall(callID dg.WordT, cpu *mvcpu.CPUT) (ok bool) {
+	call, defined := syscalls[callID]
+	if !defined {
+		log.Fatalf("ERROR: System call No. %#od not yet defined at PC=%#od", callID, cpu.GetPC())
 	}
-	return errDetail, instrCounts
+	if call.fn == nil {
+		log.Fatalf("ERROR: System call No. %#od not yet implemented at PC=%#od", callID, cpu.GetPC())
+	}
+	return call.fn(cpu)
 }

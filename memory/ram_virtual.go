@@ -51,6 +51,7 @@ func mapPage(page int) {
 	}
 	var emptyPage pageT
 	virtualRam[page] = emptyPage
+	log.Printf("DEBUG: Mapped page %#x for %#x", page, page<<10)
 	virtualRamMu.Unlock()
 }
 
@@ -61,6 +62,7 @@ func isAddrMapped(addr dg.PhysAddrT) (mapped bool) {
 	return mapped
 }
 
+// MapSlice maps (copies) the provided slice to virtual memory starting at the given address
 func MapSlice(addr dg.PhysAddrT, wds []dg.WordT) {
 	for offset, word := range wds {
 		loc := addr + dg.PhysAddrT(offset)
@@ -124,11 +126,12 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 	WriteWord(wordAddr, wd)
 }
 
+// ReadWord reads a single 16-bit word from the specified address
 func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Fatalf("ERROR: Attempt to read from unmapped page")
+		log.Fatalf("ERROR: Attempt to read from unmapped page %#x at address: %#x", addr>>10, addr)
 	}
 	wd = page.words[int(addr&0x3ff)]
 	virtualRamMu.RUnlock()
