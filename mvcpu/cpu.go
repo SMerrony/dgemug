@@ -194,6 +194,13 @@ func (cpu *CPUT) GetAtu() (atu bool) {
 	return atu
 }
 
+// SetATU is a setter for the ATU
+func (cpu *CPUT) SetATU(atu bool) {
+	cpu.cpuMu.Lock()
+	cpu.atu = atu
+	cpu.cpuMu.Unlock()
+}
+
 // SetDebugLogging is a setter for debug logging
 func (cpu *CPUT) SetDebugLogging(logging bool) {
 	cpu.cpuMu.Lock()
@@ -281,6 +288,14 @@ func (cpu *CPUT) SetSCPIO(scp bool) {
 	cpu.cpuMu.Lock()
 	cpu.scpIO = scp
 	cpu.cpuMu.Unlock()
+}
+
+// GetWSP is a getter for the Wide Stack Pointer
+func (cpu *CPUT) GetWSP() (wsp dg.PhysAddrT) {
+	cpu.cpuMu.RLock()
+	wsp = cpu.wsp
+	cpu.cpuMu.RUnlock()
+	return wsp
 }
 
 // SetupStack is a group-setter for the Wide Stack
@@ -431,12 +446,121 @@ RunLoop: // performance-critical section starts here
 		// instruction counting
 		instrCounts[iPtr.ix]++
 
-		prevPC = cpu.GetPC()
+		prevPC = cpu.pc
 
 		// N.B. RLock still in effect as we loop around
 	}
 
 	return errDetail, instrCounts
+}
+
+// Vrun is a simplified runloop for a Virtual CPU
+// It should run until a system call is encountered
+func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxInstrs]int) {
+	var (
+		thisOp dg.WordT
+		// prevPC dg.PhysAddrT
+		iPtr *decodedInstrT
+		ok   bool
+		// indIrq byte
+	)
+
+	// initial read lock taken before loop starts to eliminate one lock/unlock per cycle
+	cpu.cpuMu.RLock()
+
+	// RunLoop: // performance-critical section starts here
+	for {
+		// FETCH
+		thisOp = memory.ReadWord(cpu.pc)
+
+		// DECODE
+		iPtr, ok = InstructionDecode(thisOp, cpu.pc, true, false, true, true, nil)
+		cpu.cpuMu.RUnlock()
+		if !ok || iPtr.ix == -1 {
+			errDetail = " *** Error: could not decode instruction ***"
+			break
+		}
+
+		// if cpu.debugLogging {
+		// 	logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+		// }
+		log.Printf("DEBUG: PC=%#x %s\n", cpu.pc, iPtr.disassembly)
+
+		// EXECUTE
+		if !cpu.Execute(iPtr) {
+			errDetail = " *** Error: could not execute instruction (or CPU HALT encountered) ***"
+			break
+		}
+
+		// INTERRUPT?
+		// cpu.cpuMu.Lock()
+		// if cpu.ion && cpu.bus.GetIRQ() {
+		// 	if cpu.debugLogging {
+		// 		logging.DebugPrint(logging.DebugLog, "<<< Interrupt >>>\n")
+		// 	}
+		// 	// disable further interrupts, reset the irq
+		// 	cpu.ion = false
+		// 	cpu.bus.SetIRQ(false)
+		// 	// TODO - disable User MAP
+		// 	// store PC in location zero
+		// 	memory.WriteWord(0, dg.WordT(cpu.pc))
+		// 	// fetch service routine address from location one
+		// 	if memory.TestWbit(memory.ReadWord(1), 0) {
+		// 		indIrq = '@'
+		// 	} else {
+		// 		indIrq = ' '
+		// 	}
+		// 	cpu.pc = resolve15bitDisplacement(cpu, indIrq, absoluteMode, memory.ReadWord(1), 0)
+		// 	// next time round RunLoop the interrupt service routine will be started...
+		// }
+		// cpu.cpuMu.Unlock()
+
+		// BREAKPOINT?
+		// if len(breakpoints) > 0 {
+		// 	cpu.cpuMu.Lock()
+		// 	for _, bAddr := range breakpoints {
+		// 		if bAddr == cpu.pc {
+		// 			cpu.scpIO = true
+		// 			cpu.cpuMu.Unlock()
+		// 			msg := fmt.Sprintf(" *** BREAKpoint hit at physical address "+
+		// 				fmtRadixVerb(inputRadix)+
+		// 				" (previous PC "+fmtRadixVerb(inputRadix)+
+		// 				") ***",
+		// 				cpu.pc, prevPC)
+		// 			tto.PutNLString(msg)
+		// 			log.Println(msg)
+
+		// 			break RunLoop
+		// 		}
+		// 	}
+		// 	cpu.cpuMu.Unlock()
+		// }
+
+		// Console interrupt?
+		cpu.cpuMu.RLock()
+		// if cpu.scpIO {
+		// 	cpu.cpuMu.RUnlock()
+		// 	errDetail = " *** Console ESCape ***"
+		// 	break
+		// }
+
+		// System Call?
+		if cpu.pc == 0x3000_0000 {
+			cpu.cpuMu.RUnlock()
+			syscallTrap = true
+			break
+		}
+		syscallTrap = false
+
+		// instruction counting
+		instrCounts[iPtr.ix]++
+
+		// prevPC = cpu.pc
+
+		// N.B. RLock still in effect as we loop around
+	}
+
+	return syscallTrap, errDetail, instrCounts
 }
 
 func (cpu *CPUT) statSender(sChan chan CPUStatT) {
