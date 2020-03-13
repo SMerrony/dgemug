@@ -161,6 +161,48 @@ func (cpu *CPUT) PrintableStatus() string {
 	return res
 }
 
+// DisassembleRange returns a DASHER-formatted string of the disassembled specified region
+func (cpu *CPUT) DisassembleRange(lowAddr, highAddr dg.PhysAddrT) (disassembly string) {
+	if lowAddr > highAddr {
+		return ("%c *** Invalid address range for disassembly ***")
+	}
+
+	var skipDecode int
+
+	for addr := lowAddr; addr <= highAddr; addr++ {
+		word := memory.ReadWord(addr)
+		byte1 := dg.ByteT(word >> 8)
+		byte2 := dg.ByteT(word & 0x00ff)
+		display := fmt.Sprintf("%c%#x: %02X %02X %06o %s \"", dg.ASCIINL, addr, byte1, byte2, word, memory.WordToBinStr(word))
+		if byte1 >= ' ' && byte1 <= '~' {
+			display += string(byte1)
+		} else {
+			display += " "
+		}
+		if byte2 >= ' ' && byte2 <= '~' {
+			display += string(byte2)
+		} else {
+			display += " "
+		}
+		display += "\" "
+		if skipDecode == 0 {
+			instrTmp, ok := InstructionDecode(word, addr, true, false, true, true, nil)
+			if ok {
+				display += instrTmp.GetDisassembly()
+				if instrTmp.GetLength() > 1 {
+					skipDecode = instrTmp.GetLength() - 1
+				}
+			} else {
+				display += " *** Could not decode ***"
+			}
+		} else {
+			skipDecode--
+		}
+		disassembly = disassembly + display
+	}
+	return disassembly
+}
+
 // CompactPrintableStatus returns a concise CPU status
 func (cpu *CPUT) CompactPrintableStatus() string {
 	cpu.cpuMu.RLock()

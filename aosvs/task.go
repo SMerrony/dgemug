@@ -48,7 +48,6 @@ func createTask(pid int, tid int, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddr
 	task.stackFaultHandler = sfh
 
 	log.Printf("DEBUG: Task %d Created, Initial PC=%#x\n", tid, startAddr)
-
 	return &task
 }
 
@@ -62,6 +61,8 @@ func (task *taskT) run() (errDetail string, instrCounts [750]int) {
 	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl)
 	cpu.SetATU(true)
 	cpu.SetPC(task.startAddr)
+
+	log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+50))
 
 	for {
 		syscallTrap, errDetail, instrCounts = cpu.Vrun()
