@@ -501,9 +501,9 @@ RunLoop: // performance-critical section starts here
 func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxInstrs]int) {
 	var (
 		thisOp dg.WordT
-		// prevPC dg.PhysAddrT
-		iPtr *decodedInstrT
-		ok   bool
+		prevPC dg.PhysAddrT
+		iPtr   *decodedInstrT
+		ok     bool
 		// indIrq byte
 	)
 
@@ -587,8 +587,10 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// }
 
 		// System Call?
-		if cpu.pc == 0x3000_0000 {
+		// if cpu.pc == 0x3000_0000 {
+		if cpu.pc == 0x7000_0006 {
 			cpu.cpuMu.RUnlock()
+			cpu.SetPC(prevPC)
 			syscallTrap = true
 			break
 		}
@@ -597,7 +599,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// instruction counting
 		instrCounts[iPtr.ix]++
 
-		// prevPC = cpu.pc
+		prevPC = cpu.pc
 
 		// N.B. RLock still in effect as we loop around
 	}

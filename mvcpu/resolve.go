@@ -1,6 +1,6 @@
 // resolve.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,8 @@ import (
 
 const (
 	physMask16 = 0x7fff
-	physMask32 = 0x7fffffff
+	physMask32 = 0x7fff_ffff
+	ringMask32 = 0x7000_0000
 )
 
 func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {

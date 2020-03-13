@@ -62,13 +62,14 @@ func (task *taskT) run() (errDetail string, instrCounts [750]int) {
 	cpu.SetATU(true)
 	cpu.SetPC(task.startAddr)
 
-	log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+50))
+	log.Println(cpu.DisassembleRange(0x7000_0000, 0x7000_0020))
+	log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+0400))
 
 	for {
 		syscallTrap, errDetail, instrCounts = cpu.Vrun()
 		if syscallTrap {
-			addr := dg.PhysAddrT(memory.ReadDWord(cpu.GetWSP() - 2))
-			callID := memory.ReadWord(addr)
+			callID := memory.ReadWord(cpu.GetPC() + 2)
+			log.Printf("DEBUG: Trapped System Call #%#x\n", callID)
 			_ = syscall(callID, &cpu)
 		} else {
 			// Vrun has stopped and we're not at a system call

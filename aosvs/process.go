@@ -34,13 +34,17 @@ import (
 
 const (
 	maxTasksPerProc = 32 // TODO There's probably a proper DG const for this
-	pcInPr          = 0574
-	page8offset     = 8192
-	sfhInPr         = page8offset + 12
-	wfpInPr         = page8offset + 16
-	wspInPr         = page8offset + 18
-	wslInPr         = page8offset + 20
-	wsbInPr         = page8offset + 22
+	// taskCountInPR       = 0412 // USTTC yes
+	// sharedStartPageInPR = 0417 // USTST 416
+	// sharedPageCountInPR = 0423 // USTSZ 422
+	// sharedOffsetInPR    = 0432 // USTSH 431
+	pcInPr      = 0574
+	page8offset = 8192
+	sfhInPr     = page8offset + 12
+	wfpInPr     = page8offset + 16
+	wspInPr     = page8offset + 18
+	wslInPr     = page8offset + 20
+	wsbInPr     = page8offset + 22
 )
 
 type ustT struct {
@@ -99,7 +103,7 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn) (p *ProcessT,
 	// shared portion
 	log.Println("DEBUG: Mapping shared pages...")
 	memory.MapSlice(0x7000_0000+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10,
-		progWds[0x4400:]) // FIXME hardcoded!
+		progWds[proc.ust.sharedStartPageInPR<<10:]) // FIXME hardcoded!
 
 	// set up initial task
 	proc.tasks[0] = createTask(pid, 0,
@@ -109,6 +113,9 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn) (p *ProcessT,
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[sfhInPr], progWds[sfhInPr+1])))
+
+	// set up trap for system calls
+	memory.WriteDWord(0x7000_0006, 0x7000_0006)
 
 	return &proc, nil
 }
@@ -152,7 +159,7 @@ func (proc *ProcessT) loadUST(progWds []dg.WordT) {
 	proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
 	proc.ust.sharedBlockCount = memory.DwordFromTwoWords(progWds[ust+ustsz], progWds[ust+ustsz+1])
 	proc.ust.prType = progWds[ust+ustpr]
-	proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustpr], progWds[ust+ustpr+1])
+	proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1])
 }
 
 func (proc *ProcessT) printUST() {

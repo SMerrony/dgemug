@@ -80,21 +80,21 @@ const (
 
 	ust = 0400 // START OF USER STATUS AREA 256.
 
-	ustez = 0         // EXTENDED VARIABLE  WORD COUNT 256.
-	ustes = ustez + 1 // EXTENDED VARIABLE PAGE 0 START 257.
-	ustss = ustes + 1 // SYMBOLS START 258.
-	ustse = ustss + 2 // SYMBOLS END 260.
-	ustda = ustse + 2 // DEB ADDR OR -1 262.
-	ustrv = ustda + 2 // REVISION OF PROGRAM 264.
-	usttc = ustrv + 2 // NUMBER OF TASKS (1 TO 32.) 266.
-	ustbl = usttc + 1 // # IMPURE BLKS 267.
-	ustst = ustbl + 3 // SHARED STARTING BLK # 270.
+	ustez = 0         // EXTENDED VARIABLE  WORD COUNT 256.  = 0
+	ustes = ustez + 1 // EXTENDED VARIABLE PAGE 0 START 257. = 1
+	ustss = ustes + 1 // SYMBOLS START 258.                  = 2
+	ustse = ustss + 2 // SYMBOLS END 260.                    = 4
+	ustda = ustse + 2 // DEB ADDR OR -1 262.                 = 6
+	ustrv = ustda + 2 // REVISION OF PROGRAM 264.          = 010
+	usttc = ustrv + 2 // NUMBER OF TASKS (1 TO 32.) 266.   = 012
+	ustbl = usttc + 1 // # IMPURE BLKS 267.                = 013
+	ustst = ustbl + 3 // SHARED STARTING BLK # 270.        = 016
 	// USTST IS USTBL+3 BECAUSE THE 16. BIT USER'S
 	// USTOD IS HIDDEN UNDERNEATH
-	ustit = ustst + 2  // INTERRUPT ADDRESS 272.
-	ustsz = ustit + 2  // SHARED SIZE IN BLKS 274.
-	ustpr = ustsz + 2  // PROGRAM FILE TYPE (16 OR 32 BIT) 276.
-	ustsh = ustpr + 5  // PHYSICAL STARTING PAGE OF SHARED AREA IN .PR 281.
+	ustit = ustst + 2  // INTERRUPT ADDRESS 272.                = 020
+	ustsz = ustit + 2  // SHARED SIZE IN BLKS 274.              = 022
+	ustpr = ustsz + 2  // PROGRAM FILE TYPE (16 OR 32 BIT) 276. = 024
+	ustsh = ustpr + 5  // PHYSICAL STARTING PAGE OF SHARED AREA IN .PR 281. = 031
 	usten = ustpr + 21 // END OF USER UST
 	ustpl = usten + 6  // PROGRAM LOCALITY
 

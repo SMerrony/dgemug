@@ -86,12 +86,12 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLJMP:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
-		cpu.pc = resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLJSR:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 3
-		cpu.pc = resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLNISZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
@@ -183,7 +183,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrWPOPJ:
 		dwd := wsPop(cpu, 0)
-		cpu.pc = (cpu.pc & 0xf000_0000) | (dg.PhysAddrT(dwd) & 0x0fff_ffff)
+		cpu.pc = cpu.pc&ringMask32 | (dg.PhysAddrT(dwd) & 0x0fff_ffff)
 		cpu.SetOVR(false)
 
 	case instrWRTN: // FIXME incomplete: handle PSR and rings
@@ -395,12 +395,12 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXJMP:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		cpu.pc = resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
 
 	case instrXJSR:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc + 2) // TODO Check this, PoP is self-contradictory on p.11-642
-		cpu.pc = resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
 
 	case instrXNDO: // Narrow Do Until Greater Than
 		threeWordDo := iPtr.variant.(threeWordDoT)
