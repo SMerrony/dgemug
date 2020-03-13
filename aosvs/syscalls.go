@@ -47,7 +47,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 func syscall(callID dg.WordT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
-		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x, callID, cpu.GetPC())
+		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
 	}
 	if call.fn == nil {
 		log.Fatalf("ERROR: System call No. %#o not yet implemented at PC=%#x", callID, cpu.GetPC())
