@@ -22,13 +22,16 @@
 package aosvs
 
 import (
+	"io"
 	"log"
+	"net"
 
 	"github.com/SMerrony/dgemug/dg"
 )
 
 const (
 	agentFileOpen = iota
+	agentFileWrite
 	agentFileClose
 )
 
@@ -47,19 +50,30 @@ type agOpenRespT struct {
 	channelNo dg.WordT
 }
 
-type agChannelT struct {
-	channelNo   dg.WordT
-	isConsole   bool
-	read, write bool
+type agWriteReqT struct {
+	chanNo dg.WordT
+	bytes  []byte
+}
+type agWriteRespT struct {
+	bytesTxfrd dg.WordT
 }
 
-var agChannels = map[string]agChannelT{ // TODO should probably not be at this scope
-	"@CONSOLE": {0, true, true, true}, // @CONSOLE is always available
+type agChannelT struct {
+	path        string
+	isConsole   bool
+	read, write bool
+	rwc         io.ReadWriteCloser
+}
+
+var agChannels = map[dg.WordT]*agChannelT{ // TODO should probably not be at this scope
+	0: {"@CONSOLE", true, true, true, nil}, // @CONSOLE is always available
 }
 
 // StartAgent fires of the pseudo-agent Goroutine and returns its msg channel
-func StartAgent() chan AgentReqT {
+func StartAgent(conn net.Conn) chan AgentReqT {
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
+	agChannels[0].rwc = conn
+
 	go agentHandler(agentChan)
 	return agentChan
 }
@@ -70,7 +84,9 @@ func agentHandler(agentChan chan AgentReqT) {
 		switch request.action {
 		case agentFileOpen:
 			request.result = agentFileOpener(request.reqParms.(agOpenReqT))
-		case agentFileClose:
+		case agentFileWrite:
+			request.result = agentFileWriter(request.reqParms.(agWriteReqT))
+		// case agentFileClose:
 
 		default:
 			log.Fatalf("ERROR: Agent received unknown request type %d\n", request.action)
@@ -81,11 +97,26 @@ func agentHandler(agentChan chan AgentReqT) {
 
 func agentFileOpener(req agOpenReqT) (resp agOpenRespT) {
 	log.Printf("DEBUG: Agent received File Open request for %s\n", req.path)
-	agChan, isOpen := agChannels[req.path]
-	if isOpen {
-		resp.channelNo = agChan.channelNo
+	if req.path == "@CONSOLE" {
+		resp.channelNo = 0
 	} else {
 		log.Fatalf("ERROR: real file opening not yet implemented")
+	}
+	return resp
+}
+
+func agentFileWriter(req agWriteReqT) (resp agWriteRespT) {
+	agChan, isOpen := agChannels[req.chanNo]
+	if isOpen {
+		if agChan.isConsole {
+			n, err := agChan.rwc.Write(req.bytes)
+			if err != nil {
+				log.Fatal("ERROR: Could not write to @CONSOLE")
+			}
+			resp.bytesTxfrd = dg.WordT(n)
+		}
+	} else {
+		log.Fatal("ERROR: attempt to ?WRITE to unopened file")
 	}
 	return resp
 }

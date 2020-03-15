@@ -62,7 +62,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
 	0301: {"?CLOSE", "?CLOS", scFileIO, nil},
 	0302: {"?READ", "?READ", scFileIO, nil},
-	0303: {"?WRITE", "?WRIT", scFileIO, nil},
+	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
 	0310: {"?RETURN", "?RETU", scFileIO, nil},
 }
 
@@ -85,6 +85,23 @@ func readPacket(addr dg.PhysAddrT, pktLen int) (pkt []dg.WordT) {
 		pkt[w] = memory.ReadWord(addr + dg.PhysAddrT(w))
 	}
 	return pkt
+}
+
+// readBytes reads characters up to the first NUL from the given doubleword byte address
+func readBytes(bpAddr dg.DwordT) []byte {
+	buff := bytes.NewBufferString("")
+	lobyte := (bpAddr & 0x0001) == 1
+	wdAddr := dg.PhysAddrT(bpAddr >> 1)
+	c := memory.ReadByte(wdAddr, lobyte)
+	for c != 0 {
+		buff.WriteByte(byte(c))
+		if lobyte {
+			wdAddr++
+		}
+		lobyte = !lobyte
+		c = memory.ReadByte(wdAddr, lobyte)
+	}
+	return buff.Bytes()
 }
 
 // readString reads characters up to the first NUL from the given doubleword byte address
