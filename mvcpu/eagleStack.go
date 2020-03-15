@@ -221,6 +221,12 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVK(false)
 		cpu.SetOVR(false)
 
+	case instrWSSVS:
+		unique2Word := iPtr.variant.(unique2WordT)
+		wssav(cpu, &unique2Word)
+		cpu.SetOVK(true)
+		cpu.SetOVR(false)
+
 	case instrXPEF:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)))
@@ -262,7 +268,7 @@ func wsav(cpu *CPUT, u2wd *unique2WordT) {
 	wsPush(cpu, 0, cpu.ac[0]) // 1
 	wsPush(cpu, 0, cpu.ac[1]) // 2
 	wsPush(cpu, 0, cpu.ac[2]) // 3
-	wsPush(cpu, 0, wfpSav)       // 4
+	wsPush(cpu, 0, wfpSav)    // 4
 	dwd := cpu.ac[3] & 0x7fffffff
 	if cpu.carry {
 		dwd |= 0x80000000
@@ -283,7 +289,7 @@ func wssav(cpu *CPUT, u2wd *unique2WordT) {
 	wsPush(cpu, 0, cpu.ac[0])                            // 2
 	wsPush(cpu, 0, cpu.ac[1])                            // 3
 	wsPush(cpu, 0, cpu.ac[2])                            // 4
-	wsPush(cpu, 0, wfpSav)                                  // 5
+	wsPush(cpu, 0, wfpSav)                               // 5
 	dwd := cpu.ac[3] & 0x7fffffff
 	if cpu.carry {
 		dwd |= 0x80000000
@@ -328,7 +334,7 @@ func wpopb(cpu *CPUT) {
 	cpu.ac[2] = wsPop(cpu, 0) // 3
 	cpu.ac[1] = wsPop(cpu, 0) // 4
 	cpu.ac[0] = wsPop(cpu, 0) // 5
-	dwd = wsPop(cpu, 0)          // 6
+	dwd = wsPop(cpu, 0)       // 6
 	cpu.psr = memory.DwordGetUpperWord(dwd)
 	// TODO Set WFP is crossing rings
 	wsFramSz2 := (int(dwd&0x00007fff) * 2) + 12
