@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // mvemg project eagleMemRef_test.go
 
 // Copyright (C) 2017,2019,2020 Steve Merrony

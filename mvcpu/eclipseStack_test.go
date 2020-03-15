@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // eclipseStack_test.go
 
 // Copyright (C) 2017  Steve Merrony
@@ -21,8 +23,11 @@
 
 package mvcpu
 
-import "testing"
-import "github.com/SMerrony/dgemug/memory"
+import (
+	"testing"
+
+	"github.com/SMerrony/dgemug/memory"
+)
 
 func TestSave(t *testing.T) {
 	cpu := new(CPUT)

@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // mvemg project eaglePC_test.go
 
 // Copyright ©2017-2020  Steve Merrony
@@ -67,7 +69,7 @@ func TestWSKBO(t *testing.T) {
 	var wskb wskbT
 	iPtr.ix = instrWSKBO
 	cpu.ac[0] = 0x55555555 // 0101010101010101...
-	wskb.bitNum = 1           // 2nd from left
+	wskb.bitNum = 1        // 2nd from left
 	iPtr.variant = wskb
 	cpu.pc = 1000
 	if !eaglePC(cpu, &iPtr) {

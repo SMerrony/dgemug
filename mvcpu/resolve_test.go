@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // mvemg project resolve_test.go
 
 // Copyright (C) 2017,2019  Steve Merrony

@@ -1,3 +1,5 @@
+// +build physical !virtual
+
 // eagleStack_test.go
 
 // Copyright ©2020  Steve Merrony
