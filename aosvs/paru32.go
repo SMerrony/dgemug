@@ -1,4 +1,4 @@
-// paru32go - Go version of parts of AOS/VS PARU.32.SR definitions file
+// paru32.go - Go version of parts of AOS/VS PARU.32.SR definitions file
 
 // Copyright ©2020 Steve Merrony
 
@@ -20,6 +20,10 @@
 // THE SOFTWARE.
 
 package aosvs
+
+import (
+	"github.com/SMerrony/dgemug/dg"
+)
 
 const (
 	// System Constants
@@ -162,4 +166,61 @@ const (
 
 	dfbrc = dflgs*16 + 1 // RESOURCE CALL
 
+	//  GENERAL USER I/O PACKET
+	//
+	//        USED FOR ?OPEN/?READ/?WRITE/?CLOSE
+	//
+	ich  dg.PhysAddrT = 0             // CHANNEL NUMBER
+	isti              = ich + 1       // STATUS WORD (IN)
+	isto              = isti + 1      // RIGHT=FILE TYPE, LEFT=RESERVED
+	imrs              = isto + 1      // PHYSICAL RECORD SIZE - 1 (BYTES)
+	ibad              = imrs + 1      // BYTE POINTER TO BUFFER
+	ibal              = ibad + 1      // LOW ORDER BITS OF ?IBAD
+	ires              = ibal + 1      // RESERVED
+	ircl              = ires + 1      // RECORD LENGTH
+	irlr              = ircl + 1      // RECORD LENGTH (RETURNED)
+	irnw              = irlr + 1      // RESERVED
+	irnh              = irnw + 1      // RECORD NUMBER (HIGH)
+	irnl              = irnh + 1      // RECORD NUMBER (LOW)
+	ifnp              = irnl + 1      // BYTE POINTER TO FILE NAME
+	ifnl              = ifnp + 1      // LOW ORDER BITS OF ?IFNP
+	idel              = ifnl + 1      // DELIMITER TABLE ADDRESS
+	idll              = idel + 1      // LOWER BITS OF ?IDEL
+	iosz int          = int(idll) + 1 // LENGTH OF STANDARD I/O PACKET
+
+	//  ?ISTI FLAGS: BIT DEFINITIONS
+	iplb = 0  // PACKET LENGTH BIT (0 => SHORT PACKET)
+	icfb = 1  // CHANGE FORMAT BIT (0 => DEFAULT)
+	icdm = 1  // DUMP MODE BIT (ON ?CLOSE ONLY)
+	iptb = 2  // POSITIONING TYPE (0 => RELATIVE)
+	ibib = 3  // BINARY I/O
+	ifob = 4  // FORCE OUTPUT
+	ioex = 5  // EXCLUSIVE OPEN
+	iips = 6  // IPC NO WAIT BIT
+	pdlm = 7  // PRIORITY REQUEST
+	apbt = 8  // OPEN FILE FOR APPENDING
+	of1b = 9  // OPEN TYPE BIT 1
+	of2b = 10 // OPEN TYPE BIT 2
+	opib = 11 // OPEN FOR INPUT
+	opob = 12 // OPEN FOR OUTPUT
+	rf1b = 13 // RECORD FORMAT BIT 1
+	rf2b = 14 // RECORD FORMAT BIT 2
+	rf3b = 15 // RECORD FORMAT BIT 3
+
+	//  ?ISTI FLAGS: MASK DEFINITIONS
+	ipkl = 0x8000 >> iplb // EXTENDED PACKET (IF SET)
+	icrf = 0x8000 >> icfb // CHANGE RECORD FORMAT (IF SET)
+	cdmp = 0x8000 >> icdm // SET DUMP BIT (ONLY ON ?CLOSE)
+	ipst = 0x8000 >> iptb // RECORD POSITIONING TYPE (1 - ABSOLUTE)
+	ibin = 0x8000 >> ibib // BINARY I/O
+	ifop = 0x8000 >> ifob // FORCE OUTPUT
+	iexo = 0x8000 >> ioex // EXCLUSIVE OPEN
+	iipc = 0x8000 >> iips // IPC NO WAIT BIT
+	pdel = 0x8000 >> pdlm // PRIORITY OPEN-I/O
+	apnd = 0x8000 >> apbt // OPEN FILE FOR APPENDING
+	ofcr = 0x8000 >> of1b // ATTEMPT CREATE BEFORE OPEN
+	ofce = 0x8000 >> of2b // CORRECT ERROR ON CREATE OR OPEN
+	ofin = 0x8000 >> opib // OPEN FOR INPUT
+	ofot = 0x8000 >> opob // OPEN FOR OUTPUT
+	ofio = ofin + ofot    // OPEN FOR INPUT AND OUTPUT
 )

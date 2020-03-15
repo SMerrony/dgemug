@@ -22,29 +22,51 @@
 package aosvs
 
 import (
+	"bytes"
 	"log"
+
+	"github.com/SMerrony/dgemug/memory"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
 type syscallDescT struct {
-	name  string                 // AOS/VS System Call Name
-	alias string                 // AOS/VS 4-char Name Alias
-	fn    func(*mvcpu.CPUT) bool // implementation
+	name        string                                 // AOS/VS System Call Name
+	alias       string                                 // AOS/VS 4-char Name Alias
+	syscallType int                                    // groupings as per Table 2-1 in Sys Call Dict
+	fn          func(*mvcpu.CPUT, chan AgentReqT) bool // implementation
 }
+
+const (
+	scMemory = iota
+	scProcess
+	scFileManage
+	scFileIO
+	scDebugging
+	scWindowing
+	scMultitasking
+	scIPC
+	scConnection
+	scMultiproc
+	scClass
+	scSystem
+	scUserDev
+	scBisync
+	sc16Bit
+)
 
 var syscalls = map[dg.WordT]syscallDescT{
-	0:    {"?CREATE", "?CREA", nil},
-	1:    {"?DELETE", "?DELE", nil},
-	0300: {"?OPEN", "?OPEN", nil},
-	0301: {"?CLOSE", "?CLOS", nil},
-	0302: {"?READ", "?READ", nil},
-	0303: {"?WRITE", "?WRIT", nil},
-	0310: {"?RETURN", "?RETU", nil},
+	0:    {"?CREATE", "?CREA", scFileManage, nil},
+	1:    {"?DELETE", "?DELE", scFileManage, nil},
+	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
+	0301: {"?CLOSE", "?CLOS", scFileIO, nil},
+	0302: {"?READ", "?READ", scFileIO, nil},
+	0303: {"?WRITE", "?WRIT", scFileIO, nil},
+	0310: {"?RETURN", "?RETU", scFileIO, nil},
 }
 
-func syscall(callID dg.WordT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -52,5 +74,32 @@ func syscall(callID dg.WordT, cpu *mvcpu.CPUT) (ok bool) {
 	if call.fn == nil {
 		log.Fatalf("ERROR: System call No. %#o not yet implemented at PC=%#x", callID, cpu.GetPC())
 	}
-	return call.fn(cpu)
+	return call.fn(cpu, agent)
+}
+
+// readPacket just loads a chunk of memory into a slice of words
+// TODO maybe this should be in ram_virtual.go as 'ReadWords' for efficiency?
+func readPacket(addr dg.PhysAddrT, pktLen int) (pkt []dg.WordT) {
+	pkt = make([]dg.WordT, pktLen, pktLen)
+	for w := range pkt {
+		pkt[w] = memory.ReadWord(addr + dg.PhysAddrT(w))
+	}
+	return pkt
+}
+
+// readString reads characters up to the first NUL from the given doubleword byte address
+func readString(bpAddr dg.DwordT) string {
+	buff := bytes.NewBufferString("")
+	lobyte := (bpAddr & 0x0001) == 1
+	wdAddr := dg.PhysAddrT(bpAddr >> 1)
+	c := memory.ReadByte(wdAddr, lobyte)
+	for c != 0 {
+		buff.WriteByte(byte(c))
+		if lobyte {
+			wdAddr++
+		}
+		lobyte = !lobyte
+		c = memory.ReadByte(wdAddr, lobyte)
+	}
+	return buff.String()
 }

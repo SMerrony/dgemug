@@ -74,7 +74,7 @@ type ProcessT struct {
 }
 
 // CreateProcess creates, but does not start, an emulated AOS/VS Process
-func CreateProcess(pid int, prName string, ring int, con net.Conn) (p *ProcessT, err error) {
+func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan chan AgentReqT) (p *ProcessT, err error) {
 	progWds, err := readProgram(prName)
 	if err != nil {
 		return nil, err
@@ -90,23 +90,24 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn) (p *ProcessT,
 
 	// every process has at least one task
 	proc.tasks = make([]*taskT, proc.ust.taskCount, maxTasksPerProc)
-	log.Printf("INFO: Preparing process with %d tasks and %d blocks of shared pages\n", proc.ust.taskCount, proc.ust.sharedBlockCount)
+	log.Printf("INFO: Preparing ring %d process with %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
 
 	if proc.ust.sharedBlockCount != 0 {
 		log.Println("WARNING: Shared pages not yet supported")
 	}
 
+	segBase := dg.PhysAddrT(ring) << 28
+
 	// map (load) program into RAM
 	// unshared portion
 	log.Println("DEBUG: Mapping unshared pages...")
-	memory.MapSlice(0x7000_0000, progWds[:proc.ust.impureBlocks<<10])
+	memory.MapSlice(segBase, progWds[8192:proc.ust.sharedStartPageInPR<<10-8])
 	// shared portion
 	log.Println("DEBUG: Mapping shared pages...")
-	memory.MapSlice(0x7000_0000+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10,
-		progWds[proc.ust.sharedStartPageInPR<<10:]) // FIXME hardcoded!
+	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:])
 
 	// set up initial task
-	proc.tasks[0] = createTask(pid, 0,
+	proc.tasks[0] = createTask(pid, 0, agentChan,
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
