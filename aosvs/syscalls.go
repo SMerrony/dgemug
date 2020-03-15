@@ -64,6 +64,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0302: {"?READ", "?READ", scFileIO, nil},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
 	0310: {"?RETURN", "?RETU", scFileIO, nil},
+	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu},
 }
 
 func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
