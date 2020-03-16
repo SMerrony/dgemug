@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // process.go - abstraction of an AOS/VS process
 
 // Copyright ©2020 Steve Merrony
