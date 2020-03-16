@@ -267,6 +267,7 @@ const (
 	instrWCST
 	instrWCTR
 	instrWDIVS
+	instrWFLAD
 	instrWFPOP
 	instrWFPSH
 	instrWINC
@@ -308,6 +309,7 @@ const (
 	instrWSSVR
 	instrWSSVS
 	instrWSTB
+	instrWSTI
 	instrWSUB
 	instrWSZB
 	instrWUSGT
@@ -536,6 +538,7 @@ func InstructionsInit() {
 	instructionSet[instrWCST] = instrChars{"WCST", 0xe709, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
 	instructionSet[instrWCTR] = instrChars{"WCTR", 0x8769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
 	instructionSet[instrWDIVS] = instrChars{"WDIVS", 0xe769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
+	instructionSet[instrWFLAD] = instrChars{"WFLAD", 0x84a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrWFPOP] = instrChars{"WFPOP", 0xa789, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWFPSH] = instrChars{"WFPSH", 0x87b9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWINC] = instrChars{"WINC", 0x8259, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
@@ -577,6 +580,7 @@ func InstructionsInit() {
 	instructionSet[instrWSSVR] = instrChars{"WSSVR", 0x8729, 0xffff, 2, UNIQUE_2_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWSSVS] = instrChars{"WSSVS", 0x8739, 0xffff, 2, UNIQUE_2_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWSTB] = instrChars{"WSTB", 0x8539, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_MEMREF, 0}
+	instructionSet[instrWSTI] = instrChars{"WSTI", 0xe6b9, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrWSUB] = instrChars{"WSUB", 0x8159, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWSZB] = instrChars{"WSZB", 0x82b9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWUSGT] = instrChars{"WUSGT", 0x80a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_PC, 0}

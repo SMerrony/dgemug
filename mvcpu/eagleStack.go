@@ -131,10 +131,10 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVR(false)
 
 	case instrWFPOP:
-		cpu.fpac[3] = wsPopQWord(cpu, 0)
-		cpu.fpac[2] = wsPopQWord(cpu, 0)
-		cpu.fpac[1] = wsPopQWord(cpu, 0)
-		cpu.fpac[0] = wsPopQWord(cpu, 0)
+		cpu.fpac[3] = float64(int(wsPopQWord(cpu, 0)))
+		cpu.fpac[2] = float64(int(wsPopQWord(cpu, 0)))
+		cpu.fpac[1] = float64(int(wsPopQWord(cpu, 0)))
+		cpu.fpac[0] = float64(int(wsPopQWord(cpu, 0)))
 		tmpQwd := wsPopQWord(cpu, 0)
 		cpu.fpsr = 0
 		any := false

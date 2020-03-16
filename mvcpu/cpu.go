@@ -73,7 +73,7 @@ type CPUT struct {
 	psr                     dg.WordT     // Processor Status Register - see PoP 2-11 & A-4
 	carry, atu, ion, pfflag bool         // flag bits
 	sbr                     [8]sbrBits   // SBRs (see above)
-	fpac                    [4]dg.QwordT // 4 x 64-bit Floating Point Accumulators
+	fpac                    [4]float64   // 4 x 64-bit Floating Point Acs N.B Not same internal fmt as DG
 	fpsr                    dg.QwordT    // 64-bit Floating-Point Status Register
 	sr                      dg.WordT     // Not sure about this... fake Switch Register
 	wfp, wsp, wsl, wsb      dg.PhysAddrT // current wide stack pointers
@@ -373,6 +373,8 @@ func (cpu *CPUT) Execute(iPtr *decodedInstrT) (rc bool) {
 		rc = eclipsePC(cpu, iPtr)
 	case ECLIPSE_STACK:
 		rc = eclipseStack(cpu, iPtr)
+	case EAGLE_FPU:
+		rc = eagleFPU(cpu, iPtr)
 	case EAGLE_IO:
 		rc = eagleIO(cpu, iPtr)
 	case EAGLE_OP:

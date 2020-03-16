@@ -126,6 +126,12 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 	WriteWord(wordAddr, wd)
 }
 
+// WriteByteBA writes a byte to a standard Byte Addressed location
+func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
+	loByte := (byteAddr & 0x01) == 1
+	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
+}
+
 // ReadWord reads a single 16-bit word from the specified address
 func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()

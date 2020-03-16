@@ -87,6 +87,12 @@ func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 	WriteWord(wordAddr, wd)
 }
 
+// WriteByteBA writes a byte to a standard Byte Addressed location
+func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
+	loByte := (byteAddr & 0x01) == 1
+	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
+}
+
 // ReadWord16 returns the DG Word at the specified physical address
 func ReadWord16(wordAddr dg.WordT) dg.WordT {
 	var wd dg.WordT
