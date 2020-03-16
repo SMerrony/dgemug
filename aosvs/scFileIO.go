@@ -29,6 +29,16 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
+func scClose(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+	channel := memory.ReadWord(pktAddr + ich)
+	var creq = agCloseReqT{channel}
+	var areq = AgentReqT{agentFileClose, creq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	return true
+}
+
 func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	// pkt := readPacket(pktAddr, iosz)

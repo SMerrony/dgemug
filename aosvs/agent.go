@@ -42,6 +42,13 @@ type AgentReqT struct {
 	result   interface{}
 }
 
+type agCloseReqT struct {
+	chanNo dg.WordT
+}
+type agCloseRespT struct {
+	errCode dg.WordT
+}
+
 type agOpenReqT struct {
 	path string
 	mode dg.WordT
@@ -82,17 +89,27 @@ func agentHandler(agentChan chan AgentReqT) {
 	for {
 		request := <-agentChan
 		switch request.action {
+		case agentFileClose:
+			request.result = agentFileCloser(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
 			request.result = agentFileOpener(request.reqParms.(agOpenReqT))
 		case agentFileWrite:
 			request.result = agentFileWriter(request.reqParms.(agWriteReqT))
-		// case agentFileClose:
 
 		default:
 			log.Fatalf("ERROR: Agent received unknown request type %d\n", request.action)
 		}
 		agentChan <- request
 	}
+}
+
+func agentFileCloser(req agCloseReqT) (resp agCloseRespT) {
+	if req.chanNo == 0 {
+		resp.errCode = 0
+	} else {
+		log.Fatalf("ERROR: real file opening not yet implemented")
+	}
+	return resp
 }
 
 func agentFileOpener(req agOpenReqT) (resp agOpenRespT) {

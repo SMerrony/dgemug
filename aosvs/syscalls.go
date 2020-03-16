@@ -60,7 +60,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0:    {"?CREATE", "?CREA", scFileManage, nil},
 	1:    {"?DELETE", "?DELE", scFileManage, nil},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
-	0301: {"?CLOSE", "?CLOS", scFileIO, nil},
+	0301: {"?CLOSE", "?CLOS", scFileIO, scClose},
 	0302: {"?READ", "?READ", scFileIO, nil},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
 	0310: {"?RETURN", "?RETU", scFileIO, nil},
