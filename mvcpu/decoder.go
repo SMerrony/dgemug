@@ -713,14 +713,25 @@ func decode16bitByteDisp(d16 dg.WordT) (disp16 int16, loHi bool) {
 	return disp16, loHi
 }
 
-func decode31bitDisp(d1, d2 dg.WordT, mode int) int32 {
-	// FIXME Test this!
-	dwd := memory.DwordFromTwoWords(d1&0x7fff, d2)
-	// sign-extend if not absolute mode
-	if mode != absoluteMode && memory.TestDwbit(dwd, 1) {
-		memory.SetDwbit(&dwd, 0)
+func decode31bitDisp(d1, d2 dg.WordT, mode int) (disp32 int32) {
+	// // FIXME Test this!
+	// dwd := memory.DwordFromTwoWords(d1&0x7fff, d2)
+	// // sign-extend if not absolute mode
+	// if mode != absoluteMode && memory.TestDwbit(dwd, 1) {
+	// 	memory.SetDwbit(&dwd, 0)
+	// }
+	// return int32(dwd)
+	d1d := dg.DwordT(d1&0x7fff) << 16
+	d2d := dg.DwordT(d2)
+	if mode == absoluteMode {
+		disp32 = int32(d1d + d2d)
+	} else {
+		if memory.TestWbit(d1, 1) {
+			d1d |= 0x8000_0000
+		}
+		disp32 = int32(d1d + d2d)
 	}
-	return int32(dwd)
+	return disp32
 }
 
 func decodeCarry(cry dg.WordT) byte {

@@ -134,22 +134,19 @@ func resolve32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte boo
 
 func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
 
-	eff = dg.PhysAddrT(disp)
-
-	// handle addressing mode...
 	switch mode {
 	case absoluteMode:
-		// nothing to do
+		eff = dg.PhysAddrT(disp)
 	case pcMode:
-		eff += cpu.pc + dg.PhysAddrT(dispOffset)
+		eff = dg.PhysAddrT(int32(cpu.pc) + disp + int32(dispOffset))
 	case ac2Mode:
-		eff += dg.PhysAddrT(cpu.ac[2])
+		eff = dg.PhysAddrT(int32(cpu.ac[2]) + disp)
 	case ac3Mode:
-		eff += dg.PhysAddrT(cpu.ac[3])
+		eff = dg.PhysAddrT(int32(cpu.ac[3]) + disp)
 	}
 
 	// handle indirection
-	if ind == '@' || memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
+	if ind == '@' { // || memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
 			log.Fatalln("Terminating")
@@ -167,8 +164,10 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
+	} else {
+		eff &= 0x7fff_ffff
 	}
-
+	// log.Printf("... resolve32bitEffAddr got: %d. %s, returning %#x\n", disp, modeToString(mode), eff)
 	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve32bitEffAddr got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
