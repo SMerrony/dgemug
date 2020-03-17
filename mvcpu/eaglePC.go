@@ -122,6 +122,18 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc += 3
 		}
 
+	case instrLWISZ:
+		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
+		// unsigned wide increment and skip if zero
+		tmpAddr := resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		tmp32b := memory.ReadDWord(tmpAddr) + 1
+		memory.WriteDWord(tmpAddr, tmp32b)
+		if tmp32b == 0 {
+			cpu.pc += 4
+		} else {
+			cpu.pc += 3
+		}
+
 	case instrNSALA:
 		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
 		wd := ^memory.DwordGetLowerWord(cpu.ac[oneAccImm2Word.acd])

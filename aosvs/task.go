@@ -72,7 +72,7 @@ func (task *taskT) run() (errDetail string, instrCounts [750]int) {
 		if syscallTrap {
 			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
 			callID := memory.ReadWord(cpu.GetPC() + 2)
-			log.Printf("DEBUG: Trapped System Call: %#o, return addr: %#o\n", callID, returnAddr)
+			//log.Printf("DEBUG: Trapped System Call: %#o, return addr: %#o\n", callID, returnAddr)
 			if syscall(callID, task.agentChan, &cpu) {
 				cpu.SetPC(returnAddr + 2)
 			} else {

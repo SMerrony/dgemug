@@ -43,7 +43,7 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		size := int(uint8(memory.GetDwbits(cpu.ac[1], 27, 5)))
 		switch dataType {
 		case 3: // <sign><zeroes><int>
-			converted := fmt.Sprintf("%+0*d", size, unconverted)
+			converted := fmt.Sprintf("%+*d", size, unconverted)
 			for c := 0; c < size; c++ {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
 				cpu.ac[3]++

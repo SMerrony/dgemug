@@ -62,7 +62,7 @@ func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
 	bytes := readBytes(memory.ReadDWord(pktAddr + ibad))
-	log.Println("DEBUG: ?WRITE")
+	// log.Println("DEBUG: ?WRITE")
 	var areq AgentReqT
 	var writeReq = agWriteReqT{channel, bytes}
 	areq.action = agentFileWrite
