@@ -104,6 +104,19 @@ func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
 	return dg.ByteT(wd)
 }
 
+// ReadBytes - read specified # of bytes from 32-bit BA into slice
+func ReadBytes(ba32 dg.DwordT, num int) (res []byte) {
+	var c dg.DwordT
+	for c = 0; c < dg.DwordT(num); c++ {
+		if (ba32+c)&0x01 == 1 {
+			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1), true)))
+		} else {
+			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1), false)))
+		}
+	}
+	return res
+}
+
 // ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
 func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
 	var (

@@ -224,3 +224,12 @@ const (
 	ofot = 0x8000 >> opob // OPEN FOR OUTPUT
 	ofio = ofin + ofot    // OPEN FOR INPUT AND OUTPUT
 )
+
+// FLAGS FOR RETURN TO CLI (?RETURN)
+const (
+	Rfcf = 1 << 7 // 1B0             // CLI FORMAT
+	Rfwa = 1 << 5 // 1B2             // WARNING (SEVERITY=1)
+	Rfer = 2 << 5 // 2B2             // ERROR   (SEVERITY=2)
+	Rfab = 3 << 5 // 3B2             // ABORT   (SEVERITY=3)
+	Rfec = 1 << 4 // 1B3             // ERROR CODE FLAG. IF SET, AC0 CONTAINS ERROR CODE
+)

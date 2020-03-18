@@ -34,7 +34,7 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...
-		unconverted := int(cpu.fpac[oneAcc1Word.acd])
+		unconverted := cpu.fpac[oneAcc1Word.acd]
 		scaleFactor := int(int8(memory.GetDwbits(cpu.ac[1], 0, 8)))
 		if scaleFactor != 0 {
 			log.Fatalf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
@@ -43,7 +43,10 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		size := int(uint8(memory.GetDwbits(cpu.ac[1], 27, 5)))
 		switch dataType {
 		case 3: // <sign><zeroes><int>
-			converted := fmt.Sprintf("%+*d", size, unconverted)
+			if unconverted < 0 {
+				size++
+			}
+			converted := fmt.Sprintf("%+*.f", size, unconverted)
 			for c := 0; c < size; c++ {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
 				cpu.ac[3]++

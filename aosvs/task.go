@@ -53,7 +53,7 @@ func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb
 	return &task
 }
 
-func (task *taskT) run() (errDetail string, instrCounts [750]int) {
+func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
 	var (
 		cpu         mvcpu.CPUT
 		syscallTrap bool
@@ -68,11 +68,21 @@ func (task *taskT) run() (errDetail string, instrCounts [750]int) {
 	// log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+0400))
 
 	for {
-		syscallTrap, errDetail, instrCounts = cpu.Vrun()
+		syscallTrap, _, _ = cpu.Vrun()
 		if syscallTrap {
 			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
 			callID := memory.ReadWord(cpu.GetPC() + 2)
 			//log.Printf("DEBUG: Trapped System Call: %#o, return addr: %#o\n", callID, returnAddr)
+			// special handling for the ?RETURN system call
+			if callID == scReturn {
+				errorCode = cpu.GetAc(0)
+				flags = dg.ByteT(memory.GetDwbits(cpu.GetAc(2), 16, 8))
+				msgLen := int(uint8(memory.GetDwbits(cpu.GetAc(2), 24, 8)))
+				if msgLen > 0 {
+					termMessage = string(memory.ReadBytes(cpu.GetAc(1), msgLen))
+				}
+				break
+			}
 			if syscall(callID, task.agentChan, &cpu) {
 				cpu.SetPC(returnAddr + 2)
 			} else {
@@ -83,5 +93,5 @@ func (task *taskT) run() (errDetail string, instrCounts [750]int) {
 			break
 		}
 	}
-	return errDetail, instrCounts
+	return errorCode, termMessage, flags
 }

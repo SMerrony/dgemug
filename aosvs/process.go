@@ -90,12 +90,12 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 	proc.loadUST(progWds)
 	proc.printUST()
 
-	// every process has at least one task
+	// create slots for each task the process might run
 	proc.tasks = make([]*taskT, proc.ust.taskCount, maxTasksPerProc)
 	log.Printf("INFO: Preparing ring %d process with %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
 
 	if proc.ust.sharedBlockCount != 0 {
-		log.Println("WARNING: Shared pages not yet supported")
+		log.Println("WARNING: Shared pages not yet fully supported")
 	}
 
 	segBase := dg.PhysAddrT(ring) << 28
@@ -142,11 +142,11 @@ func readProgram(prName string) (wordImg []dg.WordT, err error) {
 }
 
 // Run launches a new AOS/VS process and its initial Task
-func (proc *ProcessT) Run() (rc int, err error) {
+func (proc *ProcessT) Run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
 
-	proc.tasks[0].run()
+	errorCode, termMessage, flags = proc.tasks[0].run()
+	return errorCode, termMessage, flags
 
-	return -1, errors.New("Not yet implemented")
 }
 
 func (proc *ProcessT) loadUST(progWds []dg.WordT) {

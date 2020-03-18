@@ -63,10 +63,8 @@ func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	channel := memory.ReadWord(pktAddr + ich)
 	bytes := readBytes(memory.ReadDWord(pktAddr + ibad))
 	// log.Println("DEBUG: ?WRITE")
-	var areq AgentReqT
 	var writeReq = agWriteReqT{channel, bytes}
-	areq.action = agentFileWrite
-	areq.reqParms = writeReq
+	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	agentChan <- areq
 	areq = <-agentChan
 	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
