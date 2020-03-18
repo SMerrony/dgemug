@@ -110,6 +110,21 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wsPush(cpu, 0, dg.DwordT(cpu.pc)+3)
 		cpu.pc = resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
+	case instrLWDO: // Wide Do Until Greater Than
+		lndo4Word := iPtr.variant.(lndo4WordT)
+		count := int32(cpu.ac[lndo4Word.acd])
+		memVarAddr := resolve32bitEffAddr(cpu, lndo4Word.ind, lndo4Word.mode, lndo4Word.disp31, iPtr.dispOffset)
+		memVar := int32(memory.ReadDWord(memVarAddr)) + 1
+		memory.WriteDWord(memVarAddr, dg.DwordT(memVar))
+		cpu.ac[lndo4Word.acd] = dg.DwordT(memVar)
+		if memVar > count {
+			// loop ends
+			cpu.pc += dg.PhysAddrT(lndo4Word.offsetU16) + 1
+		} else {
+			// loop continues
+			cpu.pc += 4
+		}
+
 	case instrLWDSZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		// unsigned wide decrement and skip if zero
