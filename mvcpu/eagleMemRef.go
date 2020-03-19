@@ -1,6 +1,6 @@
 // eagleMemRef.go
 
-// Copyright (C) 2017,2019,2020 Steve Merrony
+// Copyright ©2017-2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -136,7 +136,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		addr := resolve32bitEffAddr(cpu, 0, oneAccMode2Word.mode, disp, iPtr.dispOffset)
 		addr <<= 1
-		if !oneAccMode2Word.bitLow {
+		if oneAccMode2Word.bitLow {
 			addr++
 		}
 		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(addr)
