@@ -21,9 +21,19 @@
 
 package aosvs
 
-import "github.com/SMerrony/dgemug/mvcpu"
+import (
+	"time"
+
+	"github.com/SMerrony/dgemug/mvcpu"
+)
 
 func scIfpu(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	// TODO should reserve FPU save area
+	return true
+}
+
+func scWdelay(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	delayMs := int(cpu.GetAc(0))
+	time.Sleep(time.Millisecond * time.Duration(delayMs))
 	return true
 }
