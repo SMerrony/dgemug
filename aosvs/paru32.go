@@ -233,3 +233,25 @@ const (
 	Rfab = 3 << 5 // 3B2             // ABORT   (SEVERITY=3)
 	Rfec = 1 << 4 // 1B3             // ERROR CODE FLAG. IF SET, AC0 CONTAINS ERROR CODE
 )
+
+const (
+	// PACKET TO GET INITIAL MESSAGE (gtmes)
+	//
+	greq dg.PhysAddrT = 0        // REQUEST TYPE (SEE BELOW)
+	gnum              = greq + 1 // ARGUMENT NUMBER
+	gsw               = gnum + 1 // BYTE PTR TO POSSIBLE SWITCH
+	gsw1              = gsw + 1  // LOWER PORTION OF gsw
+	gres              = gsw1 + 1 // BYTE PTR TO AREA TO RECEIVE
+	grel              = gres + 1 // LOWER PORTION OF gres
+	// SWITCH
+	gtln = grel + 1 // PACKET LENGTH
+
+	// REQUEST TYPES (greq)
+	gmes dg.WordT = 0        // GET ENTIRE MESSAGE
+	gcmd          = gmes + 1 // GET CLI COMMAND
+	gcnt          = gcmd + 1 // GET ARGUMENT COUNT
+	garg          = gcnt + 1 // GET ARGUMENT
+	gtsw          = garg + 1 // TEST SWITCH
+	gsws          = gtsw + 1 // TEST SWITCHES
+	gdlc          = 1 << 15  //1B0             // DISABLE LOWER TO UPPERCASE CONVERSION
+)

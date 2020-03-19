@@ -145,6 +145,13 @@ func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
 	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
 }
 
+// WriteStringBA copies a string to the specified address
+func WriteStringBA(s string, byteAddr dg.DwordT) {
+	for c := 0; c < len(s); c++ {
+		WriteByteBA(byteAddr+dg.DwordT(c), dg.ByteT(s[c]))
+	}
+}
+
 // ReadWord reads a single 16-bit word from the specified address
 func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()

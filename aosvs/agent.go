@@ -25,6 +25,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 
 	"github.com/SMerrony/dgemug/dg"
 )
@@ -33,6 +34,7 @@ const (
 	agentFileOpen = iota
 	agentFileWrite
 	agentFileClose
+	agentGetMessage
 )
 
 // AgentReqT is the type of messages passed to and from the pseudo-agent
@@ -65,6 +67,16 @@ type agWriteRespT struct {
 	bytesTxfrd dg.WordT
 }
 
+type agGtMesReqT struct {
+	greq dg.WordT
+	gnum dg.WordT
+	gsw  dg.DwordT
+}
+type agGtMesRespT struct {
+	ac0, ac1 dg.DwordT
+	result   string
+}
+
 type agChannelT struct {
 	path        string
 	isConsole   bool
@@ -76,8 +88,11 @@ var agChannels = map[dg.WordT]*agChannelT{ // TODO should probably not be at thi
 	0: {"@CONSOLE", true, true, true, nil}, // @CONSOLE is always available
 }
 
+var invocationArgs []string
+
 // StartAgent fires of the pseudo-agent Goroutine and returns its msg channel
-func StartAgent(conn net.Conn) chan AgentReqT {
+func StartAgent(conn net.Conn, args []string) chan AgentReqT {
+	invocationArgs = args
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
 	agChannels[0].rwc = conn
 
@@ -95,6 +110,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agentFileOpener(request.reqParms.(agOpenReqT))
 		case agentFileWrite:
 			request.result = agentFileWriter(request.reqParms.(agWriteReqT))
+		case agentGetMessage:
+			request.result = agentGetMessager(request.reqParms.(agGtMesReqT))
 
 		default:
 			log.Fatalf("ERROR: Agent received unknown request type %d\n", request.action)
@@ -134,6 +151,32 @@ func agentFileWriter(req agWriteReqT) (resp agWriteRespT) {
 		}
 	} else {
 		log.Fatal("ERROR: attempt to ?WRITE to unopened file")
+	}
+	return resp
+}
+
+func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
+	switch req.greq {
+	// case gmes:
+	// case gcmd:
+	// case gcnt:
+	case garg: // get the nth arg - special handing for integers
+		if int(req.gnum) > len(invocationArgs)-1 {
+			log.Fatalf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
+		}
+		argS := invocationArgs[int(req.gnum)]
+		i, err := strconv.ParseInt(argS, 10, 16)
+		if err == nil { // integer-only case
+			resp.ac1 = dg.DwordT(i)
+			resp.ac0 = dg.DwordT(len(argS))
+		} else {
+			resp.result = argS + "\x00"
+			resp.ac0 = dg.DwordT(len(argS))
+		}
+	// case gtsw:
+	// case gsws:
+	default:
+		log.Fatalf("ERROR: ?GTMES request type %#x not yet supported\n", req.greq)
 	}
 	return resp
 }
