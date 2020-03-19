@@ -88,6 +88,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			} else {
 				cpu.SetPC(returnAddr + 1)
 			}
+			cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 		} else {
 			// Vrun has stopped and we're not at a system call
 			break

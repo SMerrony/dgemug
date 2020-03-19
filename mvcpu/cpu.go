@@ -332,6 +332,14 @@ func (cpu *CPUT) SetSCPIO(scp bool) {
 	cpu.cpuMu.Unlock()
 }
 
+// GetWFP is a getter for the Wide Frame Pointer
+func (cpu *CPUT) GetWFP() (wfp dg.PhysAddrT) {
+	cpu.cpuMu.RLock()
+	wfp = cpu.wfp
+	cpu.cpuMu.RUnlock()
+	return wfp
+}
+
 // GetWSP is a getter for the Wide Stack Pointer
 func (cpu *CPUT) GetWSP() (wsp dg.PhysAddrT) {
 	cpu.cpuMu.RLock()
@@ -528,7 +536,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// if cpu.debugLogging {
 		// 	logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		// }
-		//log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+		log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 
 		// EXECUTE
 		if !cpu.Execute(iPtr) {

@@ -26,6 +26,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 )
@@ -158,8 +159,19 @@ func agentFileWriter(req agWriteReqT) (resp agWriteRespT) {
 func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
 	// case gmes:
-	// case gcmd:
-	// case gcnt:
+	case gcmd: // get a parsed version of the command line
+		first := true
+		for _, arg := range invocationArgs {
+			if first {
+				first = false
+			} else {
+				resp.result += ","
+			}
+			resp.result += strings.ToUpper(arg)
+		}
+		resp.ac1 = dg.DwordT(len(resp.result))
+	case gcnt:
+		resp.ac0 = dg.DwordT(len(invocationArgs) - 1)
 	case garg: // get the nth arg - special handing for integers
 		if int(req.gnum) > len(invocationArgs)-1 {
 			log.Fatalf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
