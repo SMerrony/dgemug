@@ -1,6 +1,6 @@
 // eagleOp.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -150,6 +150,19 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrWANDI:
 		oneAccImmDwd3Word := iPtr.variant.(oneAccImmDwd3WordT)
 		cpu.ac[oneAccImmDwd3Word.acd] &= oneAccImmDwd3Word.immDword
+
+	case instrWASHI:
+		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
+		s32 := int32(cpu.ac[oneAccImm2Word.acd])
+		switch {
+		case oneAccImm2Word.immS16 == 0: // nothing happens
+		case oneAccImm2Word.immS16 < 0: // shift right
+			s32 >>= (oneAccImm2Word.immS16 * -1)
+			cpu.ac[oneAccImm2Word.acd] = dg.DwordT(s32)
+		case oneAccImm2Word.immS16 > 0: // shift left
+			s32 <<= oneAccImm2Word.immS16
+			cpu.ac[oneAccImm2Word.acd] = dg.DwordT(s32)
+		}
 
 	case instrWCOM:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
