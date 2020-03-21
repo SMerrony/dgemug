@@ -103,10 +103,10 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 	// map (load) program into RAM
 	// unshared portion
 	log.Println("DEBUG: Mapping unshared pages...")
-	memory.MapSlice(segBase, progWds[8192:proc.ust.sharedStartPageInPR<<10-8])
+	memory.MapSlice(segBase, progWds[8192:proc.ust.sharedStartPageInPR<<10-8], false)
 	// shared portion
 	log.Println("DEBUG: Mapping shared pages...")
-	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:])
+	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
 	proc.tasks[0] = createTask(pid, 0, agentChan,

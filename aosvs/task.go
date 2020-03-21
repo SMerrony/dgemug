@@ -71,7 +71,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 		syscallTrap, _, _ = cpu.Vrun()
 		if syscallTrap {
 			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
-			callID := memory.ReadWord(cpu.GetPC() + 2)
+			callID := memory.ReadWord(returnAddr)
 			//log.Printf("DEBUG: Trapped System Call: %#o, return addr: %#o\n", callID, returnAddr)
 			// special handling for the ?RETURN system call
 			if callID == scReturn {
