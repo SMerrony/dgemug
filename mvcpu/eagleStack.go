@@ -175,32 +175,55 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		firstAc := twoAcc1Word.acs
 		lastAc := twoAcc1Word.acd
-		if lastAc > firstAc {
-			firstAc += 4
-		}
-		var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
-		for thisAc := firstAc; thisAc >= lastAc; thisAc-- {
-			if cpu.debugLogging {
-				logging.DebugPrint(logging.DebugLog, "... wide popping AC%d\n", acsUp[thisAc])
+		thisAc := firstAc
+		for {
+			cpu.ac[thisAc] = wsPop(cpu, 0)
+			if thisAc == lastAc {
+				break
 			}
-			cpu.ac[acsUp[thisAc]] = wsPop(cpu, 0)
+			thisAc--
+			if thisAc == -1 {
+				thisAc = 3
+			}
 		}
+
+		// if lastAc > firstAc {
+		// 	firstAc += 4
+		// }
+		// var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
+		// for thisAc := firstAc; thisAc >= lastAc; thisAc-- {
+		// 	if cpu.debugLogging {
+		// 		logging.DebugPrint(logging.DebugLog, "... wide popping AC%d\n", acsUp[thisAc])
+		// 	}
+		// 	cpu.ac[acsUp[thisAc]] = wsPop(cpu, 0)
+		// }
 		cpu.SetOVR(false)
 
 	case instrWPSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		firstAc := twoAcc1Word.acs
 		lastAc := twoAcc1Word.acd
-		if lastAc < firstAc {
-			lastAc += 4
-		}
-		var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
-		for thisAc := firstAc; thisAc <= lastAc; thisAc++ {
-			if cpu.debugLogging {
-				logging.DebugPrint(logging.DebugLog, "... wide pushing AC%d\n", acsUp[thisAc])
+		thisAc := firstAc
+		for {
+			wsPush(cpu, 0, cpu.ac[thisAc])
+			if thisAc == lastAc {
+				break
 			}
-			wsPush(cpu, 0, cpu.ac[acsUp[thisAc]])
+			thisAc++
+			if thisAc == 4 {
+				thisAc = 0
+			}
 		}
+		// if lastAc < firstAc {
+		// 	lastAc += 4
+		// }
+		// var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
+		// for thisAc := firstAc; thisAc <= lastAc; thisAc++ {
+		// 	if cpu.debugLogging {
+		// 		logging.DebugPrint(logging.DebugLog, "... wide pushing AC%d\n", acsUp[thisAc])
+		// 	}
+		// 	wsPush(cpu, 0, cpu.ac[acsUp[thisAc]])
+		// }
 		cpu.SetOVR(false)
 
 	// N.B. WRTN is in eaglePC

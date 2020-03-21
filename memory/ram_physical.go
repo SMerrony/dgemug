@@ -51,48 +51,6 @@ func MemInit(wordSize int, doLog bool) {
 	log.Printf("INFO: Initialised %#o words of main memory\n", wordSize)
 }
 
-// GetSegment - return the segment number for the supplied address
-func GetSegment(addr dg.PhysAddrT) int {
-	return int((addr & 0x70000000) >> 28)
-}
-
-// ReadByte - read a byte from memory using word address and low-byte flag (true => lower (rightmost) byte)
-func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
-	wd := ReadWord(wordAddr)
-	if !loByte {
-		wd >>= 8
-	}
-	return dg.ByteT(wd)
-}
-
-// ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
-func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
-	var (
-		hiLo bool
-		addr dg.PhysAddrT
-	)
-	hiLo = TestWbit(byteAddr16, 15) // determine which byte to get
-	addr = dg.PhysAddrT(byteAddr16) >> 1
-	return ReadByte(addr, hiLo)
-}
-
-// WriteByte takes a normal word addr, low-byte flag and datum byte
-func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
-	wd := ReadWord(wordAddr)
-	if loByte {
-		wd = (wd & 0xff00) | dg.WordT(b)
-	} else {
-		wd = dg.WordT(b)<<8 | (wd & 0x00ff)
-	}
-	WriteWord(wordAddr, wd)
-}
-
-// WriteByteBA writes a byte to a standard Byte Addressed location
-func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
-	loByte := (byteAddr & 0x01) == 1
-	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
-}
-
 // ReadWord16 returns the DG Word at the specified physical address
 func ReadWord16(wordAddr dg.WordT) dg.WordT {
 	var wd dg.WordT
@@ -170,21 +128,6 @@ func WriteWord(wordAddr dg.PhysAddrT, datum dg.WordT) {
 	ramMu.Unlock()
 }
 
-// ReadDWord returns the doubleword at the given physical address
-func ReadDWord(wordAddr dg.PhysAddrT) dg.DwordT {
-	var hiWd, loWd dg.WordT
-	if wordAddr >= memSizeWords {
-		debug.PrintStack()
-		logging.DebugLogsDump("logs/")
-		log.Fatalf("ERROR: Attempt to read doubleword beyond end of physical memory (%#o) using address: %#o", memSizeWords, wordAddr)
-	}
-	ramMu.RLock()
-	hiWd = ram[wordAddr]
-	loWd = ram[wordAddr+1]
-	ramMu.RUnlock()
-	return DwordFromTwoWords(hiWd, loWd)
-}
-
 // ReadDwordTrap returns the doubleword at the given physical address
 func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	var hiWd, loWd dg.WordT
@@ -199,10 +142,4 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	loWd = ram[wordAddr+1]
 	ramMu.RUnlock()
 	return DwordFromTwoWords(hiWd, loWd), true
-}
-
-// WriteDWord writes a doubleword into memory at the given physical address
-func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
-	WriteWord(wordAddr, DwordGetUpperWord(dwd))
-	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
 }

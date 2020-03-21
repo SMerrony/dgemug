@@ -40,19 +40,57 @@ type pageT struct {
 }
 
 var (
-	virtualRam   map[int]pageT
-	virtualRamMu sync.RWMutex
+	virtualRam       map[int]pageT
+	virtualRamMu     sync.RWMutex
+	lastUnsharedPage int
+	firstSharedPage  int = 0x7fff_ffff // dummy high value
+	// lastSharedPage   int
 )
 
-func mapPage(page int) {
+// MapPage maps (allocates) a 1kW page of virtual memory for the process
+func MapPage(page int, shared bool) {
 	virtualRamMu.Lock()
 	if _, mapped := virtualRam[page]; mapped {
 		log.Fatalf("ERROR: Attempt to map already-mapped memory page %#o", page)
 	}
 	var emptyPage pageT
 	virtualRam[page] = emptyPage
-	log.Printf("DEBUG: Mapped page %#x for %#x", page, page<<10)
+	if !shared {
+		lastUnsharedPage++
+	}
+	if shared && (page < firstSharedPage) {
+		firstSharedPage = page
+	}
 	virtualRamMu.Unlock()
+	log.Printf("DEBUG: Mapped page %#x for %#x", page, page<<10)
+	if !shared {
+		log.Printf("DEBUG: ...Last unshared page is now: %#x\n", lastUnsharedPage)
+	}
+}
+
+// GetFirstSharedPage is a getter for the lowest shared page currently mapped
+func GetFirstSharedPage() dg.DwordT {
+	virtualRamMu.RLock()
+	p := firstSharedPage
+	virtualRamMu.RUnlock()
+	return dg.DwordT(p)
+}
+
+// AddUnsharedPage appends an unshared page to virtual memory
+func AddUnsharedPage() int {
+	virtualRamMu.RLock()
+	nextPage := lastUnsharedPage + 1
+	virtualRamMu.RUnlock()
+	MapPage(nextPage, false)
+	return nextPage
+}
+
+// GetLastUnsharedPage is a getter for the highest unshared page currently mapped
+func GetLastUnsharedPage() dg.DwordT {
+	virtualRamMu.RLock()
+	p := lastUnsharedPage
+	virtualRamMu.RUnlock()
+	return dg.DwordT(p)
 }
 
 func isAddrMapped(addr dg.PhysAddrT) (mapped bool) {
@@ -63,45 +101,39 @@ func isAddrMapped(addr dg.PhysAddrT) (mapped bool) {
 }
 
 // MapSlice maps (copies) the provided slice to virtual memory starting at the given address
-func MapSlice(addr dg.PhysAddrT, wds []dg.WordT) {
+func MapSlice(addr dg.PhysAddrT, wds []dg.WordT, shared bool) {
 	for offset, word := range wds {
 		loc := addr + dg.PhysAddrT(offset)
 		// check each time we hit a page boundary to see if it's mapped
 		if ((loc & 0x3ff) == 0) && !isAddrMapped(loc) {
-			mapPage(int(loc >> 10))
+			MapPage(int(loc>>10), shared)
 		}
 		WriteWord(loc, word)
 	}
 }
 
-func unmapPage(page int) {
+// UnmapPage unmaps (deallocates) a 1kW page of virtual memory from the process
+func UnmapPage(page int, shared bool) {
 	virtualRamMu.Lock()
 	if _, mapped := virtualRam[page]; !mapped {
 		log.Fatalf("ERROR: Attempt to unmap a non-mapped memory page %#o", page)
 	}
 	delete(virtualRam, page)
+	if !shared {
+		lastUnsharedPage--
+	}
 	virtualRamMu.Unlock()
+	log.Printf("DEBUG: Unpapped page %#x", page)
+	if !shared {
+		log.Printf("DEBUG: ...Last unshared page is now: %#x\n", lastUnsharedPage)
+	}
 }
 
 // MemInit must be called when the virtual machine is started
 func MemInit() {
 	virtualRam = make(map[int]pageT)
 	// always map user page 0
-	mapPage(ring7page0)
-}
-
-// GetSegment - return the segment number for the supplied address
-func GetSegment(addr dg.PhysAddrT) int {
-	return int((addr & 0x70000000) >> 28)
-}
-
-// ReadByte - read a byte from memory using word address and low-byte flag (true => lower (rightmost) byte)
-func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
-	wd := ReadWord(wordAddr)
-	if !loByte {
-		wd >>= 8
-	}
-	return dg.ByteT(wd)
+	MapPage(ring7page0, false)
 }
 
 // ReadBytes - read specified # of bytes from 32-bit BA into slice
@@ -115,34 +147,6 @@ func ReadBytes(ba32 dg.DwordT, num int) (res []byte) {
 		}
 	}
 	return res
-}
-
-// ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
-func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
-	var (
-		hiLo bool
-		addr dg.PhysAddrT
-	)
-	hiLo = TestWbit(byteAddr16, 15) // determine which byte to get
-	addr = dg.PhysAddrT(byteAddr16) >> 1
-	return ReadByte(addr, hiLo)
-}
-
-// WriteByte takes a normal word addr, low-byte flag and datum byte
-func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
-	wd := ReadWord(wordAddr)
-	if loByte {
-		wd = (wd & 0xff00) | dg.WordT(b)
-	} else {
-		wd = dg.WordT(b)<<8 | (wd & 0x00ff)
-	}
-	WriteWord(wordAddr, wd)
-}
-
-// WriteByteBA writes a byte to a standard Byte Addressed location
-func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
-	loByte := (byteAddr & 0x01) == 1
-	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
 }
 
 // WriteStringBA copies a string to the specified address
@@ -184,22 +188,10 @@ func WriteWord(addr dg.PhysAddrT, datum dg.WordT) {
 	virtualRamMu.Unlock()
 }
 
-func ReadDWord(addr dg.PhysAddrT) dg.DwordT {
-	var hiWd, loWd dg.WordT
-	hiWd = ReadWord(addr)
-	loWd = ReadWord(addr + 1)
-	return DwordFromTwoWords(hiWd, loWd)
-}
-
 func ReadDwordTrap(addr dg.PhysAddrT) (dg.DwordT, bool) {
 	if !isAddrMapped(addr) {
 		log.Printf("ERROR: Attempt to read unmapped doubleword at %#x\n", addr)
 		return 0, false
 	}
 	return ReadDWord(addr), true
-}
-
-func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
-	WriteWord(wordAddr, DwordGetUpperWord(dwd))
-	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
 }

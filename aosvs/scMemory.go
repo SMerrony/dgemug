@@ -1,8 +1,6 @@
-// +build virtual !physical
+// scMemory.go - Memory-related System Call Emulation
 
-// TESTS FOR REPRESENTATION OF VIRTUAL MEMORY USED IN THE OS-LEVEL EMULATOR(S)
-
-// Copyright ©2020  Steve Merrony
+// Copyright ©2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,49 +17,39 @@
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.package memory
+// THE SOFTWARE.
 
-package memory
+package aosvs
 
 import (
-	"testing"
+	"log"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/memory"
+	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func TestReadWriteWord(t *testing.T) {
-	MemInit()
-	wd := ReadWord(0x7000_0001)
-	if wd != 0 {
-		t.Errorf("Expected zero")
-	}
-
-	WriteWord(0x7000_0001, 5)
-	wd = ReadWord(0x7000_0001)
-	if wd != 5 {
-		t.Errorf("Expected 5, got %#x", wd)
-	}
+func scMem(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	highUnshared := memory.GetLastUnsharedPage()
+	lowShared := memory.GetFirstSharedPage() & (0x0fff_ffff >> 10)
+	cpu.SetAc(0, lowShared-highUnshared)
+	cpu.SetAc(1, highUnshared)
+	cpu.SetAc(2, (dg.DwordT(cpu.GetPC())&0x7000_0000)|highUnshared<<10)
+	return true
 }
 
-func TestReadWriteDWord(t *testing.T) {
-	MemInit()
-	var (
-		addr dg.PhysAddrT
-		dwd  dg.DwordT = 0x1234_5678
-	)
-	addr = 0x7000_0010 // normal case
-	WriteDWord(addr, dwd)
-	res := ReadDWord(addr)
-	if res != dwd {
-		t.Errorf("Expected %#x, got %#x", dwd, res)
+func scMemi(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	numPages := int32(cpu.GetAc(0))
+	var lastPage int
+	switch {
+	case numPages > 0: // add pages
+		for numPages > 0 {
+			lastPage = memory.AddUnsharedPage()
+			numPages--
+		}
+		cpu.SetAc(1, dg.DwordT(lastPage<<10)+1023)
+	case numPages < 0: // remove pages
+		log.Fatalln("ERROR: Unmapping via ?MEMI not yet supported")
 	}
-
-	// test across page boundary
-	MapPage(ring7page0 + 1)
-	addr = 0x7000_03ff // last word of page 0
-	WriteDWord(addr, dwd)
-	res = ReadDWord(addr)
-	if res != dwd {
-		t.Errorf("Expected %#x, got %#x", dwd, res)
-	}
+	return true
 }
