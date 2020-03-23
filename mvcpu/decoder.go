@@ -158,9 +158,9 @@ type oneAccMode2WordT struct {
 	bitLow bool
 }
 type oneAccMode3WordT struct {
-	acd    int
-	mode   int
-	disp31 int32
+	acd  int
+	mode int
+	u32  uint32
 }
 type oneAccModeInd2WordT struct {
 	acd    int
@@ -553,11 +553,11 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 		oneAccMode3Word.acd = int(memory.GetWbits(opcode, 3, 2))
 		secondWord = memory.ReadWord(pc + 1)
 		thirdWord = memory.ReadWord(pc + 2)
-		oneAccMode3Word.disp31 = decode31bitDisp(secondWord, thirdWord, oneAccMode3Word.mode)
+		oneAccMode3Word.u32 = uint32(memory.DwordFromTwoWords(secondWord, thirdWord))
 		decodedInstr.variant = oneAccMode3Word
 		if disassemble {
 			decodedInstr.disassembly += fmt.Sprintf(" %d,%#o%s [3-Word OpCode]",
-				oneAccMode3Word.acd, oneAccMode3Word.disp31, modeToString(oneAccMode3Word.mode))
+				oneAccMode3Word.acd, oneAccMode3Word.u32, modeToString(oneAccMode3Word.mode))
 		}
 	case ONEACC_MODE_IND_2_WORD_E_FMT: // eg. DSPA, ELDA, ELDB, ELEF, ESTA
 		var oneAccModeInd2Word oneAccModeInd2WordT

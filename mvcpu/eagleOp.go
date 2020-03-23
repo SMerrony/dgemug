@@ -53,26 +53,6 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.ac[oneAcc1Word.acd] &= 0x0000ffff
 		}
 
-	case instrLLDB:
-		oneAccMode3Word := iPtr.variant.(oneAccMode3WordT)
-		addr := resolve32bitEffAddr(cpu, ' ', oneAccMode3Word.mode, oneAccMode3Word.disp31>>1, iPtr.dispOffset)
-		lobyte := memory.TestDwbit(dg.DwordT(oneAccMode3Word.disp31), 31)
-		cpu.ac[oneAccMode3Word.acd] = dg.DwordT(memory.ReadByte(addr, lobyte))
-
-	case instrLLEF:
-		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		cpu.ac[oneAccModeInd3Word.acd] = dg.DwordT(
-			resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset))
-
-	case instrLLEFB:
-		oneAccMode3Word := iPtr.variant.(oneAccMode3WordT)
-		addr := resolve32bitEffAddr(cpu, ' ', oneAccMode3Word.mode, oneAccMode3Word.disp31>>1, iPtr.dispOffset)
-		addr <<= 1
-		if memory.TestDwbit(dg.DwordT(oneAccMode3Word.disp31), 31) {
-			addr |= 1
-		}
-		cpu.ac[oneAccMode3Word.acd] = dg.DwordT(addr)
-
 	case instrLPSR:
 		cpu.ac[0] = dg.DwordT(cpu.psr)
 
