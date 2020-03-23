@@ -81,7 +81,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		memory.WriteWord(effAddr, shifter)
 
 	default:
-		log.Printf("ERROR: NOVA_MEMREF instruction <%s> not yet implemented at PC=%#o\n", iPtr.mnemonic, cpu.pc)
+		log.Printf("ERROR: NOVA_MEMREF instruction <%s> (%#x)not yet implemented at PC=%#o\n", iPtr.mnemonic, memory.ReadWord(cpu.pc), cpu.pc)
 		return false
 	}
 	cpu.pc++

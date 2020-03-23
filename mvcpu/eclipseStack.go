@@ -50,7 +50,7 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrPOPJ:
-		addr := dg.PhysAddrT(memory.NsPop(cpu.pc&0x7000_0000cpu.pc&0x7000_0000, cpu.debugLogging))
+		addr := dg.PhysAddrT(memory.NsPop(cpu.pc&0x7000_0000, cpu.debugLogging))
 		cpu.pc = addr & 0x7fff
 		return true // because PC set
 

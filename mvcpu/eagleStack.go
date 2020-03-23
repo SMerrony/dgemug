@@ -328,7 +328,6 @@ func wssav(cpu *CPUT, u2wd *unique2WordT) {
 
 // wsPush - PUSH a doubleword onto the Wide Stack
 func wsPush(cpu *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
-	// TODO segment handling
 	// TODO overflow/underflow handling - either here or in instruction?
 	cpu.wsp += 2
 	memory.WriteDWord(cpu.wsp, data)
@@ -337,7 +336,6 @@ func wsPush(cpu *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
 
 // WsPop - POP a doubleword off the Wide Stack
 func wsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
-	// TODO segment handling
 	dword = memory.ReadDWord(cpu.wsp)
 	cpu.wsp -= 2
 	logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
@@ -366,7 +364,6 @@ func wpopb(cpu *CPUT) {
 
 // wsPopQWord - POP a Quad-word off the Wide Stack
 func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
-	// TODO segment handling
 	var qw dg.QwordT
 	rhDWord := wsPop(cpu, seg)
 	lhDWord := wsPop(cpu, seg)
