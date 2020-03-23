@@ -35,9 +35,10 @@ type taskT struct {
 	dir                                   string
 	startAddr                             dg.PhysAddrT
 	wfp, wsp, wsb, wsl, stackFaultHandler dg.PhysAddrT
+	debugLogging                          bool
 }
 
-func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT) *taskT {
+func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
 	var task taskT
 	task.pid = pid
 	task.tid = tid
@@ -48,6 +49,7 @@ func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb
 	task.wsb = wsb
 	task.wsl = wsl
 	task.stackFaultHandler = sfh
+	task.debugLogging = debugLogging
 
 	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", tid, startAddr)
 	return &task
@@ -63,6 +65,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl)
 	cpu.SetATU(true)
 	cpu.SetPC(task.startAddr)
+	cpu.SetDebugLogging(task.debugLogging)
 
 	// log.Println(cpu.DisassembleRange(0x7000_0000, 0x7000_0020))
 	// log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+0400))
@@ -72,7 +75,6 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 		if syscallTrap {
 			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
 			callID := memory.ReadWord(returnAddr)
-			//log.Printf("DEBUG: Trapped System Call: %#o, return addr: %#o\n", callID, returnAddr)
 			// special handling for the ?RETURN system call
 			if callID == scReturn {
 				errorCode = cpu.GetAc(0)

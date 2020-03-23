@@ -34,7 +34,7 @@ func scMem(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	lowShared := memory.GetFirstSharedPage() & (0x0fff_ffff >> 10)
 	cpu.SetAc(0, lowShared-highUnshared)
 	cpu.SetAc(1, highUnshared)
-	cpu.SetAc(2, (dg.DwordT(cpu.GetPC())&0x7000_0000)|highUnshared<<10)
+	cpu.SetAc(2, ((dg.DwordT(cpu.GetPC())&0x7000_0000)|highUnshared<<10)-1)
 	return true
 }
 
@@ -47,7 +47,7 @@ func scMemi(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 			lastPage = memory.AddUnsharedPage()
 			numPages--
 		}
-		cpu.SetAc(1, dg.DwordT(lastPage<<10)+1023)
+		cpu.SetAc(1, dg.DwordT(lastPage<<10)|dg.DwordT(cpu.GetPC()&0x7000_0000)-1)
 	case numPages < 0: // remove pages
 		log.Fatalln("ERROR: Unmapping via ?MEMI not yet supported")
 	}

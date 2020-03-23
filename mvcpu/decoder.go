@@ -259,7 +259,7 @@ func instructionMatch(opcode dg.WordT, lefMode bool, ioOn bool, atuOn bool) (int
 			}
 		}
 	}
-	return 0, false
+	return -1, false
 }
 
 // InstructionDecode decodes an opcode

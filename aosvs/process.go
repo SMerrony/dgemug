@@ -76,7 +76,7 @@ type ProcessT struct {
 }
 
 // CreateProcess creates, but does not start, an emulated AOS/VS Process
-func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan chan AgentReqT) (p *ProcessT, err error) {
+func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLogging bool) (p *ProcessT, err error) {
 	progWds, err := readProgram(prName)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,8 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[sfhInPr], progWds[sfhInPr+1])))
+		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[sfhInPr], progWds[sfhInPr+1])),
+		debugLogging)
 
 	// set up trap for system calls
 	memory.WriteDWord(0x7000_0006, 0x7000_0006)

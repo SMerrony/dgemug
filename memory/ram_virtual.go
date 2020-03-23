@@ -42,7 +42,7 @@ type pageT struct {
 var (
 	virtualRam       map[int]pageT
 	virtualRamMu     sync.RWMutex
-	lastUnsharedPage int
+	lastUnsharedPage int = -1
 	firstSharedPage  int = 0x7fff_ffff // dummy high value
 	// lastSharedPage   int
 )

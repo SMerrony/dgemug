@@ -81,6 +81,9 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	if call.fn == nil {
 		log.Fatalf("ERROR: System call No. %#o not yet implemented at PC=%#x", callID, cpu.GetPC())
 	}
+	if cpu.GetDebugLogging() {
+		log.Printf("%s System Call...\n", call.name)
+	}
 	return call.fn(cpu, agent)
 }
 

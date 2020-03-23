@@ -65,6 +65,7 @@ func WriteByteBA(byteAddr dg.DwordT, b dg.ByteT) {
 	WriteByte(dg.PhysAddrT(byteAddr>>1), loByte, b)
 }
 
+// ReadDWord does what it says on the tin
 func ReadDWord(addr dg.PhysAddrT) dg.DwordT {
 	var hiWd, loWd dg.WordT
 	hiWd = ReadWord(addr)

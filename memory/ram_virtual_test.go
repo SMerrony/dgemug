@@ -57,7 +57,7 @@ func TestReadWriteDWord(t *testing.T) {
 	}
 
 	// test across page boundary
-	MapPage(ring7page0 + 1)
+	MapPage(ring7page0+1, true)
 	addr = 0x7000_03ff // last word of page 0
 	WriteDWord(addr, dwd)
 	res = ReadDWord(addr)

@@ -243,6 +243,14 @@ func (cpu *CPUT) SetATU(atu bool) {
 	cpu.cpuMu.Unlock()
 }
 
+// GetDebugLogging is a getter for the debug logging flag
+func (cpu *CPUT) GetDebugLogging() (logging bool) {
+	cpu.cpuMu.RLock()
+	logging = cpu.debugLogging
+	cpu.cpuMu.RUnlock()
+	return logging
+}
+
 // SetDebugLogging is a setter for debug logging
 func (cpu *CPUT) SetDebugLogging(logging bool) {
 	cpu.cpuMu.Lock()
@@ -526,17 +534,17 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		thisOp = memory.ReadWord(cpu.pc)
 
 		// DECODE
-		iPtr, ok = InstructionDecode(thisOp, cpu.pc, true, false, true, true, nil)
+		iPtr, ok = InstructionDecode(thisOp, cpu.pc, true, false, true, cpu.debugLogging, nil)
 		cpu.cpuMu.RUnlock()
 		if !ok || iPtr.ix == -1 {
 			errDetail = " *** Error: could not decode instruction ***"
 			break
 		}
 
-		// if cpu.debugLogging {
-		// 	logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
-		// }
-		log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+		if cpu.debugLogging {
+			// 	logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+			log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+		}
 
 		// EXECUTE
 		if !cpu.Execute(iPtr) {
