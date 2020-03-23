@@ -46,11 +46,11 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 				logging.DebugPrint(logging.DebugLog, "... narrow popping AC%d\n", acsUp[thisAc])
 			}
 
-			cpu.ac[acsUp[thisAc]] = dg.DwordT(memory.NsPop(0, cpu.debugLogging))
+			cpu.ac[acsUp[thisAc]] = dg.DwordT(memory.NsPop(cpu.pc&0x7000_0000, cpu.debugLogging))
 		}
 
 	case instrPOPJ:
-		addr := dg.PhysAddrT(memory.NsPop(0, cpu.debugLogging))
+		addr := dg.PhysAddrT(memory.NsPop(cpu.pc&0x7000_0000cpu.pc&0x7000_0000, cpu.debugLogging))
 		cpu.pc = addr & 0x7fff
 		return true // because PC set
 
@@ -66,7 +66,7 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 			if cpu.debugLogging {
 				logging.DebugPrint(logging.DebugLog, "... narrow pushing AC%d\n", acsUp[thisAc])
 			}
-			memory.NsPush(0, memory.DwordGetLowerWord(cpu.ac[acsUp[thisAc]]), cpu.debugLogging)
+			memory.NsPush(cpu.pc&0x7000_0000, memory.DwordGetLowerWord(cpu.ac[acsUp[thisAc]]), cpu.debugLogging)
 		}
 
 	case instrPSHJ:

@@ -1,6 +1,6 @@
 // novaPC.go
 
-// Copyright (C) 2017,2020 Steve Merrony
+// Copyright ©2017-2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,17 +30,20 @@ import (
 func novaPC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	var novaNoAccEffAddr novaNoAccEffAddrT
+	segMask := cpu.pc & 0x7000_0000
 
 	switch iPtr.ix {
 
 	case instrJMP:
 		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
 		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.pc |= segMask // constrain to current segment
 
 	case instrJSR:
 		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
 		tmpPC := dg.DwordT(cpu.pc + 1)
 		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.pc |= segMask // constrain to current segment
 		cpu.ac[3] = tmpPC
 
 	default:

@@ -1,6 +1,6 @@
 // novaMemRef.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
 		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		// if effAddr != effAddrNew {
 		// 	runtime.Breakpoint()
 		// }
@@ -55,6 +56,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
 		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
 		shifter++
 		memory.WriteWord(effAddr, shifter)
@@ -66,6 +68,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
 		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
+		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
 		cpu.ac[novaOneAccEffAddr.acd] = 0x0000ffff & dg.DwordT(shifter)
 
@@ -74,6 +77,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		shifter = memory.DwordGetLowerWord(cpu.ac[novaOneAccEffAddr.acd])
 		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
+		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		memory.WriteWord(effAddr, shifter)
 
 	default:
