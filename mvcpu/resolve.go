@@ -35,25 +35,18 @@ const (
 	ringMask32 = 0x7000_0000
 )
 
-func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
-	if mode == absoluteMode {
-		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
-	} else {
-		// relative mode
-		// sign-extend to 31-bits
-		eff = dg.PhysAddrT(disp)
-		if memory.TestWbit(disp, 1) {
-			eff |= 0xffff_8000
-		}
-	}
+func resolve31bitDisplacement(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
+
 	switch mode {
+	case absoluteMode:
+		// zero-extend to 28 bits, force to current ring...
+		eff = dg.PhysAddrT(disp) // | (cpu.pc & 0x7000_0000)
 	case pcMode:
-		eff += cpu.pc + dg.PhysAddrT(dispOffset)
+		eff = dg.PhysAddrT(int32(cpu.pc) + disp + int32(dispOffset))
 	case ac2Mode:
-		eff += dg.PhysAddrT(cpu.ac[2])
+		eff = dg.PhysAddrT(int32(cpu.ac[2]) + disp)
 	case ac3Mode:
-		eff += dg.PhysAddrT(cpu.ac[3])
+		eff = dg.PhysAddrT(int32(cpu.ac[3]) + disp)
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
@@ -74,6 +67,57 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
+
+	if cpu.debugLogging {
+		logging.DebugPrint(logging.DebugLog, "... resolve31bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
+	}
+	return eff & physMask32
+}
+
+func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
+	var dispS32 int32
+	if mode != absoluteMode {
+		// relative mode
+		// sign-extend to 32-bits
+		var t16 int16
+		if !memory.TestWbit(disp, 1) {
+			t16 = int16(disp)
+		} else {
+			t16 = int16(disp | 0x8000)
+		}
+		dispS32 = int32(t16)
+	}
+	switch mode {
+	case absoluteMode:
+		// zero-extend to 28 bits, force to current ring...
+		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
+	case pcMode:
+		eff = dg.PhysAddrT(int32(cpu.pc) + dispS32 + int32(dispOffset))
+	case ac2Mode:
+		eff = dg.PhysAddrT(int32(cpu.ac[2]) + dispS32)
+	case ac3Mode:
+		eff = dg.PhysAddrT(int32(cpu.ac[3]) + dispS32)
+	}
+	// handle indirection
+	if ind == '@' { // down the rabbit hole...
+		indAddr, ok := memory.ReadDwordTrap(eff)
+		if !ok {
+			log.Fatalln("Terminating")
+		}
+		for memory.TestDwbit(indAddr, 0) {
+			indAddr, ok = memory.ReadDwordTrap(dg.PhysAddrT(indAddr & physMask32))
+			if !ok {
+				log.Fatalln("Terminating")
+			}
+		}
+		eff = dg.PhysAddrT(indAddr)
+	}
+	// check ATU
+	if cpu.atu == false {
+		// constrain result to 1st 32MB
+		eff &= 0x1ff_ffff
+	}
+
 	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve15bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
@@ -146,7 +190,7 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 	}
 
 	// handle indirection
-	if ind == '@' { // || memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
+	if ind == '@' { //|| memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
 			log.Fatalln("Terminating")
@@ -164,9 +208,10 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
-	} else {
-		eff &= 0x7fff_ffff
 	}
+	// } else {
+	// 	eff |= (cpu.pc & ringMask32)
+	// }
 	// log.Printf("... resolve32bitEffAddr got: %d. %s, returning %#x\n", disp, modeToString(mode), eff)
 	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve32bitEffAddr got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)

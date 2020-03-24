@@ -724,12 +724,12 @@ func decode31bitDisp(d1, d2 dg.WordT, mode int) (disp32 int32) {
 	d1d := dg.DwordT(d1&0x7fff) << 16
 	d2d := dg.DwordT(d2)
 	if mode == absoluteMode {
-		disp32 = int32(d1d + d2d)
+		disp32 = int32(d1d | d2d)
 	} else {
 		if memory.TestWbit(d1, 1) {
 			d1d |= 0x8000_0000
 		}
-		disp32 = int32(d1d + d2d)
+		disp32 = int32(d1d | d2d)
 	}
 	return disp32
 }
@@ -798,18 +798,12 @@ func loHiToByte(loHi bool) byte {
 }
 
 func modeToString(mode int) string {
-	var modes = [...]string{"", "PC", "AC2", "AC3"}
-	if mode == absoluteMode {
-		return ""
-	}
-	return "," + modes[mode]
+	var modes = [...]string{"", ",PC", ",AC2", ",AC3"}
+	return modes[mode]
 }
 
 func skipToString(s int) string {
-	var skips = [...]string{"NONE", "SKP", "SZC", "SNC", "SZR", "SNR", "SEZ", "SBN"}
-	if s == 0 {
-		return ""
-	}
+	var skips = [...]string{"", "SKP", "SZC", "SNC", "SZR", "SNR", "SEZ", "SBN"}
 	return skips[s]
 }
 

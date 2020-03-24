@@ -42,7 +42,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrLLEF:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		cpu.ac[oneAccModeInd3Word.acd] = dg.DwordT(
-			resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset))
+			resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset))
 
 	case instrLLEFB:
 		oneAccMode3Word := iPtr.variant.(oneAccMode3WordT)
@@ -55,12 +55,12 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLNLDA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		cpu.ac[oneAccModeInd3Word.acd] = memory.SexWordToDword(memory.ReadWord(addr))
 
 	case instrLNSTA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		wd := memory.DwordGetLowerWord(cpu.ac[oneAccModeInd3Word.acd])
 		memory.WriteWord(addr, wd)
 
@@ -72,12 +72,12 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLWLDA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		cpu.ac[oneAccModeInd3Word.acd] = memory.ReadDWord(addr)
 
 	case instrLWSTA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		memory.WriteDWord(addr, cpu.ac[oneAccModeInd3Word.acd])
 
 	case instrWBLM:

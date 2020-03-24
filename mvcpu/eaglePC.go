@@ -64,12 +64,12 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		wsPush(cpu, 0, dwd)
 		cpu.SetOVR(false)
-		cpu.pc = resolve32bitEffAddr(cpu, noAccModeInd4Word.ind, noAccModeInd4Word.mode, noAccModeInd4Word.disp31, iPtr.dispOffset)
+		cpu.pc = resolve31bitDisplacement(cpu, noAccModeInd4Word.ind, noAccModeInd4Word.mode, noAccModeInd4Word.disp31, iPtr.dispOffset)
 
 	case instrLDSP:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		value := int32(cpu.ac[oneAccModeInd3Word.acd])
-		tableAddr := resolve32bitEffAddr(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		tableAddr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		h := int32(memory.ReadDWord(tableAddr - 2))
 		l := int32(memory.ReadDWord(tableAddr - 4))
 		if value < l || value > h {
@@ -86,17 +86,17 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLJMP:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
-		cpu.pc = cpu.pc&ringMask32 | resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLJSR:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 3
-		cpu.pc = cpu.pc&ringMask32 | resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLNISZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		// unsigned narrow increment and skip if zero
-		tmpAddr := resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		tmpAddr := resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 		wd := memory.ReadWord(tmpAddr) + 1
 		memory.WriteWord(tmpAddr, wd)
 		if wd == 0 {
@@ -108,12 +108,12 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrLPSHJ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		wsPush(cpu, 0, dg.DwordT(cpu.pc)+3)
-		cpu.pc = resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		cpu.pc = resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLWDO: // Wide Do Until Greater Than
 		lndo4Word := iPtr.variant.(lndo4WordT)
 		count := int32(cpu.ac[lndo4Word.acd])
-		memVarAddr := resolve32bitEffAddr(cpu, lndo4Word.ind, lndo4Word.mode, lndo4Word.disp31, iPtr.dispOffset)
+		memVarAddr := resolve31bitDisplacement(cpu, lndo4Word.ind, lndo4Word.mode, lndo4Word.disp31, iPtr.dispOffset)
 		memVar := int32(memory.ReadDWord(memVarAddr)) + 1
 		memory.WriteDWord(memVarAddr, dg.DwordT(memVar))
 		cpu.ac[lndo4Word.acd] = dg.DwordT(memVar)
@@ -128,7 +128,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrLWDSZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		// unsigned wide decrement and skip if zero
-		tmpAddr := resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		tmpAddr := resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 		tmp32b := memory.ReadDWord(tmpAddr) - 1
 		memory.WriteDWord(tmpAddr, tmp32b)
 		if tmp32b == 0 {
@@ -140,7 +140,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrLWISZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		// unsigned wide increment and skip if zero
-		tmpAddr := resolve32bitEffAddr(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+		tmpAddr := resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 		tmp32b := memory.ReadDWord(tmpAddr) + 1
 		memory.WriteDWord(tmpAddr, tmp32b)
 		if tmp32b == 0 {
@@ -373,6 +373,21 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		tmpAddr, bit := resolveEagleBitAddr(cpu, &twoAcc1Word)
 		wd := memory.ReadWord(tmpAddr)
 		if !memory.TestWbit(wd, int(bit)) {
+			cpu.pc += 2
+		} else {
+			cpu.pc++
+		}
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, ".... Wd Addr: %d., word: %0X, bit #: %d\n", tmpAddr, wd, bit)
+		}
+
+	case instrWSZBO:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		tmpAddr, bit := resolveEagleBitAddr(cpu, &twoAcc1Word)
+		wd := memory.ReadWord(tmpAddr)
+		if !memory.TestWbit(wd, int(bit)) {
+			memory.SetWbit(&wd, uint(bit))
+			memory.WriteWord(tmpAddr, wd)
 			cpu.pc += 2
 		} else {
 			cpu.pc++

@@ -181,7 +181,7 @@ func WriteWord(addr dg.PhysAddrT, datum dg.WordT) {
 	virtualRamMu.Lock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Fatalf("ERROR: Attempt to write to unmapped page at addr %#x", addr)
+		log.Fatalf("ERROR: Attempt to write to unmapped page %#x for addr %#x", addr>>10, addr)
 	}
 	page.words[int(addr&0x3ff)] = datum
 	virtualRam[int(addr>>10)] = page
