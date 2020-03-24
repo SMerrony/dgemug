@@ -404,10 +404,10 @@ func InstructionsInit() {
 	instructionSet[instrEJSR] = instrChars{"EJSR", 0x8c38, 0xfcff, 2, NOACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_PC, 1}
 	instructionSet[instrELDA] = instrChars{"ELDA", 0xa438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
 	instructionSet[instrELDB] = instrChars{"ELDB", 0x8478, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
-	instructionSet[instrELEF] = instrChars{"ELEF", 0xe438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_OP, 1}
+	instructionSet[instrELEF] = instrChars{"ELEF", 0xe438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
 	instructionSet[instrENQH] = instrChars{"ENQH", 0xc7e9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrENQT] = instrChars{"ENQT", 0xc7f9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
-	instructionSet[instrESTA] = instrChars{"ESTA", 0xc438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_OP, 1}
+	instructionSet[instrESTA] = instrChars{"ESTA", 0xc438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
 	instructionSet[instrESTB] = instrChars{"ESTB", 0xa478, 0xe4ff, 2, ONEACC_MODE_2_WORD_E_FMT, ECLIPSE_OP, 1}
 	instructionSet[instrFNS] = instrChars{"FNS", 0x86a8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_PC, 0}
 	instructionSet[instrFPOP] = instrChars{"FPOP", 0xeee8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}

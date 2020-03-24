@@ -1,6 +1,6 @@
 // eclipsePC.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			logging.DebugPrint(logging.DebugLog, "CLM compared %d with limits %d and %d, moving PC by %d\n", acs, l, h, inc)
 		}
 		cpu.pc += inc
-		cpu.pc &= 0x7fff
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 
 	case instrDSPA:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
@@ -81,12 +81,14 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		if addr == 0xffffffff {
 			cpu.pc += 2
 		} else {
-			cpu.pc = addr & 0x7fff
+			cpu.pc = addr & (0x7fff | (cpu.pc & ringMask32))
 		}
 
 	case instrEISZ:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset) & 0x7fff
+		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
 		wd := memory.ReadWord(addr)
 		wd++
 		memory.WriteWord(addr, wd)
@@ -95,22 +97,25 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc += 2
 		}
-		cpu.pc &= 0x7fff
 
 	case instrEJMP:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
-		cpu.pc = addr & 0x7fff
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.pc = addr
 
 	case instrEJSR:
 		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 2
 		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
-		cpu.pc = addr & 0x7fff
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.pc = addr
 
 	case instrFNS:
 		cpu.pc++
-		cpu.pc &= 0x7fff
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 
 	case instrSGT: //16-bit signed numbers
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -121,7 +126,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= 0x7fff
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 
 	case instrSNB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -132,7 +137,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= 0x7fff
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SNB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
@@ -146,7 +151,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= 0x7fff
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SZB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}

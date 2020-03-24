@@ -1,6 +1,6 @@
 // eclipseMemRef.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,8 +66,32 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrELDA:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset) & 0x7fff
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
 		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(memory.ReadWord(addr))
+
+	case instrELEF:
+		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(addr)
+
+	case instrESTA:
+		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
+		// addr := resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		memory.WriteWord(addr, memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd]))
+
+	case instrLEF:
+		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
+		addr := resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.ac[novaOneAccEffAddr.acd] = dg.DwordT(addr)
 
 	default:
 		log.Printf("ERROR: ECLIPSE_MEMREF instruction <%s> not yet implemented\n", iPtr.mnemonic)

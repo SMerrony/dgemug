@@ -102,18 +102,6 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
 		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
 
-	case instrELEF:
-		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
-		//cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset))
-		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(addr & 0x7fff)
-
-	case instrESTA:
-		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		// addr := resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset)
-		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
-		memory.WriteWord(addr&0x7fff, memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd]))
-
 	case instrHXL:
 		immOneAcc := iPtr.variant.(immOneAccT)
 		dwd := cpu.ac[immOneAcc.acd] << (uint32(immOneAcc.immU16) * 4)
