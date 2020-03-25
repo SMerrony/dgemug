@@ -25,7 +25,6 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
-	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -50,36 +49,6 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wd := memory.DwordGetLowerWord(cpu.ac[immOneAcc.acd])
 		wd += dg.WordT(immOneAcc.immU16) // unsigned arithmetic does wraparound in Go
 		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
-
-	case instrBTO:
-		// TODO Handle segment and indirection...
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
-		wd := memory.ReadWord(addr)
-		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... BTO Addr: %d, Bit: %d, Before: %s\n",
-				addr, bitNum, memory.WordToBinStr(wd))
-		}
-		memory.SetWbit(&wd, bitNum)
-		memory.WriteWord(addr, wd)
-		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... BTO                     Result: %s\n", memory.WordToBinStr(wd))
-		}
-
-	case instrBTZ:
-		// TODO Handle segment and indirection...
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
-		wd := memory.ReadWord(addr)
-		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... BTZ Addr: %d, Bit: %d, Before: %s\n", addr, bitNum, memory.WordToBinStr(wd))
-		}
-		memory.ClearWbit(&wd, bitNum)
-		memory.WriteWord(addr, wd)
-		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... BTZ                     Result: %s\n",
-				memory.WordToBinStr(wd))
-		}
 
 	case instrDHXL:
 		immOneAcc := iPtr.variant.(immOneAccT)
@@ -122,10 +91,6 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wd := memory.DwordGetLowerWord(cpu.ac[oneAccImmWd2Word.acd]) | oneAccImmWd2Word.immWord
 		cpu.ac[oneAccImmWd2Word.acd] = dg.DwordT(wd)
 
-	case instrLDB:
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.ReadByteEclipseBA(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])))
-
 	case instrLSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.ac[twoAcc1Word.acd] = lsh(cpu.ac[twoAcc1Word.acs], cpu.ac[twoAcc1Word.acd])
@@ -138,13 +103,6 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		wd -= dg.WordT(immOneAcc.immU16)
 		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
-
-	case instrSTB:
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		hiLo := memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 31)
-		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])) >> 1
-		byt := dg.ByteT(cpu.ac[twoAcc1Word.acd])
-		memory.WriteByte(addr, hiLo, byt)
 
 	case instrXCH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)

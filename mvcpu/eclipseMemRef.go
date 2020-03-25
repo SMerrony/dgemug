@@ -58,6 +58,37 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[2] = dg.DwordT(src) // TODO confirm this is right, doc ambiguous
 		cpu.ac[3] = dg.DwordT(dest)
 
+	case instrBTO:
+		// TODO Handle segment and indirection...
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
+		addr |= (cpu.pc & ringMask32)
+		wd := memory.ReadWord(addr)
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "... BTO Addr: %d, Bit: %d, Before: %s\n",
+				addr, bitNum, memory.WordToBinStr(wd))
+		}
+		memory.SetWbit(&wd, bitNum)
+		memory.WriteWord(addr, wd)
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "... BTO                     Result: %s\n", memory.WordToBinStr(wd))
+		}
+
+	case instrBTZ:
+		// TODO Handle segment and indirection...
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
+		addr |= (cpu.pc & ringMask32)
+		wd := memory.ReadWord(addr)
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "... BTZ Addr: %d, Bit: %d, Before: %s\n", addr, bitNum, memory.WordToBinStr(wd))
+		}
+		memory.ClearWbit(&wd, bitNum)
+		memory.WriteWord(addr, wd)
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "... BTZ                     Result: %s\n",
+				memory.WordToBinStr(wd))
+		}
 	case instrCMP:
 		cmp(cpu)
 
@@ -86,12 +117,23 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		addr |= (cpu.pc & ringMask32)
 		memory.WriteWord(addr, memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd]))
 
+	case instrLDB:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.ReadByteEclipseBA(cpu.pc, memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])))
+
 	case instrLEF:
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
 		addr := resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15)
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		cpu.ac[novaOneAccEffAddr.acd] = dg.DwordT(addr)
+
+	case instrSTB:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		hiLo := memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 31)
+		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])) >> 1
+		byt := dg.ByteT(cpu.ac[twoAcc1Word.acd])
+		memory.WriteByte(addr, hiLo, byt)
 
 	default:
 		log.Printf("ERROR: ECLIPSE_MEMREF instruction <%s> not yet implemented\n", iPtr.mnemonic)
@@ -116,12 +158,12 @@ func cmp(cpu *CPUT) {
 	res := 0
 	for {
 		if str1len != 0 {
-			byte1 = memory.ReadByteEclipseBA(str1bp)
+			byte1 = memory.ReadByteEclipseBA(cpu.pc, str1bp)
 		} else {
 			byte1 = ' '
 		}
 		if str2len != 0 {
-			byte2 = memory.ReadByteEclipseBA(str2bp)
+			byte2 = memory.ReadByteEclipseBA(cpu.pc, str2bp)
 		} else {
 			byte2 = ' '
 		}
