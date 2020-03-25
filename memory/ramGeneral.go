@@ -38,13 +38,14 @@ func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
 }
 
 // ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing
-func ReadByteEclipseBA(byteAddr16 dg.WordT) dg.ByteT {
+func ReadByteEclipseBA(pcAddr dg.PhysAddrT, byteAddr16 dg.WordT) dg.ByteT {
 	var (
 		hiLo bool
 		addr dg.PhysAddrT
 	)
 	hiLo = TestWbit(byteAddr16, 15) // determine which byte to get
 	addr = dg.PhysAddrT(byteAddr16) >> 1
+	addr |= (pcAddr & 0x7000_0000)
 	return ReadByte(addr, hiLo)
 }
 

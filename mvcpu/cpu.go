@@ -266,6 +266,13 @@ func (cpu *CPUT) GetLef(segment int) (lef bool) {
 	return lef
 }
 
+// SetLef sets the LEF mode bit for the current (PC) segment
+func (cpu *CPUT) SetLef(lef bool) {
+	cpu.cpuMu.Lock()
+	cpu.sbr[(cpu.pc&0x7000_0000)>>28].lef = lef
+	cpu.cpuMu.Unlock()
+}
+
 // GetIO returns the current IO bit for a segment
 func (cpu *CPUT) GetIO(segment int) (io bool) {
 	cpu.cpuMu.RLock()

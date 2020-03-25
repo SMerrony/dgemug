@@ -63,12 +63,15 @@ var syscalls = map[dg.WordT]syscallDescT{
 	1:    {"?DELETE", "?DELE", scFileManage, nil},
 	3:    {"?MEM", "?MEM", scMemory, scMem},
 	014:  {"?MEMI", "?MEMI", scMemory, scMemi},
+	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay},
+	0265: {"?LEFE", "?LEFE", scUserDev, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose},
 	0302: {"?READ", "?READ", scFileIO, nil},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes},
+	0503: {"?PRI", "?PRI", scMultitasking, scDummy},
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu},
 }
 
@@ -129,4 +132,9 @@ func readString(bpAddr dg.DwordT) string {
 		c = memory.ReadByte(wdAddr, lobyte)
 	}
 	return buff.String()
+}
+
+// scDummy is a stub func for sys calls we are ignoring for now
+func scDummy(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	return true
 }

@@ -1,4 +1,4 @@
-// scSystem.go - 'System'-related System Call Emulation
+// scUserDev.go - Device-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony
 
@@ -21,28 +21,9 @@
 
 package aosvs
 
-import (
-	"github.com/SMerrony/dgemug/dg"
-	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/mvcpu"
-)
+import "github.com/SMerrony/dgemug/mvcpu"
 
-func scGhrz(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
-	cpu.SetAc(0, 2) // 2 => 100Hz
-	return true
-}
-
-func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
-	var gtMesReq = agGtMesReqT{memory.ReadWord(pktAddr + greq), memory.ReadWord(pktAddr + gnum), memory.ReadDWord(pktAddr + gsw)}
-	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
-	cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
-	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
-	gresBA := memory.ReadDWord(pktAddr + gres)
-	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA)
-	}
+func scLefe(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	cpu.SetLef(true)
 	return true
 }
