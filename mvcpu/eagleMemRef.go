@@ -220,10 +220,34 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		memory.WriteByte(resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset), oneAccMode2Word.bitLow, byt)
 
-	case instrXWADI:
+	case instrXWADD, instrXWSUB:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		s64mem := int64(int32(memory.ReadDWord(addr)))
+		s64ac := int64(int32(cpu.ac[oneAccModeInd2Word.acd]))
+		var t64 int64
+		switch iPtr.ix {
+		case instrXWADD:
+			t64 = s64ac + s64mem
+		case instrXWSUB:
+			t64 = s64ac - s64mem
+		}
+		if t64 > maxPosS32 || t64 < minNegS32 {
+			cpu.carry = true
+			cpu.SetOVR(true)
+		}
+		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(t64)
+
+	case instrXWADI, instrXWSBI:
 		immMode2Word := iPtr.variant.(immMode2WordT)
 		addr := resolve15bitDisplacement(cpu, immMode2Word.ind, immMode2Word.mode, dg.WordT(immMode2Word.disp15), iPtr.dispOffset)
-		s64 := int64(int32(memory.ReadDWord(addr))) + int64(immMode2Word.immU16)
+		var s64 int64
+		switch iPtr.ix {
+		case instrXWADI:
+			s64 = int64(int32(memory.ReadDWord(addr))) + int64(immMode2Word.immU16)
+		case instrXWSBI:
+			s64 = int64(int32(memory.ReadDWord(addr))) - int64(immMode2Word.immU16)
+		}
 		if (s64 > maxPosS32) || (s64 < minNegS32) {
 			cpu.carry = true
 			cpu.SetOVR(true)

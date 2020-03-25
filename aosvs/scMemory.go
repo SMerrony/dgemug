@@ -32,7 +32,7 @@ import (
 func scMem(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	highUnshared := memory.GetLastUnsharedPage()
 	lowShared := memory.GetFirstSharedPage()
-	cpu.SetAc(0, lowShared-highUnshared)
+	cpu.SetAc(0, lowShared-highUnshared-1)
 	cpu.SetAc(1, highUnshared&(0x0fff_ffff>>10))
 	cpu.SetAc(2, dg.DwordT(highUnshared<<10))
 	return true

@@ -618,7 +618,7 @@ func InstructionsInit() {
 	instructionSet[instrXWDSZ] = instrChars{"XWDSZ", 0xA639, 0xe7FF, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWISZ] = instrChars{"XWISZ", 0xa619, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWLDA] = instrChars{"XWLDA", 0x8309, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
-	instructionSet[instrXWSBI] = instrChars{"XWSBI", 0x8558, 0x87ff, 2, IMM_MODE_2_WORD_FMT, EAGLE_OP, 1}
+	instructionSet[instrXWSBI] = instrChars{"XWSBI", 0x8558, 0x87ff, 2, IMM_MODE_2_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWSTA] = instrChars{"XWSTA", 0x8319, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWSUB] = instrChars{"XWSUB", 0x8158, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_OP, 1}
 	instructionSet[instrZEX] = instrChars{"ZEX", 0x8359, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}

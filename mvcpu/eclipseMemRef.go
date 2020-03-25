@@ -43,13 +43,13 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 			break
 		}
-		src := memory.DwordGetLowerWord(cpu.ac[2])
-		dest := memory.DwordGetLowerWord(cpu.ac[3])
+		src := (cpu.pc & ringMask32) | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[2]))
+		dest := (cpu.pc & ringMask32) | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[3]))
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, fmt.Sprintf("BLM moving %d words from %d to %d\n", numWds, src, dest))
 		}
 		for numWds != 0 {
-			memory.WriteWord(dg.PhysAddrT(dest), memory.ReadWord(dg.PhysAddrT(src)))
+			memory.WriteWord(dest, memory.ReadWord(src))
 			numWds--
 			src++
 			dest++

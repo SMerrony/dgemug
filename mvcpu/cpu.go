@@ -553,9 +553,9 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		}
 		// ...now 16-bit style
 		if iPtr.ix == instrJSR && iPtr.disp15 == 017 && iPtr.ind == '@' {
-			// cpu.cpuMu.Lock()
-			// cpu.pc += 2
-			// cpu.cpuMu.Unlock()
+			cpu.cpuMu.Lock()
+			cpu.pc-- // Fudge!
+			cpu.cpuMu.Unlock()
 			syscallTrap = true
 			break
 		}
