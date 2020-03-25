@@ -546,6 +546,20 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 			log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
+		// Trap System Calls, first 32-bit style...
+		if iPtr.ix == instrXJSR && iPtr.disp15 == 0x06 && iPtr.ind == '@' {
+			syscallTrap = true
+			break
+		}
+		// ...now 16-bit style
+		if iPtr.ix == instrJSR && iPtr.disp15 == 017 && iPtr.ind == '@' {
+			// cpu.cpuMu.Lock()
+			// cpu.pc += 2
+			// cpu.cpuMu.Unlock()
+			syscallTrap = true
+			break
+		}
+
 		// EXECUTE
 		if !cpu.Execute(iPtr) {
 			errDetail = " *** Error: could not execute instruction (or CPU HALT encountered) ***"
@@ -604,14 +618,6 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// 	break
 		// }
 
-		// System Call?
-		// if cpu.pc == 0x3000_0000 {
-		if cpu.pc == 0x7000_0006 {
-			cpu.cpuMu.RUnlock()
-			// cpu.SetPC(prevPC)
-			syscallTrap = true
-			break
-		}
 		syscallTrap = false
 
 		// instruction counting

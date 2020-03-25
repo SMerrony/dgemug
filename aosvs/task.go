@@ -73,7 +73,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	for {
 		syscallTrap, _, _ = cpu.Vrun()
 		if syscallTrap {
-			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
+			returnAddr := cpu.GetPC() + 2 // dg.PhysAddrT(cpu.GetAc(3))
 			callID := memory.ReadWord(returnAddr)
 			// special handling for the ?RETURN system call
 			if callID == scReturn {

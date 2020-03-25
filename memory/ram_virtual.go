@@ -56,7 +56,7 @@ func MapPage(page int, shared bool) {
 	var emptyPage pageT
 	virtualRam[page] = emptyPage
 	if !shared {
-		lastUnsharedPage++
+		lastUnsharedPage = page
 	}
 	if shared && (page < firstSharedPage) {
 		firstSharedPage = page

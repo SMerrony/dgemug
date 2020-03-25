@@ -158,7 +158,18 @@ func agentFileWriter(req agWriteReqT) (resp agWriteRespT) {
 
 func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
-	// case gmes:
+	case gmes: // get entire message
+		first := true
+		for _, arg := range invocationArgs {
+			if first {
+				first = false
+			} else {
+				resp.result += " "
+			}
+			resp.result += strings.ToUpper(arg)
+		}
+		resp.ac0 = gfcf
+		resp.ac1 = dg.DwordT(len(resp.result)) >> 1 // words not bytes
 	case gcmd: // get a parsed version of the command line
 		first := true
 		for _, arg := range invocationArgs {
