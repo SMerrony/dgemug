@@ -151,14 +151,12 @@ func TestWSLE(t *testing.T) {
 func TestXNISZ(t *testing.T) {
 	cpu := new(CPUT)
 	var iPtr decodedInstrT
-	var noAccModeInd2Word noAccModeInd2WordT
 	iPtr.ix = instrXNISZ
 	memory.MemInit(10000, false)
 	memory.WriteWord(100, 0xfffe) // write max - 1 into Word at normal addr 100
-	noAccModeInd2Word.disp15 = 100
-	noAccModeInd2Word.ind = ' '
-	noAccModeInd2Word.mode = absoluteMode
-	iPtr.variant = noAccModeInd2Word
+	iPtr.disp15 = 100
+	iPtr.ind = ' '
+	iPtr.mode = absoluteMode
 	cpu.pc = 1000
 	if !eaglePC(cpu, &iPtr) {
 		t.Error("Failed to execute XNISZ")
@@ -189,14 +187,12 @@ func TestXNISZ(t *testing.T) {
 func TestXWDSZ(t *testing.T) {
 	cpu := new(CPUT)
 	var iPtr decodedInstrT
-	var noAccModeInd2Word noAccModeInd2WordT
 	iPtr.ix = instrXWDSZ
 	memory.MemInit(10000, false)
 	memory.WriteDWord(100, 2) // write 2 into DWord at normal addr 100
-	noAccModeInd2Word.disp15 = 100
-	noAccModeInd2Word.ind = ' '
-	noAccModeInd2Word.mode = absoluteMode
-	iPtr.variant = noAccModeInd2Word
+	iPtr.disp15 = 100
+	iPtr.ind = ' '
+	iPtr.mode = absoluteMode
 	cpu.pc = 1000
 	if !eaglePC(cpu, &iPtr) {
 		t.Error("Failed to execute XWDSZ")

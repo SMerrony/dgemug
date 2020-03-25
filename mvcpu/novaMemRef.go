@@ -38,9 +38,8 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
 	case instrDSZ:
-		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
-		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		// effAddr = resolve16bitEffAddr(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
 		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		// if effAddr != effAddrNew {
 		// 	runtime.Breakpoint()
@@ -53,9 +52,8 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrISZ:
-		novaNoAccEffAddr := iPtr.variant.(novaNoAccEffAddrT)
-		// effAddr = resolve16bitEffAddr(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15, iPtr.dispOffset)
-		effAddr = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		// effAddr = resolve16bitEffAddr(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
+		effAddr = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
 		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
 		shifter++

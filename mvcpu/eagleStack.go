@@ -251,8 +251,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVR(false)
 
 	case instrXPEF:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)))
+		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
 
 	case instrXPEFB:
 		noAccMode2Word := iPtr.variant.(noAccMode2WordT)

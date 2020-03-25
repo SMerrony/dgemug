@@ -29,20 +29,17 @@ import (
 
 func novaPC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
-	var novaNoAccEffAddr novaNoAccEffAddrT
 	segMask := cpu.pc & 0x7000_0000
 
 	switch iPtr.ix {
 
 	case instrJMP:
-		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
-		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.pc = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
 		cpu.pc |= segMask // constrain to current segment
 
 	case instrJSR:
-		novaNoAccEffAddr = iPtr.variant.(novaNoAccEffAddrT)
 		tmpPC := dg.DwordT(cpu.pc + 1)
-		cpu.pc = resolve8bitDisplacement(cpu, novaNoAccEffAddr.ind, novaNoAccEffAddr.mode, novaNoAccEffAddr.disp15) & 0x7fff
+		cpu.pc = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
 		cpu.pc |= segMask // constrain to current segment
 		cpu.ac[3] = tmpPC
 

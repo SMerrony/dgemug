@@ -85,8 +85,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrEISZ:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
+		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		wd := memory.ReadWord(addr)
@@ -99,16 +98,14 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrEJMP:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
+		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		cpu.pc = addr
 
 	case instrEJSR:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 2
-		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset)
+		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		cpu.pc = addr

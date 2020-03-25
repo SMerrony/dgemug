@@ -32,15 +32,13 @@ import (
 func TestDSZ(t *testing.T) {
 	cpu := new(CPUT)
 	var iPtr decodedInstrT
-	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrDSZ
 	memory.MemInit(10000, false)
 	memory.WriteWord(100, 2)
 	cpu.pc = 10
-	novaNoAccEffAddr.disp15 = 100
-	novaNoAccEffAddr.ind = ' '
-	novaNoAccEffAddr.mode = absoluteMode
-	iPtr.variant = novaNoAccEffAddr
+	iPtr.disp15 = 100
+	iPtr.ind = ' '
+	iPtr.mode = absoluteMode
 
 	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute DSZ")
@@ -68,15 +66,13 @@ func TestDSZ(t *testing.T) {
 func TestISZ(t *testing.T) {
 	cpu := new(CPUT)
 	var iPtr decodedInstrT
-	var novaNoAccEffAddr novaNoAccEffAddrT
 	iPtr.ix = instrISZ
 	memory.MemInit(10000, false)
 	memory.WriteWord(100, 0xfffe)
 	cpu.pc = 10
-	novaNoAccEffAddr.disp15 = 100
-	novaNoAccEffAddr.ind = ' '
-	novaNoAccEffAddr.mode = absoluteMode
-	iPtr.variant = novaNoAccEffAddr
+	iPtr.disp15 = 100
+	iPtr.ind = ' '
+	iPtr.mode = absoluteMode
 
 	if !novaMemRef(cpu, &iPtr) {
 		t.Error("Failed to execute ISZ")

@@ -54,17 +54,16 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrLCALL: // FIXME - LCALL only handling trivial case, no checking
-		noAccModeInd4Word := iPtr.variant.(noAccModeInd4WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 4
 		var dwd dg.DwordT
-		if noAccModeInd4Word.argCount >= 0 {
-			dwd = memory.DwordFromTwoWords(cpu.psr, dg.WordT(noAccModeInd4Word.argCount))
+		if iPtr.argCount >= 0 {
+			dwd = memory.DwordFromTwoWords(cpu.psr, dg.WordT(iPtr.argCount))
 		} else {
-			dwd = dg.DwordT(noAccModeInd4Word.argCount) & 0x00007fff
+			dwd = dg.DwordT(iPtr.argCount) & 0x00007fff
 		}
 		wsPush(cpu, 0, dwd)
 		cpu.SetOVR(false)
-		cpu.pc = resolve31bitDisplacement(cpu, noAccModeInd4Word.ind, noAccModeInd4Word.mode, noAccModeInd4Word.disp31, iPtr.dispOffset)
+		cpu.pc = resolve31bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp31, iPtr.dispOffset)
 
 	case instrLDSP:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
@@ -436,13 +435,11 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			dg.WordT(noAccModeInd3WordXcall.disp15), iPtr.dispOffset)
 
 	case instrXJMP:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 
 	case instrXJSR:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc + 2) // TODO Check this, PoP is self-contradictory on p.11-642
-		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		cpu.pc = cpu.pc&ringMask32 | resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 
 	case instrXNDO: // Narrow Do Until Greater Than
 		threeWordDo := iPtr.variant.(threeWordDoT)
@@ -460,8 +457,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrXNDSZ: // unsigned narrow increment and skip if zero
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		tmpAddr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		tmpAddr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 		wd := memory.ReadWord(tmpAddr)
 		wd-- // N.B. have checked that 0xffff + 1 == 0 in Go
 		memory.WriteWord(tmpAddr, wd)
@@ -472,8 +468,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrXNISZ: // unsigned narrow increment and skip if zero
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		tmpAddr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		tmpAddr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 		wd := memory.ReadWord(tmpAddr)
 		wd++ // N.B. have checked that 0xffff + 1 == 0 in Go
 		memory.WriteWord(tmpAddr, wd)
@@ -484,8 +479,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrXWDSZ:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		tmpAddr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		tmpAddr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 		dwd := memory.ReadDWord(tmpAddr)
 		dwd--
 		memory.WriteDWord(tmpAddr, dwd)
@@ -496,8 +490,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrXWISZ:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
-		tmpAddr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, dg.WordT(noAccModeInd2Word.disp15), iPtr.dispOffset)
+		tmpAddr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 		dwd := memory.ReadDWord(tmpAddr)
 		dwd++
 		memory.WriteDWord(tmpAddr, dwd)

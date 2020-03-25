@@ -70,9 +70,8 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrPSHJ:
-		noAccModeInd2Word := iPtr.variant.(noAccModeInd2WordT)
 		memory.NsPush(cpu.pc&ringMask32, dg.WordT(cpu.pc)+2, cpu.debugLogging)
-		addr := resolve15bitDisplacement(cpu, noAccModeInd2Word.ind, noAccModeInd2Word.mode, noAccModeInd2Word.disp15, iPtr.dispOffset) & 0X7FFF
+		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset) & 0X7FFF
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		cpu.pc = addr
