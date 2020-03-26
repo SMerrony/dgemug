@@ -64,6 +64,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	3:    {"?MEM", "?MEM", scMemory, scMem},
 	014:  {"?MEMI", "?MEMI", scMemory, scMemi},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz},
+	0157: {"?SINFO", "?SINF", scSystem, nil},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay},
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
@@ -83,7 +84,7 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
 	}
 	if call.fn == nil {
-		log.Fatalf("ERROR: System call No. %#o not yet implemented at PC=%#x", callID, cpu.GetPC())
+		log.Fatalf("ERROR: System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
 		log.Printf("%s System Call...\n", call.name)

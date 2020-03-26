@@ -40,7 +40,7 @@ func scClose(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 }
 
 func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
 	// pkt := readPacket(pktAddr, iosz)
 	// _ = pkt
 	options := memory.ReadWord(pktAddr + isti)

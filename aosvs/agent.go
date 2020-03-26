@@ -132,7 +132,7 @@ func agentFileCloser(req agCloseReqT) (resp agCloseRespT) {
 
 func agentFileOpener(req agOpenReqT) (resp agOpenRespT) {
 	log.Printf("DEBUG: Agent received File Open request for %s\n", req.path)
-	if req.path == "@CONSOLE" {
+	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
 		resp.channelNo = 0
 	} else {
 		log.Fatalf("ERROR: real file opening not yet implemented")
