@@ -72,6 +72,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes},
 	0503: {"?PRI", "?PRI", scMultitasking, scDummy},
+	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy}, // Suspend all other tasks
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu},
 }
 

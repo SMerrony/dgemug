@@ -114,6 +114,17 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.pc++
 		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 
+	case instrSGE: //16-bit signed numbers
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		acs := int16(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs]))
+		acd := int16(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]))
+		if acs >= acd {
+			cpu.pc += 2
+		} else {
+			cpu.pc++
+		}
+		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+
 	case instrSGT: //16-bit signed numbers
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		acs := int16(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs]))
