@@ -50,6 +50,7 @@ func resolve31bitDisplacement(cpu *CPUT, ind byte, mode int, disp int32, dispOff
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
+		//eff |= (cpu.pc & 0x7000_0000)
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
 			log.Fatalln("Terminating")
@@ -90,7 +91,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	switch mode {
 	case absoluteMode:
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) //| (cpu.pc & 0x7000_0000)
 	case pcMode:
 		eff = dg.PhysAddrT(int32(cpu.pc) + dispS32 + int32(dispOffset))
 	case ac2Mode:
@@ -98,8 +99,10 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	case ac3Mode:
 		eff = dg.PhysAddrT(int32(cpu.ac[3]) + dispS32)
 	}
+	//	eff |= (cpu.pc & 0x7000_0000)
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
+		eff |= (cpu.pc & 0x7000_0000)
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
 			log.Fatalln("Terminating")
@@ -127,7 +130,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) //| (cpu.pc & 0x7000_0000)
 	} else {
 		// relative mode
 		// sign-extend to 31-bits
@@ -144,8 +147,10 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 	case ac3Mode:
 		eff += dg.PhysAddrT(cpu.ac[3])
 	}
+	//eff |= (cpu.pc & 0x7000_0000)
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
+		eff |= (cpu.pc & 0x7000_0000)
 		indAddr, ok := memory.ReadWordTrap(eff)
 		if !ok {
 			log.Fatalln("Terminating")

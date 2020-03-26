@@ -449,7 +449,7 @@ func InstructionsInit() {
 	instructionSet[instrLLEFB] = instrChars{"LLEFB", 0x84e9, 0x87ff, 3, ONEACC_MODE_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLMRF] = instrChars{"LMRF", 0x87c9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrLNADD] = instrChars{"LNADD", 0x8218, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_OP, 1}
-	instructionSet[instrLNADI] = instrChars{"LNADI", 0x8618, 0x87ff, 3, NOACC_MODE_IMM_IND_3_WORD_FMT, EAGLE_OP, 1}
+	instructionSet[instrLNADI] = instrChars{"LNADI", 0x8618, 0x87ff, 3, NOACC_MODE_IMM_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLNDIV] = instrChars{"LNDIV", 0x82d8, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_OP, 1}
 	instructionSet[instrLNDO] = instrChars{"LNDO", 0x8698, 0x87ff, 4, LNDO_4_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLNDSZ] = instrChars{"LNDSZ", 0x86d9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}

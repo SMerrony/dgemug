@@ -287,11 +287,10 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 // wsav is common to WSAVR and WSAVS
 func wsav(cpu *CPUT, u2wd *unique2WordT) {
-	wfpSav := dg.DwordT(cpu.wfp)
-	wsPush(cpu, 0, cpu.ac[0]) // 1
-	wsPush(cpu, 0, cpu.ac[1]) // 2
-	wsPush(cpu, 0, cpu.ac[2]) // 3
-	wsPush(cpu, 0, wfpSav)    // 4
+	wsPush(cpu, 0, cpu.ac[0])          // 1
+	wsPush(cpu, 0, cpu.ac[1])          // 2
+	wsPush(cpu, 0, cpu.ac[2])          // 3
+	wsPush(cpu, 0, dg.DwordT(cpu.wfp)) // 4
 	dwd := cpu.ac[3] & 0x7fffffff
 	if cpu.carry {
 		dwd |= 0x80000000
@@ -307,12 +306,11 @@ func wsav(cpu *CPUT, u2wd *unique2WordT) {
 
 // wssav is common to WSSVR and WSSVS
 func wssav(cpu *CPUT, u2wd *unique2WordT) {
-	wfpSav := dg.DwordT(cpu.wfp)
 	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
 	wsPush(cpu, 0, cpu.ac[0])                            // 2
 	wsPush(cpu, 0, cpu.ac[1])                            // 3
 	wsPush(cpu, 0, cpu.ac[2])                            // 4
-	wsPush(cpu, 0, wfpSav)                               // 5
+	wsPush(cpu, 0, dg.DwordT(cpu.wfp))                   // 5
 	dwd := cpu.ac[3] & 0x7fffffff
 	if cpu.carry {
 		dwd |= 0x80000000

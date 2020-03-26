@@ -104,6 +104,11 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wd -= dg.WordT(immOneAcc.immU16)
 		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
 
+	case instrXORI:
+		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
+		wd := memory.DwordGetLowerWord(cpu.ac[oneAccImm2Word.acd]) ^ dg.WordT(oneAccImm2Word.immS16)
+		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(wd)
+
 	case instrXCH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		dwd := cpu.ac[twoAcc1Word.acs]

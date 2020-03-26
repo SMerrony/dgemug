@@ -53,6 +53,13 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		cpu.ac[oneAccMode3Word.acd] = dg.DwordT(addr)
 
+	case instrLNADI:
+		noAccModeImmInd3Word := iPtr.variant.(noAccModeImmInd3WordT)
+		addr := resolve31bitDisplacement(cpu, noAccModeImmInd3Word.ind, noAccModeImmInd3Word.mode, noAccModeImmInd3Word.disp31, iPtr.dispOffset)
+		wd := memory.ReadWord(addr)
+		wd += dg.WordT(noAccModeImmInd3Word.immU16)
+		memory.WriteWord(addr, wd)
+
 	case instrLNLDA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
@@ -87,7 +94,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		var addr dg.PhysAddrT
 		if twoAcc1Word.acs == twoAcc1Word.acd {
-			addr = 0
+			addr = cpu.pc & ringMask32
 		} else {
 			addr = resolve32bitIndirectableAddr(cpu, cpu.ac[twoAcc1Word.acs])
 		}
@@ -101,7 +108,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		var addr dg.PhysAddrT
 		if twoAcc1Word.acs == twoAcc1Word.acd {
-			addr = 0
+			addr = cpu.pc & ringMask32
 		} else {
 			addr = resolve32bitIndirectableAddr(cpu, cpu.ac[twoAcc1Word.acs])
 		}
