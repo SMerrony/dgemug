@@ -33,6 +33,13 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
+	case instrMSP:
+		// TODO handle overflow
+		seg := cpu.pc & ringMask32
+		s16 := int16(cpu.ac[iPtr.ac])
+		nsp := int16(memory.ReadWord(memory.NspLoc|seg)) + s16
+		memory.WriteWord(memory.NspLoc|seg, dg.WordT(nsp))
+
 	case instrPOP:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		first := twoAcc1Word.acs
@@ -51,7 +58,7 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrPOPJ:
 		addr := dg.PhysAddrT(memory.NsPop(cpu.pc&ringMask32, cpu.debugLogging))
-		cpu.pc = addr & 0x7fff
+		cpu.pc = (addr & 0x7fff) | (cpu.pc & ringMask32)
 		return true // because PC set
 
 	case instrPSH:
@@ -102,7 +109,7 @@ func eclipseStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[1] = dg.DwordT(memory.NsPop(cpu.pc&ringMask32, cpu.debugLogging)) // 4
 		cpu.ac[0] = dg.DwordT(memory.NsPop(cpu.pc&ringMask32, cpu.debugLogging)) // 5
 		//memory.WriteWord(memory.NspLoc, nfpSav-5)
-		memory.WriteWord(memory.NfpLoc, memory.DwordGetLowerWord(cpu.ac[3]))
+		memory.WriteWord(memory.NfpLoc|(cpu.pc&ringMask32), memory.DwordGetLowerWord(cpu.ac[3]))
 
 		return true // because PC set
 

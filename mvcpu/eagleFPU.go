@@ -30,6 +30,9 @@ import (
 func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
+	case instrFCLE:
+		cpu.fpsr = 0 // TODO check - PoP contradicts itself
+
 	case instrWSTI:
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...

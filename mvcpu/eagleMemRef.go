@@ -77,6 +77,18 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		lobyte := memory.TestDwbit(dg.DwordT(oneAccMode3Word.u32), 31)
 		memory.WriteByte(addr, lobyte, dg.ByteT(cpu.ac[oneAccMode3Word.acd]))
 
+	case instrLWADD, instrLWSUB:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		var s32 int32
+		switch iPtr.ix {
+		case instrLWADD:
+			s32 = int32(memory.ReadDWord(addr)) + int32(cpu.ac[oneAccModeInd3Word.acd])
+		case instrLWSUB:
+			s32 = int32(cpu.ac[oneAccModeInd3Word.acd]) - int32(memory.ReadDWord(addr))
+		}
+		cpu.ac[oneAccModeInd3Word.acd] = dg.DwordT(s32)
+
 	case instrLWLDA:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
@@ -227,7 +239,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		memory.WriteByte(resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset), oneAccMode2Word.bitLow, byt)
 
-	case instrXWADD, instrXWSUB:
+	case instrXWADD, instrXWSUB, instrXWMUL:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
 		s64mem := int64(int32(memory.ReadDWord(addr)))
@@ -236,6 +248,8 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		switch iPtr.ix {
 		case instrXWADD:
 			t64 = s64ac + s64mem
+		case instrXWMUL:
+			t64 = s64ac * s64mem
 		case instrXWSUB:
 			t64 = s64ac - s64mem
 		}

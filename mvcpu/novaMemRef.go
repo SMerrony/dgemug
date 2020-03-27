@@ -68,6 +68,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
 		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
+		//log.Printf("DEBUG: LDA loading AC from resolved address %#o\n", effAddr)
 		cpu.ac[novaOneAccEffAddr.acd] = 0x0000ffff & dg.DwordT(shifter)
 
 	case instrSTA:
@@ -77,6 +78,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
 		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
 		memory.WriteWord(effAddr, shifter)
+		//log.Printf("DEBUG: STA storing AC to resolved address %#o\n", effAddr)
 
 	default:
 		log.Printf("ERROR: NOVA_MEMREF instruction <%s> (%#x)not yet implemented at PC=%#o\n", iPtr.mnemonic, memory.ReadWord(cpu.pc), cpu.pc)

@@ -136,6 +136,7 @@ const (
 	instrENQT
 	instrESTA
 	instrESTB
+	instrFCLE
 	instrFNS
 	instrFPOP
 	instrFPSH
@@ -195,11 +196,13 @@ const (
 	instrLRB
 	instrLSH
 	instrLSTB
+	instrLWADD
 	instrLWDO
 	instrLWDSZ
 	instrLWISZ
 	instrLWLDA
 	instrLWSTA
+	instrLWSUB
 	instrMOV
 	instrMSP
 	instrMUL
@@ -267,6 +270,7 @@ const (
 	instrWCOM
 	instrWCST
 	instrWCTR
+	instrWDIV
 	instrWDIVS
 	instrWFLAD
 	instrWFPOP
@@ -346,6 +350,7 @@ const (
 	instrXWDSZ
 	instrXWISZ
 	instrXWLDA
+	instrXWMUL
 	instrXWSBI
 	instrXWSTA
 	instrXWSUB
@@ -410,6 +415,7 @@ func InstructionsInit() {
 	instructionSet[instrENQT] = instrChars{"ENQT", 0xc7f9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrESTA] = instrChars{"ESTA", 0xc438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
 	instructionSet[instrESTB] = instrChars{"ESTB", 0xa478, 0xe4ff, 2, ONEACC_MODE_2_WORD_E_FMT, ECLIPSE_OP, 1}
+	instructionSet[instrFCLE] = instrChars{"FCLE", 0xd6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFNS] = instrChars{"FNS", 0x86a8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_PC, 0}
 	instructionSet[instrFPOP] = instrChars{"FPOP", 0xeee8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrFPSH] = instrChars{"FPSH", 0xe6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
@@ -469,13 +475,15 @@ func InstructionsInit() {
 	instructionSet[instrLRB] = instrChars{"LRB", 0x8548, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrLSH] = instrChars{"LSH", 0x8288, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrLSTB] = instrChars{"LSTB", 0x84d9, 0x87ff, 3, ONEACC_MODE_3_WORD_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrLWADD] = instrChars{"LWADD", 0x8318, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWDO] = instrChars{"LWDO", 0x8798, 0x87ff, 4, LNDO_4_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWDSZ] = instrChars{"LWDSZ", 0x86f9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWISZ] = instrChars{"LWISZ", 0x86e9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWLDA] = instrChars{"LWLDA", 0x83f9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWSTA] = instrChars{"LWSTA", 0x84f9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrLWSUB] = instrChars{"LWSUB", 0x8358, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrMOV] = instrChars{"MOV", 0x8200, 0x8700, 1, NOVA_TWOACC_MULT_OP_FMT, NOVA_OP, 0}
-	instructionSet[instrMSP] = instrChars{"MSP", 0x86f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_OP, 0}
+	instructionSet[instrMSP] = instrChars{"MSP", 0x86f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrMUL] = instrChars{"MUL", 0xc7c8, 0xffff, 1, UNIQUE_1_WORD_FMT, NOVA_MATH, 0}
 	instructionSet[instrMULS] = instrChars{"MULS", 0xcfc8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrNADD] = instrChars{"NADD", 0x8049, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
@@ -541,6 +549,7 @@ func InstructionsInit() {
 	instructionSet[instrWCOM] = instrChars{"WCOM", 0x8459, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWCST] = instrChars{"WCST", 0xe709, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
 	instructionSet[instrWCTR] = instrChars{"WCTR", 0x8769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
+	instructionSet[instrWDIV] = instrChars{"WDIV", 0x8179, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWDIVS] = instrChars{"WDIVS", 0xe769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWFLAD] = instrChars{"WFLAD", 0x84a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrWFPOP] = instrChars{"WFPOP", 0xa789, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_STACK, 0}
@@ -620,6 +629,7 @@ func InstructionsInit() {
 	instructionSet[instrXWDSZ] = instrChars{"XWDSZ", 0xA639, 0xe7FF, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWISZ] = instrChars{"XWISZ", 0xa619, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWLDA] = instrChars{"XWLDA", 0x8309, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrXWMUL] = instrChars{"XWMUL", 0x8198, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWSBI] = instrChars{"XWSBI", 0x8558, 0x87ff, 2, IMM_MODE_2_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWSTA] = instrChars{"XWSTA", 0x8319, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWSUB] = instrChars{"XWSUB", 0x8158, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}

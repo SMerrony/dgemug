@@ -154,10 +154,12 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrWMSP:
-		tmpDwd := cpu.ac[iPtr.ac] << 1
-		tmpDwd += dg.DwordT(cpu.wsp) // memory.WspLoc)
+		// tmpDwd := cpu.ac[iPtr.ac] << 1
+		// tmpDwd += dg.DwordT(cpu.wsp) // memory.WspLoc)
 		// FIXME - handle overflow
-		cpu.wsp = dg.PhysAddrT(tmpDwd)
+		// cpu.wsp = dg.PhysAddrT(tmpDwd)
+		s32 := (int32(cpu.ac[iPtr.ac]) * 2) + int32(cpu.wsp)
+		cpu.wsp = dg.PhysAddrT(s32)
 		cpu.SetOVR(false)
 
 	case instrWPOP:
