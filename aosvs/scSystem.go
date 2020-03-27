@@ -22,10 +22,17 @@
 package aosvs
 
 import (
+	"log"
+
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/dgemug/mvcpu"
 )
+
+func scExec(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	log.Println("WARNING: ?EXEC system call not yet implemented")
+	return true
+}
 
 func scGhrz(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	cpu.SetAc(0, 2) // 2 => 100Hz
@@ -44,5 +51,26 @@ func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
 		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA)
 	}
+	return true
+}
+
+func scInfo(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+	memory.WriteWord(pktAddr+sirn, 0x0746) // system rev - faked to 7.70
+	if memory.ReadDWord(pktAddr+siln) != 0 {
+		memory.WriteStringBA("MASTERLDU", memory.ReadDWord(pktAddr+siln)) // fake master LDU name
+	}
+	if memory.ReadDWord(pktAddr+siid) != 0 {
+		memory.WriteStringBA("VSEMUG", memory.ReadDWord(pktAddr+siid)) // fake System ID
+	}
+	if memory.ReadDWord(pktAddr+sios) != 0 {
+		memory.WriteStringBA(":VSEMUG", memory.ReadDWord(pktAddr+siid)) // fake OS pathname
+	}
+	memory.WriteWord(pktAddr+ssin, savs) // claim to be AOS/VS!
+	return true
+}
+
+func scXpstat(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+
 	return true
 }

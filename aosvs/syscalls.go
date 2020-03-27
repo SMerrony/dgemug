@@ -64,17 +64,22 @@ var syscalls = map[dg.WordT]syscallDescT{
 	3:    {"?MEM", "?MEM", scMemory, scMem},
 	014:  {"?MEMI", "?MEMI", scMemory, scMemi},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz},
-	0157: {"?SINFO", "?SINF", scSystem, nil},
+	0157: {"?SINFO", "?SINF", scSystem, scInfo},
+	0166: {"?DACL", "?DACL", scFileManage, scDacl},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay},
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose},
 	0302: {"?READ", "?READ", scFileIO, nil},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
+	0330: {"?EXEC", "?EXEC", scSystem, scExec},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes},
+	0415: {"?GECHR", "?GECH", scFileIO, scGechr},
 	0503: {"?PRI", "?PRI", scMultitasking, scDummy},
 	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy}, // Suspend all other tasks
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu},
+	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv},
+	0576: {"?XPSTAT", "?XPST", scProcess, scXpstat},
 }
 
 // syscall redirects System Call according to the syscalls map
