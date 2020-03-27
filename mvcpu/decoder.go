@@ -49,6 +49,7 @@ type decodedInstrT struct {
 	disp15   dg.WordT
 	disp31   int32
 	argCount int
+	ac       int // # of a single acculmulator referenced by the instruction
 	variant  interface{}
 }
 
@@ -121,9 +122,6 @@ type novaTwoAccMultOpT struct {
 	acd, acs  int
 	c, sh, nl byte
 	skip      int
-}
-type oneAcc1WordT struct {
-	acd int
 }
 type oneAccImm2WordT struct {
 	acd    int
@@ -466,11 +464,9 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 				novaTwoAccMultOp.acd, skipToString(novaTwoAccMultOp.skip))
 		}
 	case ONEACC_1_WORD_FMT: // eg. CVWN, HLV, LDAFP
-		var oneAcc1Word oneAcc1WordT
-		oneAcc1Word.acd = int(memory.GetWbits(opcode, 3, 2))
-		decodedInstr.variant = oneAcc1Word
+		decodedInstr.ac = int(memory.GetWbits(opcode, 3, 2))
 		if disassemble {
-			decodedInstr.disassembly += fmt.Sprintf(" %d", oneAcc1Word.acd)
+			decodedInstr.disassembly += fmt.Sprintf(" %d", decodedInstr.ac)
 		}
 	case ONEACC_IMM_2_WORD_FMT: // eg. ADDI, NADDI, NLDAI, WASHI, WSEQI, WLSHI, WNADI
 		var oneAccImm2Word oneAccImm2WordT

@@ -47,28 +47,23 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 	// N.B. DSZTS and ISZTS are in eaglePC
 
 	case instrLDAFP:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wfp)
+		cpu.ac[iPtr.ac] = dg.DwordT(cpu.wfp)
 		cpu.SetOVR(false)
 
 	case instrLDASB:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsb)
+		cpu.ac[iPtr.ac] = dg.DwordT(cpu.wsb)
 		cpu.SetOVR(false)
 
 	case instrLDASL:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsl)
+		cpu.ac[iPtr.ac] = dg.DwordT(cpu.wsl)
 		cpu.SetOVR(false)
 
 	case instrLDASP:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = dg.DwordT(cpu.wsp)
+		cpu.ac[iPtr.ac] = dg.DwordT(cpu.wsp)
 		cpu.SetOVR(false)
 
 	case instrLDATS:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = memory.ReadDWord(cpu.wsp)
+		cpu.ac[iPtr.ac] = memory.ReadDWord(cpu.wsp)
 		cpu.SetOVR(false)
 
 	case instrLPEF:
@@ -92,42 +87,37 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVR(false)
 
 	case instrSTAFP:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpu.wfp = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
+		cpu.wfp = dg.PhysAddrT(cpu.ac[iPtr.ac])
 		// according the PoP does not write through to page zero...
-		//memory.WriteDWord(memory.WfpLoc, cpu.ac[oneAcc1Word.acd])
+		//memory.WriteDWord(memory.WfpLoc, cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 
 	case instrSTASB:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpu.wsb = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
-		memory.WriteDWord(WsbLoc, cpu.ac[oneAcc1Word.acd]) // write-through to p.0
+		cpu.wsb = dg.PhysAddrT(cpu.ac[iPtr.ac])
+		memory.WriteDWord(WsbLoc, cpu.ac[iPtr.ac]) // write-through to p.0
 		cpu.SetOVR(false)
 
 	case instrSTASL:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpu.wsl = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
-		memory.WriteDWord(WslLoc, cpu.ac[oneAcc1Word.acd]) // write-through to p.0
+		cpu.wsl = dg.PhysAddrT(cpu.ac[iPtr.ac])
+		memory.WriteDWord(WslLoc, cpu.ac[iPtr.ac]) // write-through to p.0
 		cpu.SetOVR(false)
 
 	case instrSTASP:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		cpu.wsp = dg.PhysAddrT(cpu.ac[oneAcc1Word.acd])
+		cpu.wsp = dg.PhysAddrT(cpu.ac[iPtr.ac])
 		// according the PoP does not write through to page zero...
-		// memory.WriteDWord(memory.WspLoc, cpu.ac[oneAcc1Word.acd])
+		// memory.WriteDWord(memory.WspLoc, cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpu.ac[oneAcc1Word.acd])
+			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpu.ac[iPtr.ac])
 		}
 
 	case instrSTATS:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
 		// FIXME handle segments
-		memory.WriteDWord(dg.PhysAddrT(memory.ReadDWord(cpu.wsp)), cpu.ac[oneAcc1Word.acd])
+		memory.WriteDWord(dg.PhysAddrT(memory.ReadDWord(cpu.wsp)), cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 
 	case instrWFPOP:
@@ -164,8 +154,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrWMSP:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		tmpDwd := cpu.ac[oneAcc1Word.acd] << 1
+		tmpDwd := cpu.ac[iPtr.ac] << 1
 		tmpDwd += dg.DwordT(cpu.wsp) // memory.WspLoc)
 		// FIXME - handle overflow
 		cpu.wsp = dg.PhysAddrT(tmpDwd)

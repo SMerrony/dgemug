@@ -114,8 +114,7 @@ func eagleIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrREADS:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		return reads(cpu, oneAcc1Word.acd)
+		return reads(cpu, iPtr.ac)
 
 	case instrWLMP:
 		if cpu.ac[1] == 0 {

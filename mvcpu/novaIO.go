@@ -117,8 +117,7 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 		return halt()
 
 	case instrINTA:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		return inta(cpu, oneAcc1Word.acd)
+		return inta(cpu, iPtr.ac)
 
 	case instrINTDS:
 		return intds(cpu)

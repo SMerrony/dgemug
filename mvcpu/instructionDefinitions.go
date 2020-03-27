@@ -271,6 +271,7 @@ const (
 	instrWFLAD
 	instrWFPOP
 	instrWFPSH
+	instrWHLV
 	instrWINC
 	instrWIOR
 	instrWIORI
@@ -544,6 +545,7 @@ func InstructionsInit() {
 	instructionSet[instrWFLAD] = instrChars{"WFLAD", 0x84a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrWFPOP] = instrChars{"WFPOP", 0xa789, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWFPSH] = instrChars{"WFPSH", 0x87b9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_STACK, 0}
+	instructionSet[instrWHLV] = instrChars{"WHLV", 0xe659, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWINC] = instrChars{"WINC", 0x8259, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWIOR] = instrChars{"WIOR", 0x8469, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWIORI] = instrChars{"WIORI", 0x86a9, 0xe7ff, 3, ONEACC_IMMDWD_3_WORD_FMT, EAGLE_OP, 0}

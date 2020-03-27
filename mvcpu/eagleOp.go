@@ -42,15 +42,14 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.carry = false
 
 	case instrCVWN:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		dwd := cpu.ac[oneAcc1Word.acd]
+		dwd := cpu.ac[iPtr.ac]
 		if dwd>>16 != 0 && dwd>>16 != 0xffff {
 			cpu.SetOVR(true)
 		}
 		if memory.TestDwbit(dwd, 16) {
-			cpu.ac[oneAcc1Word.acd] |= 0xffff0000
+			cpu.ac[iPtr.ac] |= 0xffff0000
 		} else {
-			cpu.ac[oneAcc1Word.acd] &= 0x0000ffff
+			cpu.ac[iPtr.ac] &= 0x0000ffff
 		}
 
 	case instrLPSR:
@@ -162,6 +161,10 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 		}
 
+	case instrWHLV:
+		s32 := int32(cpu.ac[iPtr.ac]) / 2
+		cpu.ac[iPtr.ac] = dg.DwordT(s32)
+
 	case instrWINC:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.carry = cpu.ac[twoAcc1Word.acs] == 0xffffffff // TODO handle overflow flag
@@ -210,8 +213,7 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[twoAcc1Word.acd] = cpu.ac[twoAcc1Word.acs]
 
 	case instrWMOVR:
-		oneAcc1Word := iPtr.variant.(oneAcc1WordT)
-		cpu.ac[oneAcc1Word.acd] = cpu.ac[oneAcc1Word.acd] >> 1
+		cpu.ac[iPtr.ac] >>= 1
 
 	case instrWMUL:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
