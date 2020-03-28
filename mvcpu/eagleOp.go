@@ -147,6 +147,20 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.ac[twoAcc1Word.acd] = ^cpu.ac[twoAcc1Word.acs]
 
+	case instrWDIV:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		if cpu.ac[twoAcc1Word.acs] != 0 {
+			s64 := int64(int32(cpu.ac[twoAcc1Word.acd])) / int64(int32(cpu.ac[twoAcc1Word.acs]))
+			if s64 <= maxPosS32 && s64 >= minNegS32 {
+				cpu.ac[twoAcc1Word.acd] = dg.DwordT(s64)
+				cpu.SetOVR(false)
+			} else {
+				cpu.SetOVR(true)
+			}
+		} else {
+			cpu.SetOVR(true)
+		}
+
 	case instrWDIVS:
 		s64 := int64(memory.QwordFromTwoDwords(cpu.ac[0], cpu.ac[1]))
 		if cpu.ac[2] == 0 {

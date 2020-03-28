@@ -47,7 +47,7 @@ func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	areq = <-agentChan
 	cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
 	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
-	gresBA := memory.ReadDWord(pktAddr + gres)
+	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((cpu.GetPC()&0x7000_0000)<<1)
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
 		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA)
 	}

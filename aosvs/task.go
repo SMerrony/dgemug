@@ -52,6 +52,7 @@ func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb
 	task.debugLogging = debugLogging
 
 	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", tid, startAddr)
+	log.Printf("-----  Start Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", startAddr, wfp, wsp, wsb, wsl, sfh)
 	return &task
 }
 
