@@ -132,6 +132,8 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		hiLo := memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 31)
 		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])) >> 1
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
 		byt := dg.ByteT(cpu.ac[twoAcc1Word.acd])
 		memory.WriteByte(addr, hiLo, byt)
 

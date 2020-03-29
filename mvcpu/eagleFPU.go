@@ -33,6 +33,27 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrFCLE:
 		cpu.fpsr = 0 // TODO check - PoP contradicts itself
 
+	case instrFLAS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] = float64(int16(twoAcc1Word.acs)) // TODO not quite right...
+
+	case instrFLDS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.fpac[oneAccModeInd2Word.acd] = float64(memory.ReadDWord(addr))
+
+	case instrFNEG:
+		cpu.fpac[iPtr.ac] = -cpu.fpac[iPtr.ac]
+
+	case instrFSTS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		memory.WriteDWord(addr, dg.DwordT(cpu.fpac[oneAccModeInd2Word.acd]))
+
 	case instrWSTI:
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...
