@@ -521,9 +521,16 @@ RunLoop: // performance-critical section starts here
 	return errDetail, instrCounts
 }
 
+// System call trap types
+const (
+	SyscallNot = iota
+	Syscall32Trap
+	Syscall16Trap
+)
+
 // Vrun is a simplified runloop for a Virtual CPU
 // It should run until a system call is encountered
-func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxInstrs]int) {
+func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInstrs]int) {
 	var (
 		thisOp dg.WordT
 		// prevPC dg.PhysAddrT
@@ -555,7 +562,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 
 		// Trap System Calls, first 32-bit style...
 		if iPtr.ix == instrXJSR && iPtr.disp15 == 0x06 && iPtr.ind == '@' {
-			syscallTrap = true
+			syscallTrap = Syscall32Trap
 			break
 		}
 		// ...now 16-bit style
@@ -563,7 +570,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 			cpu.cpuMu.Lock()
 			cpu.pc-- // Fudge!
 			cpu.cpuMu.Unlock()
-			syscallTrap = true
+			syscallTrap = Syscall16Trap
 			break
 		}
 
@@ -625,7 +632,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// 	break
 		// }
 
-		syscallTrap = false
+		syscallTrap = SyscallNot
 
 		// instruction counting
 		instrCounts[iPtr.ix]++

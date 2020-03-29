@@ -23,6 +23,7 @@ package aosvs
 
 import (
 	"log"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -46,12 +47,27 @@ func scGechr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 
 func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
-	// pkt := readPacket(pktAddr, iosz)
-	// _ = pkt
 	options := memory.ReadWord(pktAddr + isti)
 	fileType := memory.ReadWord(pktAddr + isto)
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
-	path := readString(bpPathname)
+	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	var areq AgentReqT
+	var openReq = agOpenReqT{path, options}
+	areq.action = agentFileOpen
+	areq.reqParms = openReq
+	agentChan <- areq
+	areq = <-agentChan
+	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
+	return true
+}
+
+func scOpen16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	options := memory.ReadWord(pktAddr + isti16)
+	fileType := memory.ReadWord(pktAddr + isto16)
+	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
+	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
 	var openReq = agOpenReqT{path, options}
@@ -66,7 +82,7 @@ func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
-	bytes := readBytes(memory.ReadDWord(pktAddr + ibad))
+	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), cpu.GetPC())
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}

@@ -36,6 +36,7 @@ type syscallDescT struct {
 	alias       string                                 // AOS/VS 4-char Name Alias
 	syscallType int                                    // groupings as per Table 2-1 in Sys Call Dict
 	fn          func(*mvcpu.CPUT, chan AgentReqT) bool // implementation
+	fn16        func(*mvcpu.CPUT, chan AgentReqT) bool // 16-bit implementation - may be the same as fn
 }
 
 const (
@@ -59,27 +60,29 @@ const (
 const scReturn = 0310 // We need special access to this call number - it is handled differently
 
 var syscalls = map[dg.WordT]syscallDescT{
-	0:    {"?CREATE", "?CREA", scFileManage, nil},
-	1:    {"?DELETE", "?DELE", scFileManage, nil},
-	3:    {"?MEM", "?MEM", scMemory, scMem},
-	014:  {"?MEMI", "?MEMI", scMemory, scMemi},
-	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz},
-	0157: {"?SINFO", "?SINF", scSystem, scInfo},
-	0166: {"?DACL", "?DACL", scFileManage, scDacl},
-	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay},
-	0265: {"?LEFE", "?LEFE", scUserDev, scLefe},
-	0300: {"?OPEN", "?OPEN", scFileIO, scOpen},
-	0301: {"?CLOSE", "?CLOS", scFileIO, scClose},
-	0302: {"?READ", "?READ", scFileIO, nil},
-	0303: {"?WRITE", "?WRIT", scFileIO, scWrite},
-	0330: {"?EXEC", "?EXEC", scSystem, scExec},
-	0307: {"?GTMES", "?GTME", scSystem, scGtmes},
-	0415: {"?GECHR", "?GECH", scFileIO, scGechr},
-	0503: {"?PRI", "?PRI", scMultitasking, scDummy},
-	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy}, // Suspend all other tasks
-	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu},
-	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv},
-	0576: {"?XPSTAT", "?XPST", scProcess, scXpstat},
+	0:    {"?CREATE", "?CREA", scFileManage, nil, nil},
+	1:    {"?DELETE", "?DELE", scFileManage, nil, nil},
+	3:    {"?MEM", "?MEM", scMemory, scMem, scMem},
+	014:  {"?MEMI", "?MEMI", scMemory, scMemi, scMemi},
+	027:  {"?ILKUP", "?ILKU", scIPC, scIlkup, nil},
+	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
+	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
+	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
+	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay, nil},
+	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, nil},
+	0300: {"?OPEN", "?OPEN", scFileIO, scOpen, scOpen16},
+	0301: {"?CLOSE", "?CLOS", scFileIO, scClose, nil},
+	0302: {"?READ", "?READ", scFileIO, nil, nil},
+	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, nil},
+	0312: {"?GCHR", "?GCHR", scFileIO, nil, nil},
+	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
+	0307: {"?GTMES", "?GTME", scSystem, scGtmes, nil},
+	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
+	0503: {"?PRI", "?PRI", scMultitasking, scDummy, nil},
+	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy, nil}, // Suspend all other tasks
+	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu, scIfpu},
+	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv, nil},
+	0576: {"?XPSTAT", "?XPST", scProcess, scXpstat, nil},
 }
 
 // syscall redirects System Call according to the syscalls map
@@ -97,6 +100,21 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	return call.fn(cpu, agent)
 }
 
+// syscall16 redirects a 16-bit System Call according to the syscalls map
+func syscall16(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+	call, defined := syscalls[callID]
+	if !defined {
+		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
+	}
+	if call.fn16 == nil {
+		log.Fatalf("ERROR: 16-bit System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
+	}
+	if cpu.GetDebugLogging() {
+		log.Printf("%s System Call...\n", call.name)
+	}
+	return call.fn16(cpu, agent)
+}
+
 // readPacket just loads a chunk of memory into a slice of words
 // TODO maybe this should be in ram_virtual.go as 'ReadWords' for efficiency?
 func readPacket(addr dg.PhysAddrT, pktLen int) (pkt []dg.WordT) {
@@ -108,10 +126,10 @@ func readPacket(addr dg.PhysAddrT, pktLen int) (pkt []dg.WordT) {
 }
 
 // readBytes reads characters up to the first NUL from the given doubleword byte address
-func readBytes(bpAddr dg.DwordT) []byte {
+func readBytes(bpAddr dg.DwordT, pc dg.PhysAddrT) []byte {
 	buff := bytes.NewBufferString("")
 	lobyte := (bpAddr & 0x0001) == 1
-	wdAddr := dg.PhysAddrT(bpAddr >> 1)
+	wdAddr := dg.PhysAddrT(bpAddr>>1) | (pc & 0x7000_0000)
 	c := memory.ReadByte(wdAddr, lobyte)
 	for c != 0 {
 		buff.WriteByte(byte(c))
@@ -125,10 +143,10 @@ func readBytes(bpAddr dg.DwordT) []byte {
 }
 
 // readString reads characters up to the first NUL from the given doubleword byte address
-func readString(bpAddr dg.DwordT) string {
+func readString(bpAddr dg.DwordT, pc dg.PhysAddrT) string {
 	buff := bytes.NewBufferString("")
 	lobyte := (bpAddr & 0x0001) == 1
-	wdAddr := dg.PhysAddrT(bpAddr >> 1)
+	wdAddr := dg.PhysAddrT(bpAddr>>1) | (pc & 0x7000_0000)
 	c := memory.ReadByte(wdAddr, lobyte)
 	for c != 0 {
 		buff.WriteByte(byte(c))

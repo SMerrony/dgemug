@@ -137,13 +137,13 @@ func MemInit() {
 }
 
 // ReadBytes - read specified # of bytes from 32-bit BA into slice
-func ReadBytes(ba32 dg.DwordT, num int) (res []byte) {
+func ReadBytes(ba32 dg.DwordT, pc dg.PhysAddrT, num int) (res []byte) {
 	var c dg.DwordT
 	for c = 0; c < dg.DwordT(num); c++ {
 		if (ba32+c)&0x01 == 1 {
-			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1), true)))
+			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1)|(pc&0x7000_0000), true)))
 		} else {
-			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1), false)))
+			res = append(res, byte(ReadByte(dg.PhysAddrT((ba32+c)>>1)|(pc&0x7000_0000), false)))
 		}
 	}
 	return res
