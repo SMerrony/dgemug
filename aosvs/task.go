@@ -91,6 +91,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			switch syscallTrap {
 			case mvcpu.Syscall32Trap:
 				scOk = syscall(callID, task.agentChan, &cpu)
+				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 			case mvcpu.Syscall16Trap:
 				scOk = syscall16(callID, task.agentChan, &cpu)
 			}
@@ -99,7 +100,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			} else {
 				cpu.SetPC(returnAddr + 1)
 			}
-			cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
+			//cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 		} else {
 			// Vrun has stopped and we're not at a system call
 			break

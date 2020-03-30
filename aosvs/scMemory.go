@@ -49,7 +49,7 @@ func scMemi(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 		}
 		cpu.SetAc(1, dg.DwordT(lastPage<<10)|dg.DwordT(cpu.GetPC()&0x7000_0000)-1)
 	case numPages < 0: // remove pages
-		log.Fatalln("ERROR: Unmapping via ?MEMI not yet supported")
+		log.Panicln("ERROR: Unmapping via ?MEMI not yet supported")
 	}
 	return true
 }

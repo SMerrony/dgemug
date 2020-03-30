@@ -40,6 +40,41 @@ func scClose(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
+func scGchr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	var areq AgentReqT
+	var gchrReq agGchrReqT
+	if memory.TestDwbit(cpu.GetAc(1), 0) {
+		// AC0 should contain a channel #
+		if memory.TestDwbit(cpu.GetAc(1), 1) {
+			// get default chars
+			gchrReq = agGchrReqT{true, true, dg.WordT(cpu.GetAc(0)), ""}
+		} else {
+			// get current chars
+			gchrReq = agGchrReqT{false, true, dg.WordT(cpu.GetAc(0)), ""}
+		}
+	} else {
+		// AC0 should contain BP to device name
+		bpPathname := cpu.GetAc(0)
+		path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+		if memory.TestDwbit(cpu.GetAc(1), 1) {
+			// get default chars
+			gchrReq = agGchrReqT{true, false, 0, path}
+		} else {
+			// get current chars
+			gchrReq = agGchrReqT{false, false, 0, path}
+		}
+	}
+	areq.action = agentGetChars
+	areq.reqParms = gchrReq
+	agentChan <- areq
+	areq = <-agentChan
+	wrAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	memory.WriteWord(dg.PhysAddrT(wrAddr), areq.result.(agGchrRespT).words[0])
+	memory.WriteWord(dg.PhysAddrT(wrAddr+1), areq.result.(agGchrRespT).words[1])
+	memory.WriteWord(dg.PhysAddrT(wrAddr+2), areq.result.(agGchrRespT).words[2])
+	return true
+}
+
 func scGechr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 
 	return true
@@ -83,6 +118,19 @@ func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
 	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), cpu.GetPC())
+	// log.Println("DEBUG: ?WRITE")
+	var writeReq = agWriteReqT{channel, bytes}
+	var areq = AgentReqT{agentFileWrite, writeReq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
+	return true
+}
+
+func scWrite16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	channel := memory.ReadWord(pktAddr + ich16)
+	bytes := readBytes(dg.DwordT(memory.ReadWord(pktAddr+ibad16)), cpu.GetPC())
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}

@@ -29,6 +29,33 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
+func scDadid(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	// fake PIDs
+	switch cpu.GetAc(0) {
+	case 1:
+		cpu.SetAc(1, 0)
+	case 2:
+		cpu.SetAc(1, 1)
+	case 3:
+		cpu.SetAc(1, 2)
+	case 5:
+		cpu.SetAc(1, 3)
+	case 6:
+		cpu.SetAc(1, 5)
+	case 7:
+		cpu.SetAc(1, 6)
+	case 8:
+		cpu.SetAc(1, 7)
+	case 9:
+		cpu.SetAc(1, 8)
+	case 10:
+		cpu.SetAc(1, 9)
+	default:
+		cpu.SetAc(1, 10)
+	}
+	return true
+}
+
 func scSysprv(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	funcCode := memory.ReadWord(pktAddr + sysprvPktFunc)
@@ -36,13 +63,13 @@ func scSysprv(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	case sysprvGet:
 		memory.WriteWord(pktAddr+sysprvPktFlags, 0)
 	case sysprvEnter:
-		log.Fatalln("ERROR: Enter func not yet implemented in ?SYSPRV")
+		log.Panicln("ERROR: Enter func not yet implemented in ?SYSPRV")
 	case sysprvEnterExcl:
-		log.Fatalln("ERROR: Enter Exclusive func not yet implemented in ?SYSPRV")
+		log.Panicln("ERROR: Enter Exclusive func not yet implemented in ?SYSPRV")
 	case sysprvLeave:
 		log.Println("WARNING: Leave func not yet implemented in ?SYSPRV - Ignoring")
 	default:
-		log.Fatalf("ERROR: ?SYSPRV called with unknown function code %d", funcCode)
+		log.Panicf("ERROR: ?SYSPRV called with unknown function code %d", funcCode)
 	}
 	return true
 }

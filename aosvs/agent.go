@@ -35,6 +35,7 @@ const (
 	agentFileOpen = iota
 	agentFileWrite
 	agentFileClose
+	agentGetChars
 	agentGetMessage
 )
 
@@ -50,6 +51,16 @@ type agCloseReqT struct {
 }
 type agCloseRespT struct {
 	errCode dg.WordT
+}
+
+type agGchrReqT struct {
+	getDefaults bool // otherwise get current
+	useChan     bool // otherwise use name
+	devChan     dg.WordT
+	devName     string
+}
+type agGchrRespT struct {
+	words [3]dg.WordT
 }
 
 type agOpenReqT struct {
@@ -106,57 +117,64 @@ func agentHandler(agentChan chan AgentReqT) {
 		request := <-agentChan
 		switch request.action {
 		case agentFileClose:
-			request.result = agentFileCloser(request.reqParms.(agCloseReqT))
+			request.result = doAgentFileClose(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
-			request.result = agentFileOpener(request.reqParms.(agOpenReqT))
+			request.result = doAgentFileOpen(request.reqParms.(agOpenReqT))
 		case agentFileWrite:
-			request.result = agentFileWriter(request.reqParms.(agWriteReqT))
+			request.result = doAgentFileWrite(request.reqParms.(agWriteReqT))
+		case agentGetChars:
+			request.result = doAgentGetChars(request.reqParms.(agGchrReqT))
 		case agentGetMessage:
-			request.result = agentGetMessager(request.reqParms.(agGtMesReqT))
+			request.result = doAgentGetMessage(request.reqParms.(agGtMesReqT))
 
 		default:
-			log.Fatalf("ERROR: Agent received unknown request type %d\n", request.action)
+			log.Panicf("ERROR: Agent received unknown request type %d\n", request.action)
 		}
 		agentChan <- request
 	}
 }
 
-func agentFileCloser(req agCloseReqT) (resp agCloseRespT) {
+func doAgentFileClose(req agCloseReqT) (resp agCloseRespT) {
 	if req.chanNo == 0 {
 		resp.errCode = 0
 	} else {
-		log.Fatalf("ERROR: real file opening not yet implemented")
+		log.Panicf("ERROR: real file opening not yet implemented")
 	}
 	return resp
 }
 
-func agentFileOpener(req agOpenReqT) (resp agOpenRespT) {
+func doAgentFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	log.Printf("DEBUG: Agent received File Open request for %s\n", req.path)
 	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
 		resp.channelNo = 0
 	} else {
-		log.Fatalf("ERROR: real file opening not yet implemented")
+		log.Panicf("ERROR: real file opening not yet implemented")
 	}
 	return resp
 }
 
-func agentFileWriter(req agWriteReqT) (resp agWriteRespT) {
+func doAgentFileWrite(req agWriteReqT) (resp agWriteRespT) {
 	agChan, isOpen := agChannels[req.chanNo]
 	if isOpen {
 		if agChan.isConsole {
 			n, err := agChan.rwc.Write(req.bytes)
 			if err != nil {
-				log.Fatal("ERROR: Could not write to @CONSOLE")
+				log.Panic("ERROR: Could not write to @CONSOLE")
 			}
 			resp.bytesTxfrd = dg.WordT(n)
 		}
 	} else {
-		log.Fatal("ERROR: attempt to ?WRITE to unopened file")
+		log.Panic("ERROR: attempt to ?WRITE to unopened file")
 	}
 	return resp
 }
 
-func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
+func doAgentGetChars(req agGchrReqT) (resp agGchrRespT) {
+
+	return resp
+}
+
+func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
 	case gmes: // get entire message
 		first := true
@@ -185,7 +203,7 @@ func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
 		resp.ac0 = dg.DwordT(len(invocationArgs) - 1)
 	case garg: // get the nth arg - special handing for integers
 		if int(req.gnum) > len(invocationArgs)-1 {
-			log.Fatalf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
+			log.Panicf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
 		}
 		argS := invocationArgs[int(req.gnum)]
 		i, err := strconv.ParseInt(argS, 10, 16)
@@ -199,7 +217,7 @@ func agentGetMessager(req agGtMesReqT) (resp agGtMesRespT) {
 	// case gtsw:
 	// case gsws:
 	default:
-		log.Fatalf("ERROR: ?GTMES request type %#x not yet supported\n", req.greq)
+		log.Panicf("ERROR: ?GTMES request type %#x not yet supported\n", req.greq)
 	}
 	return resp
 }

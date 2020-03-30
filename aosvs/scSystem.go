@@ -23,6 +23,7 @@ package aosvs
 
 import (
 	"log"
+	"time"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -31,6 +32,14 @@ import (
 
 func scExec(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	log.Println("WARNING: ?EXEC system call not yet implemented")
+	return true
+}
+
+func scGday(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	now := time.Now()
+	cpu.SetAc(0, dg.DwordT(now.Day()))
+	cpu.SetAc(1, dg.DwordT(now.Month()))
+	cpu.SetAc(2, dg.DwordT(now.Year()-1900))
 	return true
 }
 
@@ -51,6 +60,14 @@ func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
 		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA)
 	}
+	return true
+}
+
+func scGtod(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	now := time.Now()
+	cpu.SetAc(0, dg.DwordT(now.Second()))
+	cpu.SetAc(1, dg.DwordT(now.Minute()))
+	cpu.SetAc(2, dg.DwordT(now.Hour()))
 	return true
 }
 

@@ -65,20 +65,24 @@ var syscalls = map[dg.WordT]syscallDescT{
 	3:    {"?MEM", "?MEM", scMemory, scMem, scMem},
 	014:  {"?MEMI", "?MEMI", scMemory, scMemi, scMemi},
 	027:  {"?ILKUP", "?ILKU", scIPC, scIlkup, nil},
+	036:  {"?GTOD", "?GTOD", scSystem, scGtod, scGtod},
+	041:  {"?GDAY", "?GDAY", scSystem, scGday, scGday},
+	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
+	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
 	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay, nil},
-	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, nil},
+	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen, scOpen16},
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose, nil},
 	0302: {"?READ", "?READ", scFileIO, nil, nil},
-	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, nil},
-	0312: {"?GCHR", "?GCHR", scFileIO, nil, nil},
+	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
+	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, nil},
 	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
-	0503: {"?PRI", "?PRI", scMultitasking, scDummy, nil},
+	0503: {"?PRI", "?PRI", scMultitasking, scDummy, scDummy},
 	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy, nil}, // Suspend all other tasks
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu, scIfpu},
 	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv, nil},
@@ -89,10 +93,10 @@ var syscalls = map[dg.WordT]syscallDescT{
 func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
-		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
+		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
 	}
 	if call.fn == nil {
-		log.Fatalf("ERROR: System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
+		log.Panicf("ERROR: System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
 		log.Printf("%s System Call...\n", call.name)
@@ -104,13 +108,13 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 func syscall16(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
-		log.Fatalf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
+		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
 	}
 	if call.fn16 == nil {
-		log.Fatalf("ERROR: 16-bit System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
+		log.Panicf("ERROR: 16-bit System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
-		log.Printf("%s System Call...\n", call.name)
+		log.Printf("%s System Call (16-bit)...\n", call.name)
 	}
 	return call.fn16(cpu, agent)
 }

@@ -116,7 +116,7 @@ func MapSlice(addr dg.PhysAddrT, wds []dg.WordT, shared bool) {
 func UnmapPage(page int, shared bool) {
 	virtualRamMu.Lock()
 	if _, mapped := virtualRam[page]; !mapped {
-		log.Fatalf("ERROR: Attempt to unmap a non-mapped memory page %#o", page)
+		log.Panicf("ERROR: Attempt to unmap a non-mapped memory page %#o", page)
 	}
 	delete(virtualRam, page)
 	if !shared {
@@ -181,7 +181,7 @@ func WriteWord(addr dg.PhysAddrT, datum dg.WordT) {
 	virtualRamMu.Lock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Fatalf("ERROR: Attempt to write to unmapped page %#x for addr %#x", addr>>10, addr)
+		log.Panicf("ERROR: Attempt to write to unmapped page %#x for addr %#x", addr>>10, addr)
 	}
 	page.words[int(addr&0x3ff)] = datum
 	virtualRam[int(addr>>10)] = page

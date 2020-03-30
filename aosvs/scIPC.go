@@ -31,6 +31,6 @@ import (
 func scIlkup(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	bpPathname := cpu.GetAc(0)
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
-	log.Fatalf("?ILKUP of %s not yet implemented", path)
+	log.Panicf("?ILKUP of %s not yet implemented", path)
 	return true
 }

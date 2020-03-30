@@ -561,12 +561,12 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 		}
 
 		// Trap System Calls, first 32-bit style...
-		if iPtr.ix == instrXJSR && iPtr.disp15 == 0x06 && iPtr.ind == '@' {
+		if iPtr.ix == instrXJSR && iPtr.disp15 == 0x06 && iPtr.ind == '@' && iPtr.mode == absoluteMode {
 			syscallTrap = Syscall32Trap
 			break
 		}
 		// ...now 16-bit style
-		if iPtr.ix == instrJSR && iPtr.disp15 == 017 && iPtr.ind == '@' {
+		if iPtr.ix == instrJSR && iPtr.disp15 == 017 && iPtr.ind == '@' && iPtr.mode == absoluteMode {
 			cpu.cpuMu.Lock()
 			cpu.pc-- // Fudge!
 			cpu.cpuMu.Unlock()
