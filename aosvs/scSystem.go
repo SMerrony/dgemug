@@ -58,7 +58,21 @@ func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
 	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((cpu.GetPC()&0x7000_0000)<<1)
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA)
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((cpu.GetPC()&0x7000_0000)<<1))
+	}
+	return true
+}
+func scGtmes16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	var gtMesReq = agGtMesReqT{memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
+	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
+	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
+	gresBA := dg.DwordT(memory.ReadWord(pktAddr + gres16))
+	if gresBA != 0xffff && len(areq.result.(agGtMesRespT).result) > 0 {
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((cpu.GetPC()&0x7000_0000)<<1))
 	}
 	return true
 }

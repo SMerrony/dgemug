@@ -80,10 +80,11 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
-	0307: {"?GTMES", "?GTME", scSystem, scGtmes, nil},
+	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
 	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
+	0500: {"?TASK", "?TASK", scMultitasking, nil, nil},
 	0503: {"?PRI", "?PRI", scMultitasking, scDummy, scDummy},
-	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy, nil}, // Suspend all other tasks
+	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy, scDummy}, // Suspend all other tasks
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu, scIfpu},
 	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv, nil},
 	0576: {"?XPSTAT", "?XPST", scProcess, scXpstat, nil},

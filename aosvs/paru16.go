@@ -30,7 +30,6 @@ const (
 	//
 	//        USED FOR ?OPEN/?READ/?WRITE/?CLOSE
 	//
-
 	ich16  = 0          // CHANNEL NUMBER
 	isti16 = ich16 + 1  // STATUS WORD (IN)
 	isto16 = isti16 + 1 // RIGHT=FILE TYPE, LEFT=RESERVED
@@ -47,4 +46,14 @@ const (
 
 	iblt16 = idel16 + 1 // PACKET LENGTH
 
+)
+
+const (
+	// PACKET TO GET INITIAL MESSAGE (?GTMES)
+	//
+	greq16 = 0          // REQUEST TYPE (SEE BELOW)
+	gnum16 = greq16 + 1 // ARGUMENT NUMBER
+	gsw16  = gnum16 + 1 // BYTE PTR TO POSSIBLE SWITCH
+	gres16 = gsw16 + 1  // BYTE PTR TO AREA TO RECEIVE SWITCH
+	gtln16 = gres16 + 1 // PACKET LENGTH
 )
