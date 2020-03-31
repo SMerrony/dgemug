@@ -20,6 +20,8 @@
 // THE SOFTWARE.
 
 // N.B. To avoid namespace collisions, all these names have "16" appended
+//      No need to duplicate symbols here if they are the same as those in
+//      PARU.32.SR - eg. many option flags are identical.
 
 package aosvs
 

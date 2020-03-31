@@ -76,7 +76,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen, scOpen16},
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose, nil},
-	0302: {"?READ", "?READ", scFileIO, nil, nil},
+	0302: {"?READ", "?READ", scFileIO, nil, scRead16},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
@@ -129,7 +129,7 @@ func readPacket(addr dg.PhysAddrT, pktLen int) (pkt []dg.WordT) {
 	return pkt
 }
 
-// readBytes reads characters up to the first NUL from the given doubleword byte address
+// readBytes reads characters from memory up to the first NUL from the given doubleword byte address
 func readBytes(bpAddr dg.DwordT, pc dg.PhysAddrT) []byte {
 	buff := bytes.NewBufferString("")
 	lobyte := (bpAddr & 0x0001) == 1
@@ -146,7 +146,7 @@ func readBytes(bpAddr dg.DwordT, pc dg.PhysAddrT) []byte {
 	return buff.Bytes()
 }
 
-// readString reads characters up to the first NUL from the given doubleword byte address
+// readString reads characters from memory up to the first NUL from the given doubleword byte address
 func readString(bpAddr dg.DwordT, pc dg.PhysAddrT) string {
 	buff := bytes.NewBufferString("")
 	lobyte := (bpAddr & 0x0001) == 1
@@ -161,6 +161,19 @@ func readString(bpAddr dg.DwordT, pc dg.PhysAddrT) string {
 		c = memory.ReadByte(wdAddr, lobyte)
 	}
 	return buff.String()
+}
+
+// writeBytes writes the whole byte array into memory at the given doubleword byte address
+func writeBytes(bpAddr dg.DwordT, pc dg.PhysAddrT, arr []byte) {
+	lobyte := (bpAddr & 0x0001) == 1
+	wdAddr := dg.PhysAddrT(bpAddr>>1) | (pc & 0x7000_0000)
+	for c := 0; c < len(arr); c++ {
+		memory.WriteByte(wdAddr, lobyte, dg.ByteT(arr[c]))
+		if lobyte {
+			wdAddr++
+		}
+		lobyte = !lobyte
+	}
 }
 
 // scDummy is a stub func for sys calls we are ignoring for now

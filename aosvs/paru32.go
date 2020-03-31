@@ -66,7 +66,6 @@ const (
 	hmsk   = 0177000 // RESERVED
 
 	// ENTRY TYPE RANGES
-
 	smin = 0        // SYSTEM MINIMUM
 	smax = 63       // SYSTEM MAXIMUM
 	dmin = smax + 1 // DGC MINIMUM
@@ -75,15 +74,12 @@ const (
 	umax = 255      // USER MAXIMUM
 
 	//       LOCATIONS DEFINED IN PHYSICAL BLOCK 0 OF THE .PR FILE
-
 	preswsz = 0377 // PAGE SIZE OF EXTENSIBLE SWAPFILE REQUESTED
 	// FOR RUNNING THIS PROGRAM IF 0 ( DEFAULT )
 	// DEFAULT SWAPFILE SIZE IS USED.
 
 	//       USER STATUS TABLE (UST) TEMPLATE
-
-	ust = 0400 // START OF USER STATUS AREA 256.
-
+	ust   = 0400      // START OF USER STATUS AREA 256.
 	ustez = 0         // EXTENDED VARIABLE  WORD COUNT 256 = 0
 	ustes = ustez + 1 // EXTENDED VARIABLE PAGE 0 START 257= 1
 	ustss = ustes + 1 // SYMBOLS START 258                 = 2
@@ -151,18 +147,15 @@ const (
 	dfl15  = 1          //1B15    // RESERVED FOR SYSTEM
 	dres   = dflgs + 1  // RESERVED FOR SYSTEM
 	dnum   = dres + 1   // NUMBER OF TASKS TO CREATE
+	dslth  = dnum + 1   // LENGTH OF SHORT PACKET
 
-	dslth = dnum + 1 // LENGTH OF SHORT PACKET
-
-	dsh  = dnum + 1 // STARTING HOUR, -1 IF IMMEDIATE
-	dsms = dsh + 1  // STARTING SECOND IN HOUR, IGNORED IF IMMEDIATE
-	dcc  = dsms + 1 // NUMBER OF TIMES TO CREATE TASK(S)
-	dci  = dcc + 1  // CREATION INCREMENT  IN SECONDS
-
-	dxlth = dci + 1 // LENGTH OF EXTENDED PACKET
+	dsh   = dnum + 1 // STARTING HOUR, -1 IF IMMEDIATE
+	dsms  = dsh + 1  // STARTING SECOND IN HOUR, IGNORED IF IMMEDIATE
+	dcc   = dsms + 1 // NUMBER OF TIMES TO CREATE TASK(S)
+	dci   = dcc + 1  // CREATION INCREMENT  IN SECONDS
+	dxlth = dci + 1  // LENGTH OF EXTENDED PACKET
 
 	// BIT POINTER TO TASK DEF BITS
-
 	dfbrc = dflgs*16 + 1 // RESOURCE CALL
 
 	//  GENERAL USER I/O PACKET

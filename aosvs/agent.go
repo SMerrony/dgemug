@@ -25,16 +25,19 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 )
 
 const (
-	agentFileOpen = iota
+	agentFileClose = iota
+	agentFileOpen
+	agentFileRead
 	agentFileWrite
-	agentFileClose
 	agentGetChars
 	agentGetMessage
 )
@@ -46,49 +49,6 @@ type AgentReqT struct {
 	result   interface{}
 }
 
-type agCloseReqT struct {
-	chanNo dg.WordT
-}
-type agCloseRespT struct {
-	errCode dg.WordT
-}
-
-type agGchrReqT struct {
-	getDefaults bool // otherwise get current
-	useChan     bool // otherwise use name
-	devChan     dg.WordT
-	devName     string
-}
-type agGchrRespT struct {
-	words [3]dg.WordT
-}
-
-type agOpenReqT struct {
-	path string
-	mode dg.WordT
-}
-type agOpenRespT struct {
-	channelNo dg.WordT
-}
-
-type agWriteReqT struct {
-	chanNo dg.WordT
-	bytes  []byte
-}
-type agWriteRespT struct {
-	bytesTxfrd dg.WordT
-}
-
-type agGtMesReqT struct {
-	greq dg.WordT
-	gnum dg.WordT
-	gsw  dg.DwordT
-}
-type agGtMesRespT struct {
-	ac0, ac1 dg.DwordT
-	result   string
-}
-
 type agChannelT struct {
 	path        string
 	isConsole   bool
@@ -96,8 +56,10 @@ type agChannelT struct {
 	rwc         io.ReadWriteCloser
 }
 
+const consoleChan = 0
+
 var agChannels = map[dg.WordT]*agChannelT{ // TODO should probably not be at this scope
-	0: {"@CONSOLE", true, true, true, nil}, // @CONSOLE is always available
+	consoleChan: {"@CONSOLE", true, true, true, nil}, // @CONSOLE is always available
 }
 
 var invocationArgs []string
@@ -113,6 +75,12 @@ func StartAgent(conn net.Conn, args []string) chan AgentReqT {
 }
 
 func agentHandler(agentChan chan AgentReqT) {
+	defer func() {
+		if r := recover(); r != nil {
+			logging.DebugLogsDump("logs/")
+			os.Exit(1)
+		}
+	}()
 	for {
 		request := <-agentChan
 		switch request.action {
@@ -120,6 +88,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = doAgentFileClose(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
 			request.result = doAgentFileOpen(request.reqParms.(agOpenReqT))
+		case agentFileRead:
+			request.result = doAgentFileRead(request.reqParms.(agReadReqT))
 		case agentFileWrite:
 			request.result = doAgentFileWrite(request.reqParms.(agWriteReqT))
 		case agentGetChars:
@@ -134,13 +104,28 @@ func agentHandler(agentChan chan AgentReqT) {
 	}
 }
 
+type agCloseReqT struct {
+	chanNo dg.WordT
+}
+type agCloseRespT struct {
+	errCode dg.WordT
+}
+
 func doAgentFileClose(req agCloseReqT) (resp agCloseRespT) {
 	if req.chanNo == 0 {
 		resp.errCode = 0
 	} else {
-		log.Panicf("ERROR: real file opening not yet implemented")
+		log.Panicf("ERROR: real file closing not yet implemented")
 	}
 	return resp
+}
+
+type agOpenReqT struct {
+	path string
+	mode dg.WordT
+}
+type agOpenRespT struct {
+	channelNo dg.WordT
 }
 
 func doAgentFileOpen(req agOpenReqT) (resp agOpenRespT) {
@@ -151,6 +136,57 @@ func doAgentFileOpen(req agOpenReqT) (resp agOpenRespT) {
 		log.Panicf("ERROR: real file opening not yet implemented")
 	}
 	return resp
+}
+
+type agReadReqT struct {
+	chanNo   dg.WordT
+	length   int
+	readLine bool
+}
+type agReadRespT struct {
+	data []byte
+}
+
+func doAgentFileRead(req agReadReqT) (resp agReadRespT) {
+	agChan, isOpen := agChannels[req.chanNo]
+	if isOpen {
+		if agChan.isConsole {
+			if !req.readLine {
+				log.Panic("ERROR: Fixed-length Input from @CONSOLE not yet implemented")
+			}
+			buff := make([]byte, 0)
+			for {
+				oneByte := make([]byte, 1, 1)
+				l, err := agChan.rwc.Read(oneByte)
+				if err != nil {
+					log.Panic("ERROR: Could not read from @CONSOLE")
+				}
+				if l == 0 {
+					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
+				}
+				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\n' || oneByte[0] == '\r' {
+					break
+				}
+				// TODO DELete
+				buff = append(buff, oneByte[0])
+			}
+			resp.data = buff
+		} else {
+			log.Panicf("ERROR: real file reading not yet implemented")
+		}
+	} else {
+		log.Panic("ERROR: attempt to ?READ from unopened file")
+	}
+	log.Printf("?READ returning <%v>\n", resp.data)
+	return resp
+}
+
+type agWriteReqT struct {
+	chanNo dg.WordT
+	bytes  []byte
+}
+type agWriteRespT struct {
+	bytesTxfrd dg.WordT
 }
 
 func doAgentFileWrite(req agWriteReqT) (resp agWriteRespT) {
@@ -169,9 +205,29 @@ func doAgentFileWrite(req agWriteReqT) (resp agWriteRespT) {
 	return resp
 }
 
+type agGchrReqT struct {
+	getDefaults bool // otherwise get current
+	useChan     bool // otherwise use name
+	devChan     dg.WordT
+	devName     string
+}
+type agGchrRespT struct {
+	words [3]dg.WordT
+}
+
 func doAgentGetChars(req agGchrReqT) (resp agGchrRespT) {
 
 	return resp
+}
+
+type agGtMesReqT struct {
+	greq dg.WordT
+	gnum dg.WordT
+	gsw  dg.DwordT
+}
+type agGtMesRespT struct {
+	ac0, ac1 dg.DwordT
+	result   string
 }
 
 func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {

@@ -114,6 +114,27 @@ func scOpen16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
+func scRead16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	channel := memory.ReadWord(pktAddr + ich16)
+	specs := memory.ReadWord(pktAddr + isti16)
+	length := int(memory.ReadWord(pktAddr + ircl16))
+	dest := dg.DwordT(memory.ReadWord(pktAddr + ibad16))
+	readLine := (memory.ReadWord(pktAddr+isti16) & ibin) == 0
+	if specs&ipkl != 0 {
+		log.Panic("ERROR: ?READ extended packet not yet implemented")
+	}
+	log.Printf("DEBUG: ?READ Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v", channel, specs, length, dest, readLine)
+	var readReq = agReadReqT{channel, length, readLine}
+	var areq = AgentReqT{agentFileRead, readReq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	resp := areq.result.(agReadRespT)
+	memory.WriteWord(pktAddr+irlr16, dg.WordT(len(resp.data)))
+	writeBytes(dest, cpu.GetPC(), resp.data)
+	return true
+}
+
 func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
