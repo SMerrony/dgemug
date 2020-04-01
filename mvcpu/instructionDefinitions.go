@@ -297,6 +297,7 @@ const (
 	instrWNADI
 	instrWNEG
 	instrWPOP
+	instrWPOPB
 	instrWPOPJ
 	instrWPSH
 	instrWRTN
@@ -580,6 +581,7 @@ func InstructionsInit() {
 	instructionSet[instrWNADI] = instrChars{"WNADI", 0xe6f9, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWNEG] = instrChars{"WNEG", 0x8269, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWPOP] = instrChars{"WPOP", 0x8089, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_STACK, 0}
+	instructionSet[instrWPOPB] = instrChars{"WPOPB", 0xe779, 0xFFFF, 1, UNIQUE_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWPOPJ] = instrChars{"WPOPJ", 0x8789, 0xFFFF, 1, UNIQUE_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWPSH] = instrChars{"WPSH", 0x8579, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_STACK, 0}
 	instructionSet[instrWRTN] = instrChars{"WRTN", 0x87a9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_PC, 0}

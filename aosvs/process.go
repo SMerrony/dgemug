@@ -35,18 +35,14 @@ import (
 )
 
 const (
-	maxTasksPerProc = 32 // TODO There's probably a proper DG const for this
-	// taskCountInPR       = 0412 // USTTC yes
-	// sharedStartPageInPR = 0417 // USTST 416
-	// sharedPageCountInPR = 0423 // USTSZ 422
-	// sharedOffsetInPR    = 0432 // USTSH 431
-	pcInPr      = 0574
-	page8offset = 8192
-	sfhInPr     = page8offset + 12
-	wfpInPr     = page8offset + 16
-	wspInPr     = page8offset + 18
-	wslInPr     = page8offset + 20
-	wsbInPr     = page8offset + 22
+	maxTasksPerProc = 32
+	pcInPr          = 0574
+	page8offset     = 8192
+	sfhInPr         = page8offset + 12
+	wfpInPr         = page8offset + 16
+	wspInPr         = page8offset + 18
+	wslInPr         = page8offset + 20
+	wsbInPr         = page8offset + 22
 )
 
 type ustT struct {
@@ -115,11 +111,18 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[sfhInPr], progWds[sfhInPr+1])),
+		dg.PhysAddrT(progWds[sfhInPr]),
 		debugLogging)
 
-	// set up trap for system calls
-	memory.WriteDWord(0x7000_0006, 0x7000_0006)
+	// map in stack space
+	log.Println("DEBUG: Mapping any missing unshared pages for stack...")
+	sbp := int(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1]) >> 10)
+	slp := int(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1]) >> 10)
+	for p := sbp; p <= slp; p++ {
+		if !memory.IsPageMapped(p) {
+			memory.MapPage(p, false)
+		}
+	}
 
 	return &proc, nil
 }

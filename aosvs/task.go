@@ -30,12 +30,12 @@ import (
 )
 
 type taskT struct {
-	pid, tid                              int
-	agentChan                             chan AgentReqT
-	dir                                   string
-	startAddr                             dg.PhysAddrT
-	wfp, wsp, wsb, wsl, stackFaultHandler dg.PhysAddrT
-	debugLogging                          bool
+	pid, tid                 int
+	agentChan                chan AgentReqT
+	dir                      string
+	startAddr                dg.PhysAddrT
+	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
+	debugLogging             bool
 }
 
 func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
@@ -48,7 +48,7 @@ func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb
 	task.wsp = wsp
 	task.wsb = wsb
 	task.wsl = wsl
-	task.stackFaultHandler = sfh
+	task.wsfh = sfh
 	task.debugLogging = debugLogging
 
 	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", tid, startAddr)
@@ -63,9 +63,11 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	)
 
 	cpu.CPUInit(077, nil, nil)
-	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl)
+	cpu.SetPC(task.startAddr) // must be done before stack set up
+	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)
+	adjustedWsfh := (cpu.GetPC() & 0x7000_0000) | dg.PhysAddrT(memory.ReadWord((cpu.GetPC()&0x7000_0000)|014)) // just for debugging
+	log.Printf("----- Wide Stack Fault Handler reset to: %#x (%#o)\n", adjustedWsfh, adjustedWsfh)
 	cpu.SetATU(true)
-	cpu.SetPC(task.startAddr)
 	cpu.SetDebugLogging(task.debugLogging)
 
 	// log.Println(cpu.DisassembleRange(0x7000_0000, 0x7000_0020))

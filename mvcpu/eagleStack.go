@@ -33,11 +33,20 @@ import (
 
 // Some Page Zero special locations for the Wide Stack...
 const (
-	WsfhLoc = 014 // 12.
-	WfpLoc  = 020 // WFP 16.
-	WspLoc  = 022 // WSP 18.
-	WslLoc  = 024 // WSL 20.
-	WsbLoc  = 026 // WSB 22.
+	wsfhLoc = 014 // 12.
+	wfpLoc  = 020 // WFP 16.
+	wspLoc  = 022 // WSP 18.
+	wslLoc  = 024 // WSL 20.
+	wsbLoc  = 026 // WSB 22.
+)
+
+// Wide Stack Fault codes, values are significant
+const (
+	wsfOverflow       = 0
+	wsfPending        = 1
+	wsfTooManyArgs    = 2
+	wsfUnderflow      = 3
+	wsfReturnOverflow = 4
 )
 
 func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
@@ -90,26 +99,24 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// FIXME handle segments
 		cpu.wfp = dg.PhysAddrT(cpu.ac[iPtr.ac])
 		// according the PoP does not write through to page zero...
-		//memory.WriteDWord(memory.WfpLoc, cpu.ac[iPtr.ac])
+		//memory.WriteDWord(memory.wfpLoc, cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 
 	case instrSTASB:
-		// FIXME handle segments
 		cpu.wsb = dg.PhysAddrT(cpu.ac[iPtr.ac])
-		memory.WriteDWord(WsbLoc, cpu.ac[iPtr.ac]) // write-through to p.0
+		memory.WriteDWord((cpu.pc&0x7000_0000)|wsbLoc, cpu.ac[iPtr.ac]) // write-through to p.0
 		cpu.SetOVR(false)
 
 	case instrSTASL:
-		// FIXME handle segments
 		cpu.wsl = dg.PhysAddrT(cpu.ac[iPtr.ac])
-		memory.WriteDWord(WslLoc, cpu.ac[iPtr.ac]) // write-through to p.0
+		memory.WriteDWord((cpu.pc&0x7000_0000)|wslLoc, cpu.ac[iPtr.ac]) // write-through to p.0
 		cpu.SetOVR(false)
 
 	case instrSTASP:
 		// FIXME handle segments
 		cpu.wsp = dg.PhysAddrT(cpu.ac[iPtr.ac])
 		// according the PoP does not write through to page zero...
-		// memory.WriteDWord(memory.WspLoc, cpu.ac[iPtr.ac])
+		// memory.WriteDWord(memory.wspLoc, cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... STASP set WSP to %#o\n", cpu.ac[iPtr.ac])
@@ -155,7 +162,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrWMSP:
 		// tmpDwd := cpu.ac[iPtr.ac] << 1
-		// tmpDwd += dg.DwordT(cpu.wsp) // memory.WspLoc)
+		// tmpDwd += dg.DwordT(cpu.wsp) // memory.wspLoc)
 		// FIXME - handle overflow
 		// cpu.wsp = dg.PhysAddrT(tmpDwd)
 		s32 := (int32(cpu.ac[iPtr.ac]) * 2) + int32(cpu.wsp)
@@ -177,18 +184,9 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 				thisAc = 3
 			}
 		}
-
-		// if lastAc > firstAc {
-		// 	firstAc += 4
-		// }
-		// var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
-		// for thisAc := firstAc; thisAc >= lastAc; thisAc-- {
-		// 	if cpu.debugLogging {
-		// 		logging.DebugPrint(logging.DebugLog, "... wide popping AC%d\n", acsUp[thisAc])
-		// 	}
-		// 	cpu.ac[acsUp[thisAc]] = wsPop(cpu, 0)
-		// }
 		cpu.SetOVR(false)
+
+	// N.B. WPOPB & WPOPJ are in eaglePC.go
 
 	case instrWPSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -205,19 +203,9 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 				thisAc = 0
 			}
 		}
-		// if lastAc < firstAc {
-		// 	lastAc += 4
-		// }
-		// var acsUp = [8]int{0, 1, 2, 3, 0, 1, 2, 3}
-		// for thisAc := firstAc; thisAc <= lastAc; thisAc++ {
-		// 	if cpu.debugLogging {
-		// 		logging.DebugPrint(logging.DebugLog, "... wide pushing AC%d\n", acsUp[thisAc])
-		// 	}
-		// 	wsPush(cpu, 0, cpu.ac[acsUp[thisAc]])
-		// }
 		cpu.SetOVR(false)
 
-	// N.B. WRTN is in eaglePC
+	// N.B. WRTN is in eaglePC.go
 
 	case instrWSAVR:
 		unique2Word := iPtr.variant.(unique2WordT)
@@ -226,8 +214,14 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrWSAVS:
 		unique2Word := iPtr.variant.(unique2WordT)
-		wsav(cpu, &unique2Word)
-		cpu.SetOVK(true)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(unique2Word.immU16)*2+12, true)
+		if !ok {
+			log.Printf("DEBUG: Stack fault trapped by WSAVS, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
+		} else {
+			wsav(cpu, &unique2Word)
+			cpu.SetOVK(true)
+		}
 
 	case instrWSSVR:
 		unique2Word := iPtr.variant.(unique2WordT)
@@ -278,15 +272,20 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 // wsav is common to WSAVR and WSAVS
 func wsav(cpu *CPUT, u2wd *unique2WordT) {
-	wsPush(cpu, 0, cpu.ac[0])          // 1
-	wsPush(cpu, 0, cpu.ac[1])          // 2
-	wsPush(cpu, 0, cpu.ac[2])          // 3
-	wsPush(cpu, 0, dg.DwordT(cpu.wfp)) // 4
+	// ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(u2wd.immU16)*2+12, true)
+	// if !ok {
+	// 	log.Printf("DEBUG: Stack fault trapped by wsav(), codes %d and %d", faultCode, secondaryFault)
+	// 	wspHandleFault(cpu, faultCode, secondaryFault)
+	// }
 	dwd := cpu.ac[3] & 0x7fffffff
 	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpu, 0, dwd) // 5
+	wsPush(cpu, 0, cpu.ac[0])          // 1
+	wsPush(cpu, 0, cpu.ac[1])          // 2
+	wsPush(cpu, 0, cpu.ac[2])          // 3
+	wsPush(cpu, 0, dg.DwordT(cpu.wfp)) // 4
+	wsPush(cpu, 0, dwd)                // 5
 	cpu.wfp = cpu.wsp
 	cpu.ac[3] = dg.DwordT(cpu.wsp)
 	dwdCnt := uint(u2wd.immU16)
@@ -295,18 +294,26 @@ func wsav(cpu *CPUT, u2wd *unique2WordT) {
 	}
 }
 
-// wssav is common to WSSVR and WSSVS
-func wssav(cpu *CPUT, u2wd *unique2WordT) {
+func wsPushSpecialReturnBlock(cpu *CPUT) {
+	dwd := cpu.ac[3] & 0x7fffffff
+	if cpu.carry {
+		dwd |= 0x80000000
+	}
 	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
 	wsPush(cpu, 0, cpu.ac[0])                            // 2
 	wsPush(cpu, 0, cpu.ac[1])                            // 3
 	wsPush(cpu, 0, cpu.ac[2])                            // 4
 	wsPush(cpu, 0, dg.DwordT(cpu.wfp))                   // 5
-	dwd := cpu.ac[3] & 0x7fffffff
-	if cpu.carry {
-		dwd |= 0x80000000
+	wsPush(cpu, 0, dwd)                                  // 6
+}
+
+// wssav is common to WSSVR and WSSVS
+func wssav(cpu *CPUT, u2wd *unique2WordT) {
+	ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(u2wd.immU16)*2+12, true)
+	if !ok {
+		log.Fatalf("DEBUG: Stack fault trapped by wssav(), codes %d and %d", faultCode, secondaryFault)
 	}
-	wsPush(cpu, 0, dwd) // 6
+	wsPushSpecialReturnBlock(cpu)
 	cpu.wfp = cpu.wsp
 	cpu.ac[3] = dg.DwordT(cpu.wsp)
 	dwdCnt := uint(u2wd.immU16)
@@ -364,4 +371,76 @@ func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
 func advanceWSP(cpu *CPUT, dwdCnt uint) {
 	cpu.wsp += dg.PhysAddrT(dwdCnt * 2)
 	logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpu.wsp)
+}
+
+// wspCheckBounds does a pre-flight check to see if the intended change of WSP would cause a stack fault
+// isSave must be set by WMSP, WSSVR, WSSVS, WSAVR & WSAVS
+func wspCheckBounds(cpu *CPUT, wspChangeWds int, isSave bool) (ok bool, primaryFault, secondaryFault int) {
+	ok = true
+	if wspChangeWds > 0 {
+		if cpu.wsp+dg.PhysAddrT(wspChangeWds) > cpu.wsl {
+			if isSave {
+				return false, wsfPending, wsfOverflow
+			}
+			return false, wsfOverflow, 0
+		}
+	} else {
+		posMove := -wspChangeWds
+		if cpu.wsp-dg.PhysAddrT(posMove) < cpu.wsb {
+			if isSave {
+				return false, wsfPending, wsfUnderflow
+			}
+			return false, wsfUnderflow, 0
+		}
+	}
+	return ok, 0, 0
+}
+
+func wspHandleFault(cpu *CPUT, instrLen int, primaryFault, secondaryFault int) {
+	// from pp.5-23 of PoP
+	// Step 1
+	if primaryFault == wsfUnderflow {
+		cpu.wsp = cpu.wsl
+	}
+	// Step 2
+	dwd := dg.DwordT(cpu.pc)
+	if primaryFault != wsfPending {
+		dwd += dg.DwordT(instrLen)
+	}
+	if cpu.carry {
+		dwd |= 0x80000000
+	}
+	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
+	wsPush(cpu, 0, cpu.ac[0])                            // 2
+	wsPush(cpu, 0, cpu.ac[1])                            // 3
+	wsPush(cpu, 0, cpu.ac[2])                            // 4
+	wsPush(cpu, 0, dg.DwordT(cpu.wfp))                   // 5
+	wsPush(cpu, 0, dwd)                                  // 6
+	// Step 3
+	memory.ClearWbit(&cpu.psr, 0) // OVK
+	memory.ClearWbit(&cpu.psr, 1) // OVR
+	// TODO IRES???
+	// Step 4
+	cpu.wsp = cpu.wsp &^ (1 << 31)
+	// Step 5
+	cpu.wsl |= 0x8000_0000
+	// Step 6
+	wsSaveToMemory(cpu)
+	// Step 7
+	cpu.ac[0] = dg.DwordT(cpu.pc)
+	// Step 8
+	cpu.ac[1] = dg.DwordT(primaryFault)
+	// Step 9
+	wsfhAddr := dg.PhysAddrT(memory.ReadWord((cpu.pc & 0x7000_0000) | wsfhLoc))
+	wsfhAddr |= (cpu.pc & 0x7000_0000)
+	log.Printf("DEBUG: Calling Wide Stack Fault Handler at %#x (#%o)", wsfhAddr, wsfhAddr)
+	cpu.pc = wsfhAddr
+}
+
+func wsSaveToMemory(cpu *CPUT) {
+	seg := (cpu.pc & 0x7000_0000)
+	memory.WriteDWord(seg+wfpLoc, dg.DwordT(cpu.wfp))
+	memory.WriteDWord(seg+wspLoc, dg.DwordT(cpu.wsp))
+	memory.WriteDWord(seg+wslLoc, dg.DwordT(cpu.wsl))
+	memory.WriteDWord(seg+wsbLoc, dg.DwordT(cpu.wsb))
 }

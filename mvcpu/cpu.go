@@ -24,16 +24,13 @@ package mvcpu
 import (
 	"fmt"
 	"log"
-
-	"github.com/SMerrony/dgemug/devices"
-	"github.com/SMerrony/dgemug/logging"
-
-	//"github.com/SMerrony/dgemug/dg"
 	"runtime"
 	"sync"
 	"time"
 
+	"github.com/SMerrony/dgemug/devices"
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -49,6 +46,7 @@ const (
 	MemSizeNCLID = ((MemSizeWords * 2) / (32 * 1024)) - 1
 )
 
+// Useful signed int limits
 const (
 	maxPosS16 = 1<<15 - 1
 	minNegS16 = -(maxPosS16 + 1)
@@ -76,7 +74,7 @@ type CPUT struct {
 	fpac                    [4]float64   // 4 x 64-bit Floating Point Acs N.B Not same internal fmt as DG
 	fpsr                    dg.QwordT    // 64-bit Floating-Point Status Register
 	sr                      dg.WordT     // Not sure about this... fake Switch Register
-	wfp, wsp, wsl, wsb      dg.PhysAddrT // current wide stack pointers
+	wfp, wsp, wsl, wsb      dg.PhysAddrT // Active Wide Stack values
 
 	devNum int
 	bus    *devices.BusT
@@ -364,12 +362,13 @@ func (cpu *CPUT) GetWSP() (wsp dg.PhysAddrT) {
 }
 
 // SetupStack is a group-setter for the Wide Stack
-func (cpu *CPUT) SetupStack(wfp, wsp, wsb, wsl dg.PhysAddrT) {
+func (cpu *CPUT) SetupStack(wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT) {
 	cpu.cpuMu.Lock()
 	cpu.wfp = wfp
 	cpu.wsp = wsp
 	cpu.wsb = wsb
 	cpu.wsl = wsl
+	memory.WriteWord((cpu.pc&0x7000_0000)|wsfhLoc, dg.WordT(wsfh))
 	cpu.cpuMu.Unlock()
 }
 
@@ -556,7 +555,7 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 		}
 
 		if cpu.debugLogging {
-			// 	logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 			log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
@@ -626,6 +625,10 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 
 		// Console interrupt?
 		cpu.cpuMu.RLock()
+
+		if cpu.pc == 0x7000_0000 {
+			break
+		}
 		// if cpu.scpIO {
 		// 	cpu.cpuMu.RUnlock()
 		// 	errDetail = " *** Console ESCape ***"

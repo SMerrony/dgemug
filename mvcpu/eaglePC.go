@@ -1,6 +1,6 @@
 // eaglePC.go
 
-// Copyright (C) 2017,2019,2020 Steve Merrony
+// Copyright ©2017-2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -182,9 +182,6 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		split8bitDisp := iPtr.variant.(split8bitDispT)
 		cpu.pc += dg.PhysAddrT(int32(split8bitDisp.disp8))
 
-		// case WPOPB: // FIXME - not yet decoded!
-		// 	wpopb(cpu)
-
 	case instrWCLM:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		var h, l int32
@@ -206,6 +203,9 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 				cpu.pc += 5
 			}
 		}
+
+	case instrWPOPB:
+		wpopb(cpu)
 
 	case instrWPOPJ:
 		dwd := wsPop(cpu, 0)

@@ -47,12 +47,19 @@ var (
 	// lastSharedPage   int
 )
 
+func IsPageMapped(page int) (locked bool) {
+	virtualRamMu.RLock()
+	_, locked = virtualRam[page]
+	virtualRamMu.RUnlock()
+	return locked
+}
+
 // MapPage maps (allocates) a 1kW page of virtual memory for the process
 func MapPage(page int, shared bool) {
-	virtualRamMu.Lock()
-	if _, mapped := virtualRam[page]; mapped {
+	if IsPageMapped(page) {
 		log.Fatalf("ERROR: Attempt to map already-mapped memory page %#o", page)
 	}
+	virtualRamMu.Lock()
 	var emptyPage pageT
 	virtualRam[page] = emptyPage
 	if !shared {
@@ -116,7 +123,7 @@ func MapSlice(addr dg.PhysAddrT, wds []dg.WordT, shared bool) {
 func UnmapPage(page int, shared bool) {
 	virtualRamMu.Lock()
 	if _, mapped := virtualRam[page]; !mapped {
-		log.Panicf("ERROR: Attempt to unmap a non-mapped memory page %#o", page)
+		log.Panicf("ERROR: Attempt to unmap a non-mapped memory page #%x (%#o)", page, page)
 	}
 	delete(virtualRam, page)
 	if !shared {
@@ -125,7 +132,7 @@ func UnmapPage(page int, shared bool) {
 	virtualRamMu.Unlock()
 	log.Printf("DEBUG: Unpapped page %#x", page)
 	if !shared {
-		log.Printf("DEBUG: ...Last unshared page is now: %#x\n", lastUnsharedPage)
+		log.Printf("DEBUG: ...Last unshared page is now: %#x (%#o)\n", lastUnsharedPage, lastUnsharedPage)
 	}
 }
 
@@ -161,7 +168,7 @@ func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Fatalf("ERROR: Attempt to read from unmapped page %#x at address: %#x", addr>>10, addr)
+		log.Fatalf("ERROR: Attempt to read from unmapped page %#x at address: %#x (%#o)", addr>>10, addr, addr)
 	}
 	wd = page.words[int(addr&0x3ff)]
 	virtualRamMu.RUnlock()
@@ -181,7 +188,7 @@ func WriteWord(addr dg.PhysAddrT, datum dg.WordT) {
 	virtualRamMu.Lock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Panicf("ERROR: Attempt to write to unmapped page %#x for addr %#x", addr>>10, addr)
+		log.Panicf("ERROR: Attempt to write to unmapped page %#x for addr %#x (%#o)", addr>>10, addr, addr)
 	}
 	page.words[int(addr&0x3ff)] = datum
 	virtualRam[int(addr>>10)] = page

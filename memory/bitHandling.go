@@ -63,6 +63,11 @@ func ClearWbit(word *dg.WordT, bitNum uint) {
 	*word = *word &^ (1 << (15 - bitNum))
 }
 
+// ClearDwbit clears a single bit in a DG doubleword
+func ClearDwbit(dword *dg.DwordT, bitNum uint) {
+	*dword = *dword &^ (1 << (31 - bitNum))
+}
+
 // GetDwbits - in the DG world, the first (leftmost) bit is numbered zero...
 // extract nbits from value starting at leftBit
 func GetDwbits(value dg.DwordT, leftBit uint, nbits uint) dg.DwordT {

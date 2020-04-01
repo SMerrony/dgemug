@@ -99,7 +99,6 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	case ac3Mode:
 		eff = dg.PhysAddrT(int32(cpu.ac[3]) + dispS32)
 	}
-	//	eff |= (cpu.pc & 0x7000_0000)
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
 		eff |= (cpu.pc & 0x7000_0000)
@@ -122,7 +121,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	}
 
 	if cpu.debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... resolve15bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
+		logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
 	return eff
 }
@@ -147,7 +146,7 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 	case ac3Mode:
 		eff += dg.PhysAddrT(cpu.ac[3])
 	}
-	//eff |= (cpu.pc & 0x7000_0000)
+
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
 		eff |= (cpu.pc & 0x7000_0000)
@@ -169,7 +168,7 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 		eff &= 0x1ff_ffff
 	}
 	if cpu.debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... resolve8bitDsiplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
+		logging.DebugPrint(logging.DebugLog, "... resolve8bitDisplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
 	return eff
 }
