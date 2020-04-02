@@ -204,6 +204,18 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 		}
 
+	case instrWMESS:
+		dwd := memory.ReadDWord(dg.PhysAddrT(cpu.ac[2]))
+		ord := dwd ^ cpu.ac[0]
+		if ord&cpu.ac[3] == 0 {
+			memory.WriteDWord(dg.PhysAddrT(cpu.ac[2]), cpu.ac[1])
+			cpu.ac[1] = dwd
+			cpu.pc += 2
+		} else {
+			cpu.ac[1] = dwd
+			cpu.pc++
+		}
+
 	case instrWPOPB:
 		wpopb(cpu)
 

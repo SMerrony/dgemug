@@ -289,6 +289,7 @@ const (
 	instrWLSH
 	instrWLSHI
 	instrWLSI
+	instrWMESS
 	instrWMOV
 	instrWMOVR
 	instrWMSP
@@ -573,6 +574,7 @@ func InstructionsInit() {
 	instructionSet[instrWLSH] = instrChars{"WLSH", 0x8559, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWLSHI] = instrChars{"WLSHI", 0xe6d9, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWLSI] = instrChars{"WLSI", 0x85b9, 0x87ff, 1, IMM_ONEACC_FMT, EAGLE_OP, 0}
+	instructionSet[instrWMESS] = instrChars{"WMESS", 0xe719, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWMOV] = instrChars{"WMOV", 0x8379, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWMOVR] = instrChars{"WMOVR", 0xe699, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWMSP] = instrChars{"WMSP", 0xe649, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_STACK, 0}
