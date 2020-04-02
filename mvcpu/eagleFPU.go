@@ -54,6 +54,12 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		addr |= (cpu.pc & ringMask32)
 		memory.WriteDWord(addr, dg.DwordT(cpu.fpac[oneAccModeInd2Word.acd]))
 
+	case instrFTD:
+		memory.ClearQwbit(&cpu.fpsr, fpsrTe)
+
+	case instrFTE:
+		memory.SetQwbit(&cpu.fpsr, fpsrTe)
+
 	case instrWSTI:
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...

@@ -144,7 +144,9 @@ const (
 	instrFPOP
 	instrFPSH
 	instrFSA
+	instrFTD
 	instrFSTS
+	instrFTE
 	instrFXTD
 	instrFXTE
 	instrHALT
@@ -429,7 +431,9 @@ func InstructionsInit() {
 	instructionSet[instrFPOP] = instrChars{"FPOP", 0xeee8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrFPSH] = instrChars{"FPSH", 0xe6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrFSA] = instrChars{"FSA", 0x8ea8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_PC, 0}
+	instructionSet[instrFTD] = instrChars{"FTD", 0xcee8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFSTS] = instrChars{"FSTS", 0x84a8, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
+	instructionSet[instrFTE] = instrChars{"FTE", 0xc6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFXTD] = instrChars{"FXTD", 0xa779, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrFXTE] = instrChars{"FXTE", 0xc749, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrHALT] = instrChars{"HALT", 0x647f, 0xffff, 1, UNIQUE_1_WORD_FMT, NOVA_IO, 0}
