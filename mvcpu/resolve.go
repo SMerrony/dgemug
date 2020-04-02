@@ -91,7 +91,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	switch mode {
 	case absoluteMode:
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) //| (cpu.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
 	case pcMode:
 		eff = dg.PhysAddrT(int32(cpu.pc) + dispS32 + int32(dispOffset))
 	case ac2Mode:
@@ -129,7 +129,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
 	if mode == absoluteMode {
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) //| (cpu.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
 	} else {
 		// relative mode
 		// sign-extend to 31-bits
