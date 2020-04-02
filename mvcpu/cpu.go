@@ -61,6 +61,20 @@ type sbrBits struct {
 	physAddr        uint32 // 19 bits used
 }
 
+// FPU SR bits
+const (
+	fpsrAny = 0
+	fpsrOvr = 1
+	fpsrUnf = 2
+	fpsrInv = 3
+	fpsrMof = 4
+	fpsrTe  = 5
+	fpsrZ   = 6
+	fpsrN   = 7
+	fpsrRnd = 8
+	fpsrPar = 22
+)
+
 // CPUT holds the current state of a CPUT
 type CPUT struct {
 	cpuMu sync.RWMutex

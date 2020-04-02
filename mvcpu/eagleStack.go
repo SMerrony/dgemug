@@ -160,13 +160,22 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 		}
 
+	case instrWFPSH:
+		wsPushQWord(cpu, cpu.fpsr) // TODO Is this right?
+		wsPushQWord(cpu, dg.QwordT(cpu.fpac[0]))
+		wsPushQWord(cpu, dg.QwordT(cpu.fpac[1]))
+		wsPushQWord(cpu, dg.QwordT(cpu.fpac[2]))
+		wsPushQWord(cpu, dg.QwordT(cpu.fpac[3]))
+
 	case instrWMSP:
-		// tmpDwd := cpu.ac[iPtr.ac] << 1
-		// tmpDwd += dg.DwordT(cpu.wsp) // memory.wspLoc)
-		// FIXME - handle overflow
-		// cpu.wsp = dg.PhysAddrT(tmpDwd)
-		s32 := (int32(cpu.ac[iPtr.ac]) * 2) + int32(cpu.wsp)
-		cpu.wsp = dg.PhysAddrT(s32)
+		sMove := int(int32(cpu.ac[iPtr.ac]) * 2)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, sMove, true)
+		if !ok {
+			log.Printf("DEBUG: Stack fault trapped by WMSP, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
+			return true // we have set PC
+		}
+		cpu.wsp = dg.PhysAddrT(sMove) + cpu.wsp
 		cpu.SetOVR(false)
 
 	case instrWPOP:
@@ -207,33 +216,39 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	// N.B. WRTN is in eaglePC.go
 
-	case instrWSAVR:
-		unique2Word := iPtr.variant.(unique2WordT)
-		wsav(cpu, &unique2Word)
-		cpu.SetOVK(false)
-
-	case instrWSAVS:
+	case instrWSAVR, instrWSAVS:
 		unique2Word := iPtr.variant.(unique2WordT)
 		ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(unique2Word.immU16)*2+12, true)
 		if !ok {
-			log.Printf("DEBUG: Stack fault trapped by WSAVS, codes %d and %d", faultCode, secondaryFault)
+			log.Printf("DEBUG: Stack fault trapped by WSAVR/S, codes %d and %d", faultCode, secondaryFault)
 			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
-		} else {
-			wsav(cpu, &unique2Word)
+			return true // we have set PC
+		}
+		wsav(cpu, &unique2Word)
+		switch iPtr.ix {
+		case instrWSAVR:
+			cpu.SetOVK(false)
+		case instrWSAVS:
 			cpu.SetOVK(true)
 		}
 
-	case instrWSSVR:
+	case instrWSSVR, instrWSSVS:
 		unique2Word := iPtr.variant.(unique2WordT)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(unique2Word.immU16)*2+12, true)
+		if !ok {
+			log.Printf("DEBUG: Stack fault trapped by WSSVR/S, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
+			return true // we have set PC
+		}
 		wssav(cpu, &unique2Word)
-		cpu.SetOVK(false)
-		cpu.SetOVR(false)
-
-	case instrWSSVS:
-		unique2Word := iPtr.variant.(unique2WordT)
-		wssav(cpu, &unique2Word)
-		cpu.SetOVK(true)
-		cpu.SetOVR(false)
+		switch iPtr.ix {
+		case instrWSSVR:
+			cpu.SetOVK(false)
+			cpu.SetOVR(false)
+		case instrWSSVS:
+			cpu.SetOVK(true)
+			cpu.SetOVR(false)
+		}
 
 	case instrXPEF:
 		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
@@ -328,6 +343,13 @@ func wsPush(cpu *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
 	cpu.wsp += 2
 	memory.WriteDWord(cpu.wsp, data)
 	logging.DebugPrint(logging.DebugLog, "... wsPush pushed %#o onto the Wide Stack at location: %#o\n", data, cpu.wsp)
+}
+
+func wsPushQWord(cpu *CPUT, qw dg.QwordT) {
+	cpu.wsp += 2
+	memory.WriteDWord(cpu.wsp, dg.DwordT(qw>>32))
+	cpu.wsp += 2
+	memory.WriteDWord(cpu.wsp, dg.DwordT(qw))
 }
 
 // WsPop - POP a doubleword off the Wide Stack

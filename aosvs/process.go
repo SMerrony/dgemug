@@ -116,11 +116,12 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 
 	// map in stack space
 	log.Println("DEBUG: Mapping any missing unshared pages for stack...")
-	sbp := int(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1]) >> 10)
-	slp := int(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1]) >> 10)
-	for p := sbp; p <= slp; p++ {
-		if !memory.IsPageMapped(p) {
-			memory.MapPage(p, false)
+	if sbp := int(proc.tasks[0].wsb >> 10); sbp != 0 {
+		slp := int(proc.tasks[0].wsl >> 10)
+		for p := sbp; p <= slp; p++ {
+			if !memory.IsPageMapped(p) {
+				memory.MapPage(p, false)
+			}
 		}
 	}
 
