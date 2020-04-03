@@ -330,6 +330,7 @@ const (
 	instrWUSGT
 	instrWUGTI
 	instrWXCH
+	instrWXORI
 	instrXCALL
 	instrXCH
 	instrXCT
@@ -617,6 +618,7 @@ func InstructionsInit() {
 	instructionSet[instrWUSGT] = instrChars{"WUSGT", 0x80a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWUGTI] = instrChars{"WUGTI", 0xc699, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWXCH] = instrChars{"WXCH", 0x8369, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
+	instructionSet[instrWXORI] = instrChars{"WXORI", 0x86b9, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrXCALL] = instrChars{"XCALL", 0x8609, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_XCALL_FMT, EAGLE_PC, 1}
 	instructionSet[instrXCH] = instrChars{"XCH", 0x81c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrXCT] = instrChars{"XCT", 0xa6f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_OP, 0}

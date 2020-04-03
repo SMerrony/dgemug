@@ -486,7 +486,7 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 		if disassemble {
 			decodedInstr.disassembly += fmt.Sprintf(" %#o,%d [2-Word OpCode]", oneAccImmWd2Word.immWord, oneAccImmWd2Word.acd)
 		}
-	case ONEACC_IMM_3_WORD_FMT: // eg. WADDI, WUGTI
+	case ONEACC_IMM_3_WORD_FMT: // eg. WADDI, WUGTI, WXORI
 		var oneAccImm3Word oneAccImm3WordT
 		oneAccImm3Word.acd = int(memory.GetWbits(opcode, 3, 2))
 		oneAccImm3Word.immU32 = uint32(memory.ReadDWord(pc + 1))
