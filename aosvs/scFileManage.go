@@ -21,9 +21,27 @@
 
 package aosvs
 
-import "github.com/SMerrony/dgemug/mvcpu"
+import (
+	"log"
+
+	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/memory"
+	"github.com/SMerrony/dgemug/mvcpu"
+)
 
 func scDacl(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
-
+	// TODO this is all faked...
+	switch dg.WordT(cpu.GetAc(0)) { // make 16-bit safe
+	case 0xffff:
+		log.Fatal("ERROR: Setting new DefACL not yet implemented in ?DACL")
+	case 0:
+		defacl := []byte("XYZZY")
+		defacl = append(defacl, 0)
+		defacl = append(defacl, faco+facw+faca+facw+face)
+		defacl = append(defacl, 0)
+		memory.WriteBytesBA(defacl, cpu.GetAc(1))
+	case 1:
+		log.Fatal("ERROR: Turning off DefACL not yet implemented in ?DACL")
+	}
 	return true
 }

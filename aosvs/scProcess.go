@@ -30,6 +30,7 @@ import (
 )
 
 func scDadid(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
 	// fake PIDs
 	switch cpu.GetAc(0) {
 	case 1:
@@ -52,6 +53,18 @@ func scDadid(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 		cpu.SetAc(1, 9)
 	default:
 		cpu.SetAc(1, 10)
+	}
+	return true
+}
+
+func scGunm(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
+	if dg.WordT(cpu.GetAc(0)) == 0xffff {
+		cpu.SetAc(0, 1)      // Claim not to be in SU mode
+		cpu.SetAc(1, 0x001f) // Claim to have nearly all privileges
+		memory.WriteStringBA("XYZZY", cpu.GetAc(2))
+	} else {
+		log.Panic("ERROR: ?GUNM request type not yet implemented")
 	}
 	return true
 }

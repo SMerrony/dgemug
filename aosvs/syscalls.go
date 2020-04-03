@@ -39,6 +39,7 @@ type syscallDescT struct {
 	fn16        func(*mvcpu.CPUT, chan AgentReqT) bool // 16-bit implementation - may be the same as fn
 }
 
+// System Call Types as per Chap 2 of Sys Call Dictionary
 const (
 	scMemory = iota
 	scProcess
@@ -68,6 +69,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	036:  {"?GTOD", "?GTOD", scSystem, scGtod, scGtod},
 	041:  {"?GDAY", "?GDAY", scSystem, scGday, scGday},
 	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},
+	072:  {"?GUNM", "?GUNM", scProcess, scGunm, nil},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},

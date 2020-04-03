@@ -664,3 +664,28 @@ const (
 //        7-15  (FOR FUTURE EXPANSION)
 
 )
+
+const (
+	// ACCESS CONTROL SPECIFICATIONS
+
+	// ACCESS PRIVILEGE BIT POSITIONS
+	faob = 11 // OWNER ACCESS
+	fawb = 12 // WRITE ACCESS
+	faab = 13 // APPEND ACCESS
+	farb = 14 // READ ACCESS
+	faeb = 15 // EXECUTE ACCESS
+
+	// DEFINITIONS FOR USE WITH WSKBN/WSKBZ EAGLE INSTRUCTIONS
+	faobb = 16 + faob // OWNER ACCESS
+	fawbb = 16 + fawb // WRITE ACCESS
+	faabb = 16 + faab // APPEND ACCESS
+	farbb = 16 + farb // READ ACCESS
+	faebb = 16 + faeb // EXECUTE ACCESS
+
+	// ACCESS PRIVILEGE MASKS
+	faco = 0x8000 >> faob // OWNER
+	facw = 0x8000 >> fawb // WRITE
+	faca = 0x8000 >> faab // APPEND
+	facr = 0x8000 >> farb // READ
+	face = 0x8000 >> faeb // EXECUTE
+)

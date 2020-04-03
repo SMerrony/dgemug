@@ -156,6 +156,13 @@ func ReadBytes(ba32 dg.DwordT, pc dg.PhysAddrT, num int) (res []byte) {
 	return res
 }
 
+// WriteBytesBA copies a byte array to the specified address
+func WriteBytesBA(b []byte, byteAddr dg.DwordT) {
+	for c := 0; c < len(b); c++ {
+		WriteByteBA(byteAddr+dg.DwordT(c), dg.ByteT(b[c]))
+	}
+}
+
 // WriteStringBA copies a string to the specified address
 func WriteStringBA(s string, byteAddr dg.DwordT) {
 	for c := 0; c < len(s); c++ {
