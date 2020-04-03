@@ -334,6 +334,7 @@ const (
 	instrXCALL
 	instrXCH
 	instrXCT
+	instrXFLDS
 	instrXJMP
 	instrXJSR
 	instrXLDB
@@ -622,6 +623,7 @@ func InstructionsInit() {
 	instructionSet[instrXCALL] = instrChars{"XCALL", 0x8609, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_XCALL_FMT, EAGLE_PC, 1}
 	instructionSet[instrXCH] = instrChars{"XCH", 0x81c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrXCT] = instrChars{"XCT", 0xa6f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_OP, 0}
+	instructionSet[instrXFLDS] = instrChars{"XFLDS", 0x8209, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXJMP] = instrChars{"XJMP", 0xc609, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXJSR] = instrChars{"XJSR", 0xc619, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXLDB] = instrChars{"XLDB", 0x8419, 0x87ff, 2, ONEACC_MODE_2_WORD_X_B_FMT, EAGLE_MEMREF, 1}

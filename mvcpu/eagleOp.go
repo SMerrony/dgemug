@@ -136,6 +136,10 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
 		cpu.ac[immOneAcc.acd] = dg.DwordT(s64)
 
+	case instrWANC:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.ac[twoAcc1Word.acd] &= ^cpu.ac[twoAcc1Word.acs]
+
 	case instrWAND:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.ac[twoAcc1Word.acd] &= cpu.ac[twoAcc1Word.acs]

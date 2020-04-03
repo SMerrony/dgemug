@@ -35,6 +35,7 @@ type taskT struct {
 	dir                      string
 	startAddr                dg.PhysAddrT
 	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
+	killAddr                 dg.PhysAddrT
 	debugLogging             bool
 }
 

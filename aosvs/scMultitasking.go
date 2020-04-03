@@ -32,6 +32,11 @@ func scIfpu(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
+// func scKilad(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+
+// 	return true
+// }
+
 func scWdelay(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	delayMs := int(cpu.GetAc(0))
 	time.Sleep(time.Millisecond * time.Duration(delayMs))
