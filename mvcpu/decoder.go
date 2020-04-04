@@ -352,13 +352,17 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 			decodedInstr.disassembly += fmt.Sprintf(" %#o,%s [3-Word OpCode]",
 				noAccMode3Word.immU32, modeToString(noAccMode3Word.mode))
 		}
-	case NOACC_MODE_IND_2_WORD_E_FMT, NOACC_MODE_IND_2_WORD_X_FMT:
-		switch ix {
-		case instrXJMP, instrXJSR, instrXNDSZ, instrXNISZ, instrXPEF, instrXPSHJ, instrXWDSZ:
-			decodedInstr.mode = int(memory.GetWbits(opcode, 3, 2))
-		case instrEDSZ, instrEISZ, instrEJMP, instrEJSR, instrPSHJ:
-			decodedInstr.mode = int(memory.GetWbits(opcode, 6, 2))
+	case NOACC_MODE_IND_2_WORD_E_FMT:
+		decodedInstr.mode = int(memory.GetWbits(opcode, 6, 2))
+		secondWord = memory.ReadWord(pc + 1)
+		decodedInstr.ind = decodeIndirect(memory.TestWbit(secondWord, 0))
+		decodedInstr.disp15 = dg.WordT(decode15bitDisp(secondWord, decodedInstr.mode))
+		if disassemble {
+			decodedInstr.disassembly += fmt.Sprintf(" %c0%o%s [2-Word OpCode]",
+				decodedInstr.ind, decodedInstr.disp15, modeToString(decodedInstr.mode))
 		}
+	case NOACC_MODE_IND_2_WORD_X_FMT:
+		decodedInstr.mode = int(memory.GetWbits(opcode, 3, 2))
 		secondWord = memory.ReadWord(pc + 1)
 		decodedInstr.ind = decodeIndirect(memory.TestWbit(secondWord, 0))
 		decodedInstr.disp15 = dg.WordT(decode15bitDisp(secondWord, decodedInstr.mode))
