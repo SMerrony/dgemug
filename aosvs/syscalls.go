@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"log"
 
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 
 	"github.com/SMerrony/dgemug/dg"
@@ -71,9 +72,11 @@ var syscalls = map[dg.WordT]syscallDescT{
 	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},
 	072:  {"?GUNM", "?GUNM", scProcess, scGunm, nil},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
+	0111: {"?GNAME", "?GNAM", scFileManage, scGname, scGname},
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
 	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
+	0167: {"?CON", "?CON", scConnection, nil, nil},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay, nil},
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen, scOpen16},
@@ -83,6 +86,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
+	0336: {"?RECREATE", "?RECR", scFileManage, nil, nil},
 	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
 	0500: {"?TASK", "?TASK", scMultitasking, nil, nil},
 	0503: {"?PRI", "?PRI", scMultitasking, scDummy, scDummy},
@@ -103,6 +107,7 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 		log.Panicf("ERROR: System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
+		logging.DebugPrint(logging.DebugLog, "%s System Call...\n", call.name)
 		log.Printf("%s System Call...\n", call.name)
 	}
 	return call.fn(cpu, agent)

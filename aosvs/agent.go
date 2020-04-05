@@ -271,7 +271,11 @@ func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 			resp.ac0 = dg.DwordT(len(argS))
 		}
 	// case gtsw:
-	// case gsws:
+	case gsws:
+		// TODO faked for now
+		log.Println("WARNING: Faking empty ?GSWS response to ?GTMES system call")
+		resp.ac0 = 0
+		resp.ac1 = 0
 	default:
 		log.Panicf("ERROR: ?GTMES request type %#x not yet supported\n", req.greq)
 	}

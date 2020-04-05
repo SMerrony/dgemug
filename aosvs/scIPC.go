@@ -31,6 +31,11 @@ import (
 func scIlkup(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	bpPathname := cpu.GetAc(0)
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+	// trap SWAT checking...
+	if path == "?10.SWAT.IPC" {
+		cpu.SetAc(0, erfde)
+		return false
+	}
 	log.Panicf("?ILKUP of %s not yet implemented", path)
 	return true
 }

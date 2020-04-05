@@ -45,3 +45,8 @@ func scDacl(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	}
 	return true
 }
+
+func scGname(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+
+	return true
+}

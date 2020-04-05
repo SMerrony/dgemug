@@ -25,6 +25,7 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 	"github.com/SMerrony/dgemug/mvcpu"
 )
@@ -81,6 +82,9 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			callID := memory.ReadWord(returnAddr)
 			// special handling for the ?RETURN system call
 			if callID == scReturn {
+				if task.debugLogging {
+					logging.DebugPrint(logging.DebugLog, "?RETURN")
+				}
 				log.Println("INFO: ?RETURN")
 				errorCode = cpu.GetAc(0)
 				flags = dg.ByteT(memory.GetDwbits(cpu.GetAc(2), 16, 8))
