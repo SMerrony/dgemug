@@ -411,6 +411,8 @@ func (cpu *CPUT) Execute(iPtr *decodedInstrT) (rc bool) {
 		rc = eclipseStack(cpu, iPtr)
 	case EAGLE_FPU:
 		rc = eagleFPU(cpu, iPtr)
+	case EAGLE_DECIMAL:
+		rc = eagleDecimal(cpu, iPtr)
 	case EAGLE_IO:
 		rc = eagleIO(cpu, iPtr)
 	case EAGLE_OP:

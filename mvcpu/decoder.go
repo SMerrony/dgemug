@@ -43,13 +43,14 @@ type decodedInstrT struct {
 	instrLength int
 	dispOffset  int
 	disassembly string
-	// instuction parameters...
+	// instruction parameters...
 	mode     int
 	ind      byte
-	disp15   dg.WordT
-	disp31   int32
+	disp15   dg.WordT // a signed 15-bit displacement
+	disp31   int32    // a signed 31-bit displacement
 	argCount int
-	ac       int // # of a single acculmulator referenced by the instruction
+	ac       int      // # of a single acculmulator referenced by the instruction
+	word2    dg.WordT // 2nd word of instruction
 	variant  interface{}
 }
 
@@ -631,6 +632,21 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 		if disassemble {
 			decodedInstr.disassembly += fmt.Sprintf(" %#o [2-Word OpCode]", unique2Word.immU16)
 		}
+	case WIDE_DEC_SPECIAL_FMT: // Funky - following word defines OpCode...
+		decodedInstr.word2 = memory.ReadWord(pc + 1)
+		if disassemble {
+			switch decodedInstr.word2 {
+			case 0x0000:
+				decodedInstr.disassembly = "WDMOV"
+			case 0x0001:
+				decodedInstr.disassembly = "WDCMP"
+			case 0x0002:
+				decodedInstr.disassembly = "WDINC"
+			case 0x0003:
+				decodedInstr.disassembly = "WDDEC"
+			}
+		}
+
 	case WSKB_FMT: // eg. WSKBO/Z
 		var wskb wskbT
 		tmp8bit := dg.ByteT(memory.GetWbits(opcode, 1, 3) & 0xff)

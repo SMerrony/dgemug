@@ -30,6 +30,7 @@ const (
 	ECLIPSE_OP
 	ECLIPSE_PC
 	ECLIPSE_STACK
+	EAGLE_DECIMAL
 	EAGLE_IO
 	EAGLE_PC
 	EAGLE_OP
@@ -75,6 +76,7 @@ const (
 	THREE_WORD_DO_FMT
 	TWOACC_1_WORD_FMT
 	TWOACC_IMM_2_WORD_FMT
+	WIDE_DEC_SPECIAL_FMT
 	WSKB_FMT
 )
 
@@ -276,6 +278,7 @@ const (
 	instrWCOM
 	instrWCST
 	instrWCTR
+	instrWDecOp
 	instrWDIV
 	instrWDIVS
 	instrWFLAD
@@ -545,7 +548,7 @@ func InstructionsInit() {
 	instructionSet[instrSTB] = instrChars{"STB", 0x8608, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_MEMREF, 0}
 	instructionSet[instrSUB] = instrChars{"SUB", 0x8500, 0x8700, 1, NOVA_TWOACC_MULT_OP_FMT, NOVA_OP, 0}
 	instructionSet[instrSZB] = instrChars{"SZB", 0x8488, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_PC, 0}
-	instructionSet[instrSZBO] = instrChars{"SZBO", 0x84c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
+	instructionSet[instrSZBO] = instrChars{"SZBO", 0x84c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_PC, 0}
 	instructionSet[instrWADC] = instrChars{"WADC", 0x8249, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWADD] = instrChars{"WADD", 0x8149, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWADDI] = instrChars{"WADDI", 0x8689, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_OP, 0}
@@ -565,6 +568,7 @@ func InstructionsInit() {
 	instructionSet[instrWCOM] = instrChars{"WCOM", 0x8459, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWCST] = instrChars{"WCST", 0xe709, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
 	instructionSet[instrWCTR] = instrChars{"WCTR", 0x8769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_MEMREF, 0}
+	instructionSet[instrWDecOp] = instrChars{"WDecOp", 0x8719, 0xffff, 2, WIDE_DEC_SPECIAL_FMT, EAGLE_DECIMAL, 1}
 	instructionSet[instrWDIV] = instrChars{"WDIV", 0x8179, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWDIVS] = instrChars{"WDIVS", 0xe769, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWFLAD] = instrChars{"WFLAD", 0x84a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_FPU, 0}
