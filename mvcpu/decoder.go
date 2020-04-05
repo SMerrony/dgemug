@@ -703,7 +703,7 @@ func decode15bitDisp(d15 dg.WordT, mode int) (disp16 int16) {
 
 func decode16bitByteDisp(d16 dg.WordT) (disp16 int16, loHi bool) {
 	loHi = memory.TestWbit(d16, 15)
-	disp16 = int16(d16 >> 1)
+	disp16 = int16(d16) / 2
 	// if cpu.debugLogging {
 	// 	logging.DebugPrint(logging.DebugLog, "... decode16bitByteDisp got: %#o, returning %#o\n", d16, disp16)
 	// }
