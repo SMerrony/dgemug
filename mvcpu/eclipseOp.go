@@ -32,6 +32,10 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
+	case instrANC:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.ac[twoAcc1Word.acd] &= ^cpu.ac[twoAcc1Word.acs]
+
 	case instrADDI:
 		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
 		// signed 16-bit add immediate
