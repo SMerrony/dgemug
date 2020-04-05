@@ -139,6 +139,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrSNB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bit := resolveEclipseBitAddr(cpu, &twoAcc1Word)
+		addr |= (cpu.pc & ringMask32)
 		wd := memory.ReadWord(addr)
 		if memory.TestWbit(wd, int(bit)) {
 			cpu.pc += 2
@@ -150,18 +151,23 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			logging.DebugPrint(logging.DebugLog, "SNB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
 
-	case instrSZB:
+	case instrSZB, instrSZBO:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bit := resolveEclipseBitAddr(cpu, &twoAcc1Word)
+		addr |= (cpu.pc & ringMask32)
 		wd := memory.ReadWord(addr)
 		if !memory.TestWbit(wd, int(bit)) {
+			if iPtr.ix == instrSZBO {
+				memory.SetWbit(&wd, bit)
+				memory.WriteWord(addr, wd)
+			}
 			cpu.pc += 2
 		} else {
 			cpu.pc++
 		}
 		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
 		if cpu.debugLogging {
-			logging.DebugPrint(logging.DebugLog, "SZB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
+			logging.DebugPrint(logging.DebugLog, "SZB(O): Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
 
 	default:
