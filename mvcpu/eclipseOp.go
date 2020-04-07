@@ -65,6 +65,18 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[immOneAcc.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
 		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
 
+	case instrDIVX:
+		dividend := int32(int16(cpu.ac[1]))
+		divisor := int32(int16(cpu.ac[2]))
+		quotient := dividend / divisor
+		if quotient < minNegS16 || quotient > maxPosS16 {
+			cpu.carry = true
+		} else {
+			cpu.carry = false
+			cpu.ac[0] = dg.DwordT(dividend%divisor) & 0x0000_ffff
+			cpu.ac[1] = dg.DwordT(quotient) & 0x0000_ffff
+		}
+
 	case instrDLSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		dplus1 := twoAcc1Word.acd + 1
@@ -74,6 +86,10 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		dwd := dlsh(cpu.ac[twoAcc1Word.acs], cpu.ac[twoAcc1Word.acd], cpu.ac[dplus1])
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
 		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
+
+	case instrHLV:
+		s16 := int16(cpu.ac[iPtr.ac]) / 2
+		cpu.ac[iPtr.ac] = dg.DwordT(s16)
 
 	case instrHXL:
 		immOneAcc := iPtr.variant.(immOneAccT)

@@ -26,6 +26,7 @@ const (
 	NOVA_IO
 	NOVA_MATH
 	NOVA_PC
+	ECLIPSE_FPU
 	ECLIPSE_MEMREF
 	ECLIPSE_OP
 	ECLIPSE_PC
@@ -117,6 +118,7 @@ const (
 	instrDIC
 	instrDIV
 	instrDIVS
+	instrDIVX
 	instrDLSH
 	instrDOA
 	instrDOB
@@ -139,6 +141,7 @@ const (
 	instrESTA
 	instrESTB
 	instrFCLE
+	instrFCMP
 	instrFLAS
 	instrFLDS
 	instrFNEG
@@ -146,6 +149,7 @@ const (
 	instrFPOP
 	instrFPSH
 	instrFSA
+	instrFSST
 	instrFTD
 	instrFSTS
 	instrFTE
@@ -407,6 +411,7 @@ func InstructionsInit() {
 	instructionSet[instrDIC] = instrChars{"DIC", 0x6500, 0xe700, 1, NOVA_DATA_IO_FMT, NOVA_IO, 0}
 	instructionSet[instrDIV] = instrChars{"DIV", 0xd7c8, 0xffff, 1, UNIQUE_1_WORD_FMT, NOVA_MATH, 0}
 	instructionSet[instrDIVS] = instrChars{"DIVS", 0xdfc8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_OP, 0}
+	instructionSet[instrDIVX] = instrChars{"DIVX", 0xbfc8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrDLSH] = instrChars{"DLSH", 0x82c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrDOA] = instrChars{"DOA", 0x6200, 0xe700, 1, NOVA_DATA_IO_FMT, NOVA_IO, 0}
 	instructionSet[instrDOB] = instrChars{"DOB", 0x6400, 0xe700, 1, NOVA_DATA_IO_FMT, NOVA_IO, 0}
@@ -429,6 +434,7 @@ func InstructionsInit() {
 	instructionSet[instrESTA] = instrChars{"ESTA", 0xc438, 0xe4ff, 2, ONEACC_MODE_IND_2_WORD_E_FMT, ECLIPSE_MEMREF, 1}
 	instructionSet[instrESTB] = instrChars{"ESTB", 0xa478, 0xe4ff, 2, ONEACC_MODE_2_WORD_E_FMT, ECLIPSE_OP, 1}
 	instructionSet[instrFCLE] = instrChars{"FCLE", 0xd6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
+	instructionSet[instrFCMP] = instrChars{"FCMP", 0x8728, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFLAS] = instrChars{"FLAS", 0x8528, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFLDS] = instrChars{"FLDS", 0x8428, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 1}
 	instructionSet[instrFNEG] = instrChars{"FNEG", 0xe628, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_FPU, 0}
@@ -436,6 +442,7 @@ func InstructionsInit() {
 	instructionSet[instrFPOP] = instrChars{"FPOP", 0xeee8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrFPSH] = instrChars{"FPSH", 0xe6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
 	instructionSet[instrFSA] = instrChars{"FSA", 0x8ea8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_PC, 0}
+	instructionSet[instrFSST] = instrChars{"FSST", 0x86e8, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFTD] = instrChars{"FTD", 0xcee8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFSTS] = instrChars{"FSTS", 0x84a8, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrFTE] = instrChars{"FTE", 0xc6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_FPU, 0}
