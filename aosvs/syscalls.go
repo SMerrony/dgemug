@@ -33,11 +33,11 @@ import (
 )
 
 type syscallDescT struct {
-	name        string                                 // AOS/VS System Call Name
-	alias       string                                 // AOS/VS 4-char Name Alias
-	syscallType int                                    // groupings as per Table 2-1 in Sys Call Dict
-	fn          func(*mvcpu.CPUT, chan AgentReqT) bool // implementation
-	fn16        func(*mvcpu.CPUT, chan AgentReqT) bool // 16-bit implementation - may be the same as fn
+	name        string                                      // AOS/VS System Call Name
+	alias       string                                      // AOS/VS 4-char Name Alias
+	syscallType int                                         // groupings as per Table 2-1 in Sys Call Dict
+	fn          func(*mvcpu.CPUT, int, chan AgentReqT) bool // implementation
+	fn16        func(*mvcpu.CPUT, int, chan AgentReqT) bool // 16-bit implementation - may be the same as fn
 }
 
 // System Call Types as per Chap 2 of Sys Call Dictionary
@@ -98,7 +98,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 }
 
 // syscall redirects System Call according to the syscalls map
-func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -110,11 +110,11 @@ func syscall(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 		logging.DebugPrint(logging.DebugLog, "%s System Call...\n", call.name)
 		log.Printf("%s System Call...\n", call.name)
 	}
-	return call.fn(cpu, agent)
+	return call.fn(cpu, PID, agent)
 }
 
 // syscall16 redirects a 16-bit System Call according to the syscalls map
-func syscall16(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall16(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -125,7 +125,7 @@ func syscall16(callID dg.WordT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool)
 	if cpu.GetDebugLogging() {
 		log.Printf("%s System Call (16-bit)...\n", call.name)
 	}
-	return call.fn16(cpu, agent)
+	return call.fn16(cpu, PID, agent)
 }
 
 // readPacket just loads a chunk of memory into a slice of words
@@ -186,6 +186,6 @@ func writeBytes(bpAddr dg.DwordT, pc dg.PhysAddrT, arr []byte) {
 }
 
 // scDummy is a stub func for sys calls we are ignoring for now
-func scDummy(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scDummy(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	return true
 }

@@ -23,7 +23,7 @@ package aosvs
 
 import "github.com/SMerrony/dgemug/mvcpu"
 
-func scLefe(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scLefe(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	cpu.SetLef(true)
 	return true
 }

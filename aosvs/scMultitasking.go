@@ -27,7 +27,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scIfpu(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scIfpu(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	// TODO should reserve FPU save area
 	return true
 }
@@ -37,7 +37,7 @@ func scIfpu(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 // 	return true
 // }
 
-func scWdelay(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scWdelay(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	delayMs := int(cpu.GetAc(0))
 	time.Sleep(time.Millisecond * time.Duration(delayMs))
 	return true

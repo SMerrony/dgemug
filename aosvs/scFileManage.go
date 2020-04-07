@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scDacl(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scDacl(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	// TODO this is all faked...
 	switch dg.WordT(cpu.GetAc(0)) { // make 16-bit safe
 	case 0xffff:
@@ -46,7 +46,7 @@ func scDacl(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGname(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGname(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 
 	return true
 }

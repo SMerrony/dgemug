@@ -97,10 +97,10 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			var scOk bool
 			switch syscallTrap {
 			case mvcpu.Syscall32Trap:
-				scOk = syscall(callID, task.agentChan, &cpu)
+				scOk = syscall(callID, task.pid, task.agentChan, &cpu)
 				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 			case mvcpu.Syscall16Trap:
-				scOk = syscall16(callID, task.agentChan, &cpu)
+				scOk = syscall16(callID, task.pid, task.agentChan, &cpu)
 			}
 			if scOk {
 				cpu.SetPC(returnAddr + 2)

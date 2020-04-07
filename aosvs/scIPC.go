@@ -28,7 +28,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scIlkup(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scIlkup(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	bpPathname := cpu.GetAc(0)
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	// trap SWAT checking...

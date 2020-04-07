@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scMem(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scMem(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	highUnshared := memory.GetLastUnsharedPage()
 	lowShared := memory.GetFirstSharedPage()
 	cpu.SetAc(0, lowShared-highUnshared-1)
@@ -38,7 +38,7 @@ func scMem(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scMemi(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scMemi(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	numPages := int32(cpu.GetAc(0))
 	var lastPage int
 	switch {

@@ -63,7 +63,7 @@ type ustT struct {
 
 // ProcessT represents an AOS/VS Process which will contain one or more Tasks
 type ProcessT struct {
-	pid             int
+	PID             int
 	name            string
 	programFileName string
 	tasks           []*taskT
@@ -72,13 +72,12 @@ type ProcessT struct {
 }
 
 // CreateProcess creates, but does not start, an emulated AOS/VS Process
-func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLogging bool) (p *ProcessT, err error) {
+func CreateProcess(args []string, vRoot string, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLogging bool) (p *ProcessT, err error) {
 	progWds, err := readProgram(prName)
 	if err != nil {
 		return nil, err
 	}
 	var proc ProcessT
-	proc.pid = pid
 	proc.programFileName = prName
 	proc.console = con
 
@@ -86,10 +85,22 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 	proc.loadUST(progWds)
 	proc.printUST()
 
+	// Announce ourself to pseudo-Agent and get PID
+	var areq AgentReqT
+	areq.action = agentAllocatePID
+	areq.reqParms = agAllocatePIDReqT{invocationArgs: args, virtualRoot: vRoot}
+	agentChan <- areq
+	areq = <-agentChan
+	if !areq.result.(agAllocatePIDRespT).ok {
+		log.Panic("ERROR: Could not get PID from pseudo-Agent")
+	}
+	proc.PID = areq.result.(agAllocatePIDRespT).PID
+	log.Printf("INFO: Obtained PID %d for process\n", proc.PID)
+
 	// create slots for each task the process might run
 	proc.tasks = make([]*taskT, proc.ust.taskCount, maxTasksPerProc)
 	log.Printf("INFO: Preparing ring %d process with %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
-
+	log.Printf("----  PR: %s  Args: %v\n", prName, args)
 	if proc.ust.sharedBlockCount != 0 {
 		log.Println("WARNING: Shared pages not yet fully supported")
 	}
@@ -105,7 +116,7 @@ func CreateProcess(pid int, prName string, ring int, con net.Conn, agentChan cha
 	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
-	proc.tasks[0] = createTask(pid, 0, agentChan,
+	proc.tasks[0] = createTask(proc.PID, 0, agentChan,
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),

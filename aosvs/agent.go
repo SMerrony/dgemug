@@ -34,7 +34,8 @@ import (
 )
 
 const (
-	agentFileClose = iota
+	agentAllocatePID = iota
+	agentFileClose
 	agentFileOpen
 	agentFileRead
 	agentFileWrite
@@ -49,24 +50,35 @@ type AgentReqT struct {
 	result   interface{}
 }
 
+const maxPID = 255
+
+type perProcessDataT struct {
+	invocationArgs []string
+	virtualRoot    string
+}
+
 type agChannelT struct {
 	path        string
 	isConsole   bool
 	read, write bool
-	rwc         io.ReadWriteCloser
+	rwc         io.ReadWriteCloser // stream I/O
+	file        *os.File           // file I/O
 }
 
 const consoleChan = 0
 
-var agChannels = map[dg.WordT]*agChannelT{ // TODO should probably not be at this scope
-	consoleChan: {"@CONSOLE", true, true, true, nil}, // @CONSOLE is always available
-}
-
-var invocationArgs []string
+var (
+	pidInUse       [maxPID]bool
+	perProcessData = map[int]perProcessDataT{}
+	agChannels     = map[int]*agChannelT{
+		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, rwc: nil, file: nil}, // @CONSOLE is always available
+	}
+)
 
 // StartAgent fires of the pseudo-agent Goroutine and returns its msg channel
-func StartAgent(conn net.Conn, args []string) chan AgentReqT {
-	invocationArgs = args
+func StartAgent(conn net.Conn) chan AgentReqT {
+	// fake some in-use PIDs so they are not used
+	pidInUse[0], pidInUse[1], pidInUse[2], pidInUse[3], pidInUse[4] = true, true, true, true, true
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
 	agChannels[0].rwc = conn
 
@@ -84,18 +96,20 @@ func agentHandler(agentChan chan AgentReqT) {
 	for {
 		request := <-agentChan
 		switch request.action {
+		case agentAllocatePID:
+			request.result = agAllocatePID(request.reqParms.(agAllocatePIDReqT))
 		case agentFileClose:
-			request.result = doAgentFileClose(request.reqParms.(agCloseReqT))
+			request.result = agFileClose(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
-			request.result = doAgentFileOpen(request.reqParms.(agOpenReqT))
+			request.result = agFileOpen(request.reqParms.(agOpenReqT))
 		case agentFileRead:
-			request.result = doAgentFileRead(request.reqParms.(agReadReqT))
+			request.result = agFileRead(request.reqParms.(agReadReqT))
 		case agentFileWrite:
-			request.result = doAgentFileWrite(request.reqParms.(agWriteReqT))
+			request.result = agFileWrite(request.reqParms.(agWriteReqT))
 		case agentGetChars:
-			request.result = doAgentGetChars(request.reqParms.(agGchrReqT))
+			request.result = agGetChars(request.reqParms.(agGchrReqT))
 		case agentGetMessage:
-			request.result = doAgentGetMessage(request.reqParms.(agGtMesReqT))
+			request.result = agGetMessage(request.reqParms.(agGtMesReqT))
 
 		default:
 			log.Panicf("ERROR: Agent received unknown request type %d\n", request.action)
@@ -104,108 +118,37 @@ func agentHandler(agentChan chan AgentReqT) {
 	}
 }
 
-type agCloseReqT struct {
-	chanNo dg.WordT
-}
-type agCloseRespT struct {
-	errCode dg.WordT
-}
-
-func doAgentFileClose(req agCloseReqT) (resp agCloseRespT) {
-	if req.chanNo == 0 {
-		resp.errCode = 0
-	} else {
-		log.Panicf("ERROR: real file closing not yet implemented")
-	}
-	return resp
-}
-
-type agOpenReqT struct {
-	path string
-	mode dg.WordT
-}
-type agOpenRespT struct {
-	channelNo dg.WordT
-}
-
-func doAgentFileOpen(req agOpenReqT) (resp agOpenRespT) {
-	log.Printf("DEBUG: Agent received File Open request for %s\n", req.path)
-	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
-		resp.channelNo = 0
-	} else {
-		log.Panicf("ERROR: real file opening not yet implemented")
-	}
-	return resp
-}
-
-type agReadReqT struct {
-	chanNo   dg.WordT
-	length   int
-	readLine bool
-}
-type agReadRespT struct {
-	data []byte
-}
-
-func doAgentFileRead(req agReadReqT) (resp agReadRespT) {
-	agChan, isOpen := agChannels[req.chanNo]
-	if isOpen {
-		if agChan.isConsole {
-			if !req.readLine {
-				log.Panic("ERROR: Fixed-length Input from @CONSOLE not yet implemented")
-			}
-			buff := make([]byte, 0)
-			for {
-				oneByte := make([]byte, 1, 1)
-				l, err := agChan.rwc.Read(oneByte)
-				if err != nil {
-					log.Panic("ERROR: Could not read from @CONSOLE")
-				}
-				if l == 0 {
-					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
-				}
-				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\n' || oneByte[0] == '\r' {
-					break
-				}
-				// TODO DELete
-				buff = append(buff, oneByte[0])
-			}
-			resp.data = buff
-		} else {
-			log.Panicf("ERROR: real file reading not yet implemented")
+func getNextFreePID() (pid int, ok bool) {
+	for p := 1; p < maxPID; p++ {
+		if !pidInUse[p] {
+			pidInUse[p] = true
+			return p, true
 		}
-	} else {
-		log.Panic("ERROR: attempt to ?READ from unopened file")
 	}
-	log.Printf("?READ returning <%v>\n", resp.data)
-	return resp
+	return 0, false // all PIDs in use
 }
 
-type agWriteReqT struct {
-	chanNo dg.WordT
-	bytes  []byte
+type agAllocatePIDReqT struct {
+	invocationArgs []string
+	virtualRoot    string
 }
-type agWriteRespT struct {
-	bytesTxfrd dg.WordT
+type agAllocatePIDRespT struct {
+	PID int
+	ok  bool
 }
 
-func doAgentFileWrite(req agWriteReqT) (resp agWriteRespT) {
-	agChan, isOpen := agChannels[req.chanNo]
-	if isOpen {
-		if agChan.isConsole {
-			n, err := agChan.rwc.Write(req.bytes)
-			if err != nil {
-				log.Panic("ERROR: Could not write to @CONSOLE")
-			}
-			resp.bytesTxfrd = dg.WordT(n)
-		}
-	} else {
-		log.Panic("ERROR: attempt to ?WRITE to unopened file")
+func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
+	resp.PID, resp.ok = getNextFreePID()
+	if !resp.ok {
+		return resp
 	}
+	perProcessData[resp.PID] = perProcessDataT{invocationArgs: req.invocationArgs, virtualRoot: req.virtualRoot}
+	log.Printf("DEBUG: AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
 	return resp
 }
 
 type agGchrReqT struct {
+	PID         int
 	getDefaults bool // otherwise get current
 	useChan     bool // otherwise use name
 	devChan     dg.WordT
@@ -215,12 +158,13 @@ type agGchrRespT struct {
 	words [3]dg.WordT
 }
 
-func doAgentGetChars(req agGchrReqT) (resp agGchrRespT) {
+func agGetChars(req agGchrReqT) (resp agGchrRespT) {
 
 	return resp
 }
 
 type agGtMesReqT struct {
+	PID  int
 	greq dg.WordT
 	gnum dg.WordT
 	gsw  dg.DwordT
@@ -230,11 +174,11 @@ type agGtMesRespT struct {
 	result   string
 }
 
-func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
+func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
 	case gmes: // get entire message
 		first := true
-		for _, arg := range invocationArgs {
+		for _, arg := range perProcessData[req.PID].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -246,7 +190,7 @@ func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		resp.ac1 = dg.DwordT(len(resp.result)) >> 1 // words not bytes
 	case gcmd: // get a parsed version of the command line
 		first := true
-		for _, arg := range invocationArgs {
+		for _, arg := range perProcessData[req.PID].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -256,12 +200,12 @@ func doAgentGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		}
 		resp.ac1 = dg.DwordT(len(resp.result))
 	case gcnt:
-		resp.ac0 = dg.DwordT(len(invocationArgs) - 1)
+		resp.ac0 = dg.DwordT(len(perProcessData[req.PID].invocationArgs) - 1)
 	case garg: // get the nth arg - special handing for integers
-		if int(req.gnum) > len(invocationArgs)-1 {
+		if int(req.gnum) > len(perProcessData[req.PID].invocationArgs)-1 {
 			log.Panicf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
 		}
-		argS := invocationArgs[int(req.gnum)]
+		argS := perProcessData[req.PID].invocationArgs[int(req.gnum)]
 		i, err := strconv.ParseInt(argS, 10, 16)
 		if err == nil { // integer-only case
 			resp.ac1 = dg.DwordT(i)

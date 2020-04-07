@@ -30,7 +30,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scClose(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scClose(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
 	var creq = agCloseReqT{channel}
@@ -40,17 +40,17 @@ func scClose(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGchr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGchr(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	var areq AgentReqT
 	var gchrReq agGchrReqT
 	if memory.TestDwbit(cpu.GetAc(1), 0) {
 		// AC0 should contain a channel #
 		if memory.TestDwbit(cpu.GetAc(1), 1) {
 			// get default chars
-			gchrReq = agGchrReqT{true, true, dg.WordT(cpu.GetAc(0)), ""}
+			gchrReq = agGchrReqT{PID, true, true, dg.WordT(cpu.GetAc(0)), ""}
 		} else {
 			// get current chars
-			gchrReq = agGchrReqT{false, true, dg.WordT(cpu.GetAc(0)), ""}
+			gchrReq = agGchrReqT{PID, false, true, dg.WordT(cpu.GetAc(0)), ""}
 		}
 	} else {
 		// AC0 should contain BP to device name
@@ -58,10 +58,10 @@ func scGchr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 		path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 		if memory.TestDwbit(cpu.GetAc(1), 1) {
 			// get default chars
-			gchrReq = agGchrReqT{true, false, 0, path}
+			gchrReq = agGchrReqT{PID, true, false, 0, path}
 		} else {
 			// get current chars
-			gchrReq = agGchrReqT{false, false, 0, path}
+			gchrReq = agGchrReqT{PID, false, false, 0, path}
 		}
 	}
 	areq.action = agentGetChars
@@ -75,15 +75,17 @@ func scGchr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGechr(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGechr(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 
 	return true
 }
 
-func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scOpen(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
 	options := memory.ReadWord(pktAddr + isti)
 	fileType := memory.ReadWord(pktAddr + isto)
+	// blockSize := memory.ReadWord(pktAddr+imrs)
+	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
@@ -93,14 +95,20 @@ func scOpen(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	areq.reqParms = openReq
 	agentChan <- areq
 	areq = <-agentChan
+	if areq.result.(agOpenRespT).ac0 != 0 {
+		cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
+		return false
+	}
 	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
-func scOpen16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scOpen16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
 	options := memory.ReadWord(pktAddr + isti16)
 	fileType := memory.ReadWord(pktAddr + isto16)
+	// blockSize := memory.ReadWord(pktAddr+imrs16)
+	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
@@ -110,13 +118,17 @@ func scOpen16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	areq.reqParms = openReq
 	agentChan <- areq
 	areq = <-agentChan
-	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
+	if areq.result.(agOpenRespT).ac0 != 0 {
+		cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
+		return false
+	}
+	memory.WriteWord(pktAddr+ich16, areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
-func scRead16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scRead16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
-	channel := memory.ReadWord(pktAddr + ich16)
+	channel := int(memory.ReadWord(pktAddr + ich16))
 	specs := memory.ReadWord(pktAddr + isti16)
 	length := int(memory.ReadWord(pktAddr + ircl16))
 	dest := dg.DwordT(memory.ReadWord(pktAddr + ibad16))
@@ -135,9 +147,9 @@ func scRead16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scWrite(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
-	channel := memory.ReadWord(pktAddr + ich)
+	channel := int(memory.ReadWord(pktAddr + ich))
 	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), cpu.GetPC())
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}
@@ -148,9 +160,9 @@ func scWrite(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scWrite16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scWrite16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
-	channel := memory.ReadWord(pktAddr + ich16)
+	channel := int(memory.ReadWord(pktAddr + ich16))
 	bytes := readBytes(dg.DwordT(memory.ReadWord(pktAddr+ibad16)), cpu.GetPC())
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}

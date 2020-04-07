@@ -30,12 +30,12 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scExec(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scExec(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	log.Println("WARNING: ?EXEC system call not yet implemented")
 	return true
 }
 
-func scGday(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGday(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	now := time.Now()
 	cpu.SetAc(0, dg.DwordT(now.Day()))
 	cpu.SetAc(1, dg.DwordT(now.Month()))
@@ -43,14 +43,14 @@ func scGday(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGhrz(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGhrz(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	cpu.SetAc(0, 2) // 2 => 100Hz
 	return true
 }
 
-func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGtmes(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
-	var gtMesReq = agGtMesReqT{memory.ReadWord(pktAddr + greq), memory.ReadWord(pktAddr + gnum), memory.ReadDWord(pktAddr + gsw)}
+	var gtMesReq = agGtMesReqT{PID, memory.ReadWord(pktAddr + greq), memory.ReadWord(pktAddr + gnum), memory.ReadDWord(pktAddr + gsw)}
 	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
 	agentChan <- areq
 	areq = <-agentChan
@@ -62,9 +62,9 @@ func scGtmes(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	}
 	return true
 }
-func scGtmes16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGtmes16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
-	var gtMesReq = agGtMesReqT{memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
+	var gtMesReq = agGtMesReqT{PID, memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
 	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
 	agentChan <- areq
 	areq = <-agentChan
@@ -77,7 +77,7 @@ func scGtmes16(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGtod(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGtod(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	now := time.Now()
 	cpu.SetAc(0, dg.DwordT(now.Second()))
 	cpu.SetAc(1, dg.DwordT(now.Minute()))
@@ -85,7 +85,7 @@ func scGtod(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scInfo(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scInfo(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	memory.WriteWord(pktAddr+sirn, 0x0746) // system rev - faked to 7.70
 	if memory.ReadDWord(pktAddr+siln) != 0 {
@@ -101,7 +101,7 @@ func scInfo(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scXpstat(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scXpstat(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 
 	return true
 }

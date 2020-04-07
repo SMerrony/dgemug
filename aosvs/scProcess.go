@@ -29,7 +29,7 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scDadid(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scDadid(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
 	// fake PIDs
 	switch cpu.GetAc(0) {
@@ -57,7 +57,7 @@ func scDadid(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scGunm(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scGunm(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
 	if dg.WordT(cpu.GetAc(0)) == 0xffff {
 		cpu.SetAc(0, 1)      // Claim not to be in SU mode
@@ -69,7 +69,7 @@ func scGunm(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scSysprv(cpu *mvcpu.CPUT, agentChan chan AgentReqT) bool {
+func scSysprv(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
 	funcCode := memory.ReadWord(pktAddr + sysprvPktFunc)
 	switch funcCode {
