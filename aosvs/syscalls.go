@@ -86,6 +86,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
+	0333: {"?UIDSTAT", "?UIDS", scMultitasking, nil, nil},
 	0336: {"?RECREATE", "?RECR", scFileManage, nil, nil},
 	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
 	0500: {"?TASK", "?TASK", scMultitasking, nil, nil},

@@ -90,7 +90,7 @@ func scOpen(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
-	var openReq = agOpenReqT{path, options}
+	var openReq = agOpenReqT{PID, path, options}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	agentChan <- areq
@@ -113,7 +113,7 @@ func scOpen16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
-	var openReq = agOpenReqT{path, options}
+	var openReq = agOpenReqT{PID, path, options}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	agentChan <- areq

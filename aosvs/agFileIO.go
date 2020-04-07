@@ -45,6 +45,7 @@ func agFileClose(req agCloseReqT) (resp agCloseRespT) {
 }
 
 type agOpenReqT struct {
+	PID  int
 	path string
 	mode dg.WordT
 }
@@ -94,8 +95,12 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	if req.mode&apnd != 0 {
 		flags |= os.O_APPEND
 	}
-
-	fp, err = os.OpenFile(req.path, flags, 0755)
+	if req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
+		log.Printf("DEBUG: Attempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
+		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.path, flags, 0755)
+	} else {
+		fp, err = os.OpenFile(req.path, flags, 0755)
+	}
 	if err != nil {
 		resp.ac0 = erfad
 		return resp
