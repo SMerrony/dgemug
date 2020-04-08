@@ -401,6 +401,8 @@ func (cpu *CPUT) Execute(iPtr *decodedInstrT) (rc bool) {
 		rc = novaMath(cpu, iPtr)
 	case NOVA_PC:
 		rc = novaPC(cpu, iPtr)
+	case ECLIPSE_FPU:
+		rc = eclipseFPU(cpu, iPtr)
 	case ECLIPSE_MEMREF:
 		rc = eclipseMemRef(cpu, iPtr)
 	case ECLIPSE_OP:

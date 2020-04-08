@@ -20,46 +20,47 @@
 package mvcpu
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
 )
 
-func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
+func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
-	case instrWSTI:
-		cpu.ac[2] = cpu.ac[3]
-		// TODO a lot of this should be moved into a func...
-		unconverted := cpu.fpac[iPtr.ac]
-		scaleFactor := int(int8(memory.GetDwbits(cpu.ac[1], 0, 8)))
-		if scaleFactor != 0 {
-			log.Fatalf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
-		}
-		dataType := uint8(memory.GetDwbits(cpu.ac[1], 24, 3))
-		size := int(uint8(memory.GetDwbits(cpu.ac[1], 27, 5)))
-		switch dataType {
-		case 3: // <sign><zeroes><int>
-			if unconverted < 0 {
-				size++
-			}
-			converted := fmt.Sprintf("%+*.f", size, unconverted)
-			for c := 0; c < size; c++ {
-				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
-				cpu.ac[3]++
-			}
-		default:
-			log.Fatalf("ERROR: Decimal data type %d not yet supported\n", dataType)
-		}
+	case instrFCLE:
+		cpu.fpsr = 0 // TODO check - PoP contradicts itself
 
-	case instrWFLAD:
+	case instrFLAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpu.fpac[twoAcc1Word.acd] = float64(int32(cpu.ac[twoAcc1Word.acs])) // N.B INT32 conversion required!!!
+		cpu.fpac[twoAcc1Word.acd] = float64(int16(twoAcc1Word.acs)) // TODO not quite right...
 
+	case instrFLDS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		cpu.fpac[oneAccModeInd2Word.acd] = float64(memory.ReadDWord(addr))
+
+	case instrFNEG:
+		cpu.fpac[iPtr.ac] = -cpu.fpac[iPtr.ac]
+
+	case instrFSTS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		addr &= 0x7fff
+		addr |= (cpu.pc & ringMask32)
+		memory.WriteDWord(addr, dg.DwordT(cpu.fpac[oneAccModeInd2Word.acd]))
+
+	case instrFTD:
+		memory.ClearQwbit(&cpu.fpsr, fpsrTe)
+
+	case instrFTE:
+
+		memory.SetQwbit(&cpu.fpsr, fpsrTe)
 	default:
-		log.Fatalf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Fatalf("ERROR: ECLIPSE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 
