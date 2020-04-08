@@ -23,6 +23,7 @@ package aosvs
 
 import (
 	"log"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -47,6 +48,30 @@ func scDacl(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 }
 
 func scGname(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+	bpFilename := cpu.GetAc(0)
+	filename := strings.ToUpper(readString(bpFilename, cpu.GetPC()))
+	if filename[0] == '@' {
+		filename = ":PER:" + filename[1:] // convert @ to :PER
+	}
+	filename = strings.ReplaceAll(filename, "/", ":") // convert any / to :
+	bpPathname := cpu.GetAc(1)
+	writeBytes(bpPathname, cpu.GetPC(), []byte(filename))
+	cpu.SetAc(2, dg.DwordT(len(filename)))
+	log.Printf("DEBUG: ?GNAME returning %s for %s\n", readString(bpFilename, cpu.GetPC()), filename)
+	return true
+}
 
+func scRecreate(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+	bpFilename := cpu.GetAc(0)
+	filename := strings.ToUpper(readString(bpFilename, cpu.GetPC()))
+	var recReq = agRecreateReqT{PID: PID, aosFilename: filename}
+	var areq = AgentReqT{agentFileRecreate, recReq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	resp := areq.result.(agRecreateRespT)
+	if !resp.ok {
+		cpu.SetAc(0, resp.errCode)
+		return false
+	}
 	return true
 }

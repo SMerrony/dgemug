@@ -24,6 +24,7 @@ package aosvs
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 )
@@ -152,6 +153,34 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 		log.Panic("ERROR: attempt to ?READ from unopened file")
 	}
 	log.Printf("?READ returning <%v>\n", resp.data)
+	return resp
+}
+
+type agRecreateReqT struct {
+	PID         int
+	aosFilename string
+}
+type agRecreateRespT struct {
+	ok      bool
+	errCode dg.DwordT
+}
+
+func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
+	filename := strings.ReplaceAll(req.aosFilename, ":", "/") // convert any : to /
+	if filename[0] == '@' {
+		log.Fatalf("ERROR: ?RECREATE in :PER not yet implemented (file: %s)", filename)
+	}
+	if filename[0] != '/' {
+		filename = perProcessData[req.PID].virtualRoot + "/" + filename
+		log.Printf("DEBUG: ?RECREATE resolved %s to %s\n", req.aosFilename, filename)
+	}
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		resp.errCode = erfde
+		resp.ok = false
+	} else {
+		os.Truncate(filename, 0)
+		resp.ok = true
+	}
 	return resp
 }
 

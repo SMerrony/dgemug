@@ -38,6 +38,7 @@ const (
 	agentFileClose
 	agentFileOpen
 	agentFileRead
+	agentFileRecreate
 	agentFileWrite
 	agentGetChars
 	agentGetMessage
@@ -104,6 +105,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agFileOpen(request.reqParms.(agOpenReqT))
 		case agentFileRead:
 			request.result = agFileRead(request.reqParms.(agReadReqT))
+		case agentFileRecreate:
+			request.result = agFileRecreate(request.reqParms.(agRecreateReqT))
 		case agentFileWrite:
 			request.result = agFileWrite(request.reqParms.(agWriteReqT))
 		case agentGetChars:
