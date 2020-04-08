@@ -29,8 +29,36 @@ import (
 func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
+	case instrFAS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] += cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
 	case instrFCLE:
 		cpu.fpsr = 0 // TODO check - PoP contradicts itself
+
+	case instrFCMP:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		switch {
+		case cpu.fpac[twoAcc1Word.acs] == cpu.fpac[twoAcc1Word.acd]:
+			memory.ClearQwbit(&cpu.fpsr, fpsrN)
+			memory.SetQwbit(&cpu.fpsr, fpsrZ)
+		case cpu.fpac[twoAcc1Word.acs] > cpu.fpac[twoAcc1Word.acd]:
+			memory.SetQwbit(&cpu.fpsr, fpsrN)
+			memory.ClearQwbit(&cpu.fpsr, fpsrZ)
+		case cpu.fpac[twoAcc1Word.acs] < cpu.fpac[twoAcc1Word.acd]:
+			memory.ClearQwbit(&cpu.fpsr, fpsrN)
+			memory.ClearQwbit(&cpu.fpsr, fpsrZ)
+		}
+
+	case instrFFAS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT) // N.B. Not the usual AC order
+		s32 := int32(cpu.fpac[twoAcc1Word.acd])
+		if s32 < minNegS16 || s32 > maxPosS16 {
+			memory.SetQwbit(&cpu.fpsr, fpsrMof)
+		}
+		cpu.ac[twoAcc1Word.acs] = dg.DwordT(s32)
 
 	case instrFLAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -45,6 +73,18 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrFNEG:
 		cpu.fpac[iPtr.ac] = -cpu.fpac[iPtr.ac]
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
+
+	case instrFSLT:
+		if memory.TestQwbit(cpu.fpsr, fpsrN) {
+			cpu.pc++
+		}
+	case instrFSS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] -= cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	case instrFSTS:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)

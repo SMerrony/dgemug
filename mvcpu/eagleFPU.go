@@ -57,6 +57,8 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrWFLAD:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.fpac[twoAcc1Word.acd] = float64(int32(cpu.ac[twoAcc1Word.acs])) // N.B INT32 conversion required!!!
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	default:
 		log.Fatalf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)

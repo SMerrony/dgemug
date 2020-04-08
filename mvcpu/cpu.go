@@ -301,6 +301,15 @@ func (cpu *CPUT) GetInstrCount() (ic uint64) {
 	return ic
 }
 
+// SetN is a setter for the FPU N flag
+func (cpu *CPUT) SetN(b bool) {
+	if b {
+		memory.SetQwbit(&cpu.fpsr, fpsrN)
+	} else {
+		memory.ClearQwbit(&cpu.fpsr, fpsrN)
+	}
+}
+
 // GetOVR is a getter for the OVR flag embedded in the PSR
 func (cpu *CPUT) GetOVR() bool {
 	return memory.TestWbit(cpu.psr, 1)
@@ -373,6 +382,15 @@ func (cpu *CPUT) GetWSP() (wsp dg.PhysAddrT) {
 	wsp = cpu.wsp
 	cpu.cpuMu.RUnlock()
 	return wsp
+}
+
+// SetZ is a setter for the FPU Z flag
+func (cpu *CPUT) SetZ(b bool) {
+	if b {
+		memory.SetQwbit(&cpu.fpsr, fpsrZ)
+	} else {
+		memory.ClearQwbit(&cpu.fpsr, fpsrZ)
+	}
 }
 
 // SetupStack is a group-setter for the Wide Stack
