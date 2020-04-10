@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -87,7 +88,7 @@ func scOpen(p syscallParmsT) bool {
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
 	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
@@ -99,6 +100,7 @@ func scOpen(p syscallParmsT) bool {
 		return false
 	}
 	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
+	logging.DebugPrint(logging.ScLog, "DEBUG: ----- Returned channel # %d\n", areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
@@ -110,7 +112,7 @@ func scOpen16(p syscallParmsT) bool {
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
 	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
@@ -125,6 +127,30 @@ func scOpen16(p syscallParmsT) bool {
 	return true
 }
 
+func scRead(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
+	channel := int(memory.ReadWord(pktAddr + ich))
+	specs := memory.ReadWord(pktAddr + isti)
+	length := int(memory.ReadWord(pktAddr + ircl))
+	dest := memory.ReadDWord(pktAddr + ibad)
+	readLine := (memory.ReadWord(pktAddr+isti) & ibin) == 0
+	if specs&ipkl != 0 {
+		log.Panic("ERROR: ?READ (32-bit) extended packet not yet implemented")
+	}
+	logging.DebugPrint(logging.ScLog, "DEBUG: ?READ (32-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
+	var readReq = agReadReqT{channel, specs, length, readLine}
+	var areq = AgentReqT{agentFileRead, readReq, nil}
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	resp := areq.result.(agReadRespT)
+	memory.WriteWord(pktAddr+irlr, dg.WordT(len(resp.data)))
+	writeBytes(dest, p.ringMask, resp.data)
+	if resp.ac0 != 0 {
+		p.cpu.SetAc(0, dg.DwordT(resp.ac0))
+	}
+	return true
+}
+
 func scRead16(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	channel := int(memory.ReadWord(pktAddr + ich16))
@@ -133,10 +159,10 @@ func scRead16(p syscallParmsT) bool {
 	dest := dg.DwordT(memory.ReadWord(pktAddr + ibad16))
 	readLine := (memory.ReadWord(pktAddr+isti16) & ibin) == 0
 	if specs&ipkl != 0 {
-		log.Panic("ERROR: ?READ extended packet not yet implemented")
+		log.Panic("ERROR: ?READ (16-bit) extended packet not yet implemented")
 	}
-	log.Printf("DEBUG: ?READ Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v", channel, specs, length, dest, readLine)
-	var readReq = agReadReqT{channel, length, readLine}
+	logging.DebugPrint(logging.ScLog, "DEBUG: ?READ (16-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
+	var readReq = agReadReqT{channel, specs, length, readLine}
 	var areq = AgentReqT{agentFileRead, readReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan

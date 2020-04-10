@@ -1,5 +1,5 @@
 // debugLogs.go
-// Copyright (C) 2018,2019  Steve Merrony
+// Copyright ©2018-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,31 +27,38 @@ import (
 )
 
 const (
-	numDebugLogs     = 6
+	numLogs          = 7
 	numDebugLogLines = 100000 // each circular buffer contains this many lines
-
-	// DebugLog is the general-purpose log
-	DebugLog = 0
-	// MtLog is for the type 6026 MT tape module
-	MtLog = 1
-	// DkpLog is for the type 4231a Moving-Head Disk
-	DkpLog = 2
-	// DpfLog is for the type 6061 DPF disk module
-	DpfLog = 3
-	// DskpLog is for the type 6239 DSKP disk module
-	DskpLog = 4
-	// MapLog is for BMC/DCH-related logging
-	MapLog = 5
-
-	logPerms = 0644
+	logPerms         = 0644
 )
+
+// Log IDs
+const (
+	DebugLog = iota // DebugLog is the general-purpose log
+	MtLog           // MtLog is for the type 6026 MT tape module
+	DkpLog          // DkpLog is for the type 4231a Moving-Head Disk
+	DpfLog          // DpfLog is for the type 6061 DPF disk module
+	DskpLog         // DskpLog is for the type 6239 DSKP disk module
+	MapLog          // MapLog is for BMC/DCH-related logging
+	ScLog           // ScLog is for System Call logging in the VS emulator
+)
+
+var logs = map[int]string{
+	DebugLog: "debug.log",
+	MtLog:    "mt_debug.log",
+	DkpLog:   "dkp_debug.log",
+	DpfLog:   "dpf_debug.log",
+	DskpLog:  "dskp_debug.log",
+	MapLog:   "bmcdch_debug.log",
+	ScLog:    "syscall_debug.log",
+}
 
 var (
 	// N.B. I tried using strings.Builder for the logs with Go 1.10, it seemed to use c.1000x more heap
-	logArr    [numDebugLogs][numDebugLogLines]string // the stored log messages
-	logArrMu  [numDebugLogs]sync.Mutex
-	firstLine [numDebugLogs]int // pointer to the first line of each log
-	lastLine  [numDebugLogs]int // pointer to the last line of each log
+	logArr    [numLogs][numDebugLogLines]string // the stored log messages
+	logArrMu  [numLogs]sync.Mutex
+	firstLine [numLogs]int // pointer to the first line of each log
+	lastLine  [numLogs]int // pointer to the last line of each log
 )
 
 // DebugLogsDump can be called to dump out each of the non-empty debug logs to text files
@@ -65,20 +72,7 @@ func DebugLogsDump(dir string) {
 	for l := range logArr {
 		logArrMu[l].Lock()
 		if firstLine[l] != lastLine[l] { // ignore unused or empty logs
-			switch l {
-			case DebugLog:
-				debugDumpFile, _ = os.OpenFile(dir+"debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case MtLog:
-				debugDumpFile, _ = os.OpenFile(dir+"mt_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case DkpLog:
-				debugDumpFile, _ = os.OpenFile(dir+"dkp_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case DpfLog:
-				debugDumpFile, _ = os.OpenFile(dir+"dpf_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case DskpLog:
-				debugDumpFile, _ = os.OpenFile(dir+"dskp_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			case MapLog:
-				debugDumpFile, _ = os.OpenFile(dir+"bmcdch_debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
-			}
+			debugDumpFile, _ = os.OpenFile(dir+logs[l], os.O_WRONLY|os.O_CREATE|os.O_TRUNC, logPerms)
 			debugDumpFile.WriteString(">>> Dumping Debug Log\n\n")
 			thisLine := firstLine[l]
 			for thisLine != lastLine[l] {

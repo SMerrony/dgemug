@@ -22,11 +22,13 @@
 package aosvs
 
 import (
+	"io"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 )
 
 type agCloseReqT struct {
@@ -57,7 +59,7 @@ type agOpenRespT struct {
 
 func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	resp.ac0 = 0
-	log.Printf("DEBUG: Agent received File Open request for %s\n", req.path)
+	logging.DebugPrint(logging.ScLog, "DEBUG: ----- Agent received File Open request for %s\n", req.path)
 	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
 		resp.channelNo = consoleChan
 		return resp
@@ -97,7 +99,7 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 		flags |= os.O_APPEND
 	}
 	if req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
-		log.Printf("DEBUG: Attempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
+		logging.DebugPrint(logging.ScLog, "DEBUG: ----- Attempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
 		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.path, flags, 0755)
 	} else {
 		fp, err = os.OpenFile(req.path, flags, 0755)
@@ -107,18 +109,20 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 		return resp
 	}
 	agChan.file = fp
-	newChan := len(agChannels) + 1
+	newChan := len(agChannels)
 	agChannels[newChan] = &agChan
-
+	resp.channelNo = dg.WordT(newChan)
 	return resp
 }
 
 type agReadReqT struct {
 	chanNo   int
+	specs    dg.WordT
 	length   int
 	readLine bool
 }
 type agReadRespT struct {
+	ac0  dg.WordT
 	data []byte
 }
 
@@ -147,12 +151,22 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 			}
 			resp.data = buff
 		} else {
-			log.Panicf("ERROR: real file reading not yet implemented")
+			switch {
+			case req.specs&ipst != 0:
+				log.Fatal("Absolute positining NYI")
+			}
+			buf := make([]byte, req.length)
+			n, err := agChannels[req.chanNo].file.Read(buf)
+			if n == 0 && err == io.EOF {
+				resp.ac0 = ereof
+			} else {
+				resp.data = buf
+			}
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?READ from unopened file")
 	}
-	log.Printf("?READ returning <%v>\n", resp.data)
+	logging.DebugPrint(logging.ScLog, "?READ returning <%v>\n", resp.data)
 	return resp
 }
 
@@ -172,7 +186,7 @@ func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 	}
 	if filename[0] != '/' {
 		filename = perProcessData[req.PID].virtualRoot + "/" + filename
-		log.Printf("DEBUG: ?RECREATE resolved %s to %s\n", req.aosFilename, filename)
+		logging.DebugPrint(logging.ScLog, "DEBUG: ?RECREATE resolved %s to %s\n", req.aosFilename, filename)
 	}
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		resp.errCode = erfde

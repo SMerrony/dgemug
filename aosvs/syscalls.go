@@ -69,7 +69,7 @@ const (
 const scReturn = 0310 // We need special access to this call number - it is handled differently
 
 var syscalls = map[dg.WordT]syscallDescT{
-	0:    {"?CREATE", "?CREA", scFileManage, nil, nil},
+	0:    {"?CREATE", "?CREA", scFileManage, scCreate, nil},
 	1:    {"?DELETE", "?DELE", scFileManage, nil, nil},
 	3:    {"?MEM", "?MEM", scMemory, scMem, scMem},
 	014:  {"?MEMI", "?MEMI", scMemory, scMemi, scMemi},
@@ -90,7 +90,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, scLefe},
 	0300: {"?OPEN", "?OPEN", scFileIO, scOpen, scOpen16},
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose, nil},
-	0302: {"?READ", "?READ", scFileIO, nil, scRead16},
+	0302: {"?READ", "?READ", scFileIO, scRead, scRead16},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
@@ -118,7 +118,7 @@ func syscall(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentRe
 	}
 	if cpu.GetDebugLogging() {
 		logging.DebugPrint(logging.DebugLog, "%s System Call...\n", call.name)
-		log.Printf("%s System Call...\n", call.name)
+		logging.DebugPrint(logging.ScLog, "%s System Call...\n", call.name)
 	}
 	return call.fn(syscallParmsT{cpu, PID, ringMask, agent})
 }

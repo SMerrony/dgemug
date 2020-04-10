@@ -29,6 +29,13 @@ import (
 	"github.com/SMerrony/dgemug/memory"
 )
 
+func scCreate(p syscallParmsT) bool {
+	bpFilename := p.cpu.GetAc(0)
+	filename := strings.ToUpper(readString(bpFilename, p.cpu.GetPC()))
+	log.Fatalf("ERROR: ?CREATE called for %s - not yet implemented", filename)
+	return true
+}
+
 func scDacl(p syscallParmsT) bool {
 	// TODO this is all faked...
 	switch dg.WordT(p.cpu.GetAc(0)) { // make 16-bit safe
