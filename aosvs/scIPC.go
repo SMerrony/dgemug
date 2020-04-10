@@ -24,16 +24,14 @@ package aosvs
 import (
 	"log"
 	"strings"
-
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scIlkup(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	bpPathname := cpu.GetAc(0)
-	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+func scIlkup(p syscallParmsT) bool {
+	bpPathname := p.cpu.GetAc(0)
+	path := strings.ToUpper(readString(bpPathname, p.cpu.GetPC()))
 	// trap SWAT checking...
 	if path == "?10.SWAT.IPC" {
-		cpu.SetAc(0, erfde)
+		p.cpu.SetAc(0, erfde)
 		return false
 	}
 	log.Panicf("?ILKUP of %s not yet implemented", path)

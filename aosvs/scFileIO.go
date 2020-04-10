@@ -27,107 +27,106 @@ import (
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scClose(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+func scClose(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
 	var creq = agCloseReqT{channel}
 	var areq = AgentReqT{agentFileClose, creq, nil}
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	return true
 }
 
-func scGchr(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scGchr(p syscallParmsT) bool {
 	var areq AgentReqT
 	var gchrReq agGchrReqT
-	if memory.TestDwbit(cpu.GetAc(1), 0) {
+	if memory.TestDwbit(p.cpu.GetAc(1), 0) {
 		// AC0 should contain a channel #
-		if memory.TestDwbit(cpu.GetAc(1), 1) {
+		if memory.TestDwbit(p.cpu.GetAc(1), 1) {
 			// get default chars
-			gchrReq = agGchrReqT{PID, true, true, dg.WordT(cpu.GetAc(0)), ""}
+			gchrReq = agGchrReqT{p.PID, true, true, dg.WordT(p.cpu.GetAc(0)), ""}
 		} else {
 			// get current chars
-			gchrReq = agGchrReqT{PID, false, true, dg.WordT(cpu.GetAc(0)), ""}
+			gchrReq = agGchrReqT{p.PID, false, true, dg.WordT(p.cpu.GetAc(0)), ""}
 		}
 	} else {
 		// AC0 should contain BP to device name
-		bpPathname := cpu.GetAc(0)
-		path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
-		if memory.TestDwbit(cpu.GetAc(1), 1) {
+		bpPathname := p.cpu.GetAc(0)
+		path := strings.ToUpper(readString(bpPathname, p.ringMask))
+		if memory.TestDwbit(p.cpu.GetAc(1), 1) {
 			// get default chars
-			gchrReq = agGchrReqT{PID, true, false, 0, path}
+			gchrReq = agGchrReqT{p.PID, true, false, 0, path}
 		} else {
 			// get current chars
-			gchrReq = agGchrReqT{PID, false, false, 0, path}
+			gchrReq = agGchrReqT{p.PID, false, false, 0, path}
 		}
 	}
 	areq.action = agentGetChars
 	areq.reqParms = gchrReq
-	agentChan <- areq
-	areq = <-agentChan
-	wrAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	wrAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
 	memory.WriteWord(dg.PhysAddrT(wrAddr), areq.result.(agGchrRespT).words[0])
 	memory.WriteWord(dg.PhysAddrT(wrAddr+1), areq.result.(agGchrRespT).words[1])
 	memory.WriteWord(dg.PhysAddrT(wrAddr+2), areq.result.(agGchrRespT).words[2])
 	return true
 }
 
-func scGechr(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scGechr(p syscallParmsT) bool {
 
 	return true
 }
 
-func scOpen(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+func scOpen(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	options := memory.ReadWord(pktAddr + isti)
 	fileType := memory.ReadWord(pktAddr + isto)
 	// blockSize := memory.ReadWord(pktAddr+imrs)
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
-	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+	path := strings.ToUpper(readString(bpPathname, p.ringMask))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
-	var openReq = agOpenReqT{PID, path, options}
+	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	if areq.result.(agOpenRespT).ac0 != 0 {
-		cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
+		p.cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
 		return false
 	}
 	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
-func scOpen16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+func scOpen16(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	options := memory.ReadWord(pktAddr + isti16)
 	fileType := memory.ReadWord(pktAddr + isto16)
 	// blockSize := memory.ReadWord(pktAddr+imrs16)
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
-	path := strings.ToUpper(readString(bpPathname, cpu.GetPC()))
+	path := strings.ToUpper(readString(bpPathname, p.ringMask))
 	log.Printf("DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
-	var openReq = agOpenReqT{PID, path, options}
+	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	if areq.result.(agOpenRespT).ac0 != 0 {
-		cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
+		p.cpu.SetAc(0, areq.result.(agOpenRespT).ac0)
 		return false
 	}
 	memory.WriteWord(pktAddr+ich16, areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
-func scRead16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+func scRead16(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	channel := int(memory.ReadWord(pktAddr + ich16))
 	specs := memory.ReadWord(pktAddr + isti16)
 	length := int(memory.ReadWord(pktAddr + ircl16))
@@ -139,36 +138,36 @@ func scRead16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	log.Printf("DEBUG: ?READ Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v", channel, specs, length, dest, readLine)
 	var readReq = agReadReqT{channel, length, readLine}
 	var areq = AgentReqT{agentFileRead, readReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	resp := areq.result.(agReadRespT)
 	memory.WriteWord(pktAddr+irlr16, dg.WordT(len(resp.data)))
-	writeBytes(dest, cpu.GetPC(), resp.data)
+	writeBytes(dest, p.ringMask, resp.data)
 	return true
 }
 
-func scWrite(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+func scWrite(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	channel := int(memory.ReadWord(pktAddr + ich))
-	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), cpu.GetPC())
+	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), p.cpu.GetPC())
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
 	return true
 }
 
-func scWrite16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
+func scWrite16(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
 	channel := int(memory.ReadWord(pktAddr + ich16))
-	bytes := readBytes(dg.DwordT(memory.ReadWord(pktAddr+ibad16)), cpu.GetPC())
+	bytes := readBytes(dg.DwordT(memory.ReadWord(pktAddr+ibad16)), p.ringMask)
 	// log.Println("DEBUG: ?WRITE")
 	var writeReq = agWriteReqT{channel, bytes}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
+	p.agentChan <- areq
+	areq = <-p.agentChan
 	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
 	return true
 }

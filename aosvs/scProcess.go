@@ -26,51 +26,50 @@ import (
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scDadid(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scDadid(p syscallParmsT) bool {
 	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
 	// fake PIDs
-	switch cpu.GetAc(0) {
+	switch p.cpu.GetAc(0) {
 	case 1:
-		cpu.SetAc(1, 0)
+		p.cpu.SetAc(1, 0)
 	case 2:
-		cpu.SetAc(1, 1)
+		p.cpu.SetAc(1, 1)
 	case 3:
-		cpu.SetAc(1, 2)
+		p.cpu.SetAc(1, 2)
 	case 5:
-		cpu.SetAc(1, 3)
+		p.cpu.SetAc(1, 3)
 	case 6:
-		cpu.SetAc(1, 5)
+		p.cpu.SetAc(1, 5)
 	case 7:
-		cpu.SetAc(1, 6)
+		p.cpu.SetAc(1, 6)
 	case 8:
-		cpu.SetAc(1, 7)
+		p.cpu.SetAc(1, 7)
 	case 9:
-		cpu.SetAc(1, 8)
+		p.cpu.SetAc(1, 8)
 	case 10:
-		cpu.SetAc(1, 9)
+		p.cpu.SetAc(1, 9)
 	default:
-		cpu.SetAc(1, 10)
+		p.cpu.SetAc(1, 10)
 	}
 	return true
 }
 
-func scGunm(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scGunm(p syscallParmsT) bool {
 	// TODO this should really get passed off to a central 'process manager' (pseudo-EXEC/PMGR?)
-	if dg.WordT(cpu.GetAc(0)) == 0xffff {
-		cpu.SetAc(0, 1)      // Claim not to be in SU mode
-		cpu.SetAc(1, 0x001f) // Claim to have nearly all privileges
-		memory.WriteStringBA("XYZZY", cpu.GetAc(2))
+	if dg.WordT(p.cpu.GetAc(0)) == 0xffff {
+		p.cpu.SetAc(0, 1)      // Claim not to be in SU mode
+		p.cpu.SetAc(1, 0x001f) // Claim to have nearly all privileges
+		memory.WriteStringBA("XYZZY", p.cpu.GetAc(2))
 	} else {
 		log.Panic("ERROR: ?GUNM request type not yet implemented")
 	}
 	return true
 }
 
-func scSysprv(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+func scSysprv(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	funcCode := memory.ReadWord(pktAddr + sysprvPktFunc)
 	switch funcCode {
 	case sysprvGet:

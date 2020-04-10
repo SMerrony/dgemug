@@ -27,66 +27,65 @@ import (
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scExec(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scExec(p syscallParmsT) bool {
 	log.Println("WARNING: ?EXEC system call not yet implemented")
 	return true
 }
 
-func scGday(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scGday(p syscallParmsT) bool {
 	now := time.Now()
-	cpu.SetAc(0, dg.DwordT(now.Day()))
-	cpu.SetAc(1, dg.DwordT(now.Month()))
-	cpu.SetAc(2, dg.DwordT(now.Year()-1900))
+	p.cpu.SetAc(0, dg.DwordT(now.Day()))
+	p.cpu.SetAc(1, dg.DwordT(now.Month()))
+	p.cpu.SetAc(2, dg.DwordT(now.Year()-1900))
 	return true
 }
 
-func scGhrz(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	cpu.SetAc(0, 2) // 2 => 100Hz
+func scGhrz(p syscallParmsT) bool {
+	p.cpu.SetAc(0, 2) // 2 => 100Hz
 	return true
 }
 
-func scGtmes(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
-	var gtMesReq = agGtMesReqT{PID, memory.ReadWord(pktAddr + greq), memory.ReadWord(pktAddr + gnum), memory.ReadDWord(pktAddr + gsw)}
+func scGtmes(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
+	var gtMesReq = agGtMesReqT{p.PID, memory.ReadWord(pktAddr + greq), memory.ReadWord(pktAddr + gnum), memory.ReadDWord(pktAddr + gsw)}
 	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
-	cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
-	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
-	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((cpu.GetPC()&0x7000_0000)<<1)
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	p.cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
+	p.cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
+	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1)
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((cpu.GetPC()&0x7000_0000)<<1))
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1))
 	}
 	return true
 }
-func scGtmes16(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2)) | (cpu.GetPC() & 0x7000_0000)
-	var gtMesReq = agGtMesReqT{PID, memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
+func scGtmes16(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.cpu.GetPC() & 0x7000_0000)
+	var gtMesReq = agGtMesReqT{p.PID, memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
 	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
-	agentChan <- areq
-	areq = <-agentChan
-	cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
-	cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	p.cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
+	p.cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
 	gresBA := dg.DwordT(memory.ReadWord(pktAddr + gres16))
 	if gresBA != 0xffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((cpu.GetPC()&0x7000_0000)<<1))
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1))
 	}
 	return true
 }
 
-func scGtod(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scGtod(p syscallParmsT) bool {
 	now := time.Now()
-	cpu.SetAc(0, dg.DwordT(now.Second()))
-	cpu.SetAc(1, dg.DwordT(now.Minute()))
-	cpu.SetAc(2, dg.DwordT(now.Hour()))
+	p.cpu.SetAc(0, dg.DwordT(now.Second()))
+	p.cpu.SetAc(1, dg.DwordT(now.Minute()))
+	p.cpu.SetAc(2, dg.DwordT(now.Hour()))
 	return true
 }
 
-func scInfo(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	pktAddr := dg.PhysAddrT(cpu.GetAc(2))
+func scInfo(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	memory.WriteWord(pktAddr+sirn, 0x0746) // system rev - faked to 7.70
 	if memory.ReadDWord(pktAddr+siln) != 0 {
 		memory.WriteStringBA("MASTERLDU", memory.ReadDWord(pktAddr+siln)) // fake master LDU name
@@ -101,7 +100,7 @@ func scInfo(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 	return true
 }
 
-func scXpstat(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scXpstat(p syscallParmsT) bool {
 
 	return true
 }

@@ -26,20 +26,25 @@ import (
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scMem(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	highUnshared := memory.GetLastUnsharedPage()
-	lowShared := memory.GetFirstSharedPage()
-	cpu.SetAc(0, lowShared-highUnshared-1)
-	cpu.SetAc(1, highUnshared&(0x0fff_ffff>>10))
-	cpu.SetAc(2, dg.DwordT(highUnshared<<10))
+func scGshpt(p syscallParmsT) bool {
+	p.cpu.SetAc(0, memory.GetFirstSharedPage()&0x0003_ffff)
+	p.cpu.SetAc(1, dg.DwordT(memory.GetNumSharedPages()))
 	return true
 }
 
-func scMemi(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	numPages := int32(cpu.GetAc(0))
+func scMem(p syscallParmsT) bool {
+	highUnshared := memory.GetLastUnsharedPage() //& 0x0003_ffff // assumed in current ring
+	lowShared := memory.GetFirstSharedPage()     //& 0x0003_ffff
+	p.cpu.SetAc(0, lowShared-highUnshared-1)
+	p.cpu.SetAc(1, highUnshared&(0x0fff_ffff>>10))
+	p.cpu.SetAc(2, dg.DwordT(highUnshared<<10))
+	return true
+}
+
+func scMemi(p syscallParmsT) bool {
+	numPages := int32(p.cpu.GetAc(0))
 	var lastPage int
 	switch {
 	case numPages > 0: // add pages
@@ -47,7 +52,7 @@ func scMemi(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 			lastPage = memory.AddUnsharedPage()
 			numPages--
 		}
-		cpu.SetAc(1, dg.DwordT(lastPage<<10)|dg.DwordT(cpu.GetPC()&0x7000_0000)-1)
+		p.cpu.SetAc(1, (dg.DwordT(lastPage<<10)|dg.DwordT(p.ringMask))-1)
 	case numPages < 0: // remove pages
 		log.Panicln("ERROR: Unmapping via ?MEMI not yet supported")
 	}

@@ -689,11 +689,8 @@ func decode15bitDisp(d15 dg.WordT, mode int) (disp16 int16) {
 	if mode == absoluteMode {
 		disp16 = int16(d15 & 0x7fff) // zero extend
 	} else {
-		if memory.TestWbit(d15, 1) {
-			disp16 = int16(d15 | 0x8000) // sign extend
-		} else {
-			disp16 = int16(d15 & 0x7fff) // zero extend
-		}
+
+		disp16 = int16(d15<<1) / 2
 	}
 	// if cpu.debugLogging {
 	// 	logging.DebugPrint(logging.DebugLog, "... decode15bitDisp got: %#o, returning: %#o\n", d15, disp16)

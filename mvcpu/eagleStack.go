@@ -184,7 +184,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		lastAc := twoAcc1Word.acd
 		thisAc := firstAc
 		for {
-			cpu.ac[thisAc] = wsPop(cpu, 0)
+			cpu.ac[thisAc] = WsPop(cpu, 0)
 			if thisAc == lastAc {
 				break
 			}
@@ -353,7 +353,7 @@ func wsPushQWord(cpu *CPUT, qw dg.QwordT) {
 }
 
 // WsPop - POP a doubleword off the Wide Stack
-func wsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
+func WsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 	dword = memory.ReadDWord(cpu.wsp)
 	cpu.wsp -= 2
 	logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
@@ -364,16 +364,16 @@ func wsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 func wpopb(cpu *CPUT) {
 	wspSav := cpu.wsp
 	// pop off 6 double words
-	dwd := wsPop(cpu, 0) // 1
+	dwd := WsPop(cpu, 0) // 1
 	cpu.carry = memory.TestDwbit(dwd, 0)
 	cpu.pc = dg.PhysAddrT(dwd & 0x7fffffff)
-	cpu.ac[3] = wsPop(cpu, 0) // 2
+	cpu.ac[3] = WsPop(cpu, 0) // 2
 	// replace WFP with popped value of AC3
 	cpu.wfp = dg.PhysAddrT(cpu.ac[3])
-	cpu.ac[2] = wsPop(cpu, 0) // 3
-	cpu.ac[1] = wsPop(cpu, 0) // 4
-	cpu.ac[0] = wsPop(cpu, 0) // 5
-	dwd = wsPop(cpu, 0)       // 6
+	cpu.ac[2] = WsPop(cpu, 0) // 3
+	cpu.ac[1] = WsPop(cpu, 0) // 4
+	cpu.ac[0] = WsPop(cpu, 0) // 5
+	dwd = WsPop(cpu, 0)       // 6
 	cpu.psr = memory.DwordGetUpperWord(dwd)
 	// TODO Set WFP is crossing rings
 	wsFramSz2 := (int(dwd&0x00007fff) * 2) + 12
@@ -383,8 +383,8 @@ func wpopb(cpu *CPUT) {
 // wsPopQWord - POP a Quad-word off the Wide Stack
 func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
 	var qw dg.QwordT
-	rhDWord := wsPop(cpu, seg)
-	lhDWord := wsPop(cpu, seg)
+	rhDWord := WsPop(cpu, seg)
+	lhDWord := WsPop(cpu, seg)
 	qw = dg.QwordT(lhDWord)<<32 | dg.QwordT(rhDWord)
 	return qw
 }

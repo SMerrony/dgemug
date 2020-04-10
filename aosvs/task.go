@@ -32,20 +32,23 @@ import (
 
 type taskT struct {
 	pid, tid                 int
+	sixteenBit               bool
 	agentChan                chan AgentReqT
 	dir                      string
-	startAddr                dg.PhysAddrT
+	startAddr, ringMask      dg.PhysAddrT
 	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
 	killAddr                 dg.PhysAddrT
 	debugLogging             bool
 }
 
-func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
+func createTask(pid int, bit16 bool, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
 	var task taskT
 	task.pid = pid
+	task.sixteenBit = bit16
 	task.tid = tid
 	task.agentChan = agent
 	task.startAddr = startAddr
+	task.ringMask = startAddr & 0x7000_0000
 	task.wfp = wfp
 	task.wsp = wsp
 	task.wsb = wsb
@@ -61,7 +64,7 @@ func createTask(pid int, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb
 func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
 	var (
 		cpu         mvcpu.CPUT
-		syscallTrap int
+		syscallTrap bool
 	)
 
 	cpu.CPUInit(077, nil, nil)
@@ -77,9 +80,17 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 
 	for {
 		syscallTrap, _, _ = cpu.Vrun()
-		if syscallTrap != mvcpu.SyscallNot {
-			returnAddr := cpu.GetPC() + 2 // dg.PhysAddrT(cpu.GetAc(3))
-			callID := memory.ReadWord(returnAddr)
+		if syscallTrap {
+			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
+			var callID dg.WordT
+			if task.sixteenBit {
+				ss := memory.NsPop(task.ringMask, false)
+				callID = memory.ReadWord(task.ringMask | dg.PhysAddrT(ss))
+				memory.NsPush(task.ringMask, ss, false)
+			} else {
+				callID = memory.ReadWord(dg.PhysAddrT(memory.ReadDWord(cpu.GetWSP() - 2)))
+			}
+			//log.Printf("DEBUG: System Call %#o return addr %#o\n", callID, returnAddr)
 			// special handling for the ?RETURN system call
 			if callID == scReturn {
 				if task.debugLogging {
@@ -90,22 +101,24 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 				flags = dg.ByteT(memory.GetDwbits(cpu.GetAc(2), 16, 8))
 				msgLen := int(uint8(memory.GetDwbits(cpu.GetAc(2), 24, 8)))
 				if msgLen > 0 {
-					termMessage = string(memory.ReadBytes(cpu.GetAc(1), cpu.GetPC(), msgLen))
+					termMessage = string(memory.ReadBytes(cpu.GetAc(1), task.ringMask, msgLen))
 				}
 				break
 			}
 			var scOk bool
-			switch syscallTrap {
-			case mvcpu.Syscall32Trap:
-				scOk = syscall(callID, task.pid, task.agentChan, &cpu)
-				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
-			case mvcpu.Syscall16Trap:
-				scOk = syscall16(callID, task.pid, task.agentChan, &cpu)
-			}
-			if scOk {
-				cpu.SetPC(returnAddr + 2)
+			if task.sixteenBit {
+				scOk = syscall16(callID, task.pid, task.ringMask, task.agentChan, &cpu)
+				nfp := memory.ReadWord(task.ringMask | memory.NfpLoc)
+				cpu.SetAc(3, dg.DwordT(nfp)|dg.DwordT(task.ringMask))
 			} else {
+				scOk = syscall(callID, task.pid, task.ringMask, task.agentChan, &cpu)
+				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
+			}
+			mvcpu.WsPop(&cpu, 7)
+			if scOk {
 				cpu.SetPC(returnAddr + 1)
+			} else {
+				cpu.SetPC(returnAddr)
 			}
 			//cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 		} else {

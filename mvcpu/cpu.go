@@ -556,16 +556,15 @@ RunLoop: // performance-critical section starts here
 	return errDetail, instrCounts
 }
 
-// System call trap types
+// System call trap
 const (
-	SyscallNot = iota
-	Syscall32Trap
-	Syscall16Trap
+	SyscallNot  = false
+	SyscallTrap = true
 )
 
 // Vrun is a simplified runloop for a Virtual CPU
 // It should run until a system call is encountered
-func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInstrs]int) {
+func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxInstrs]int) {
 	var (
 		thisOp dg.WordT
 		// prevPC dg.PhysAddrT
@@ -595,24 +594,18 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 			log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
-		// Trap System Calls, first 32-bit style...
-		if iPtr.ix == instrXJSR && iPtr.disp15 == 0x06 && iPtr.ind == '@' && iPtr.mode == absoluteMode {
-			syscallTrap = Syscall32Trap
-			break
-		}
-		// ...now 16-bit style
-		if iPtr.ix == instrJSR && iPtr.disp15 == 017 && iPtr.ind == '@' && iPtr.mode == absoluteMode {
-			cpu.cpuMu.Lock()
-			cpu.pc-- // Fudge!
-			cpu.cpuMu.Unlock()
-			syscallTrap = Syscall16Trap
-			break
-		}
-
 		// EXECUTE
 		if !cpu.Execute(iPtr) {
 			errDetail = " *** Error: could not execute instruction (or CPU HALT encountered) ***"
 			break
+		}
+
+		// System Call?
+		if cpu.pc == 0x3000_0000 {
+			syscallTrap = SyscallTrap
+			break
+		} else {
+			syscallTrap = SyscallNot
 		}
 
 		// INTERRUPT?
@@ -663,6 +656,7 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 		cpu.cpuMu.RLock()
 
 		if cpu.pc == 0x7000_0000 {
+			log.Println("OOPS: At location 0 in ring 7")
 			break
 		}
 		// if cpu.scpIO {
@@ -670,8 +664,6 @@ func (cpu *CPUT) Vrun() (syscallTrap int, errDetail string, instrCounts [maxInst
 		// 	errDetail = " *** Console ESCape ***"
 		// 	break
 		// }
-
-		syscallTrap = SyscallNot
 
 		// instruction counting
 		instrCounts[iPtr.ix]++

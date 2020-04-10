@@ -21,9 +21,7 @@
 
 package aosvs
 
-import "github.com/SMerrony/dgemug/mvcpu"
-
-func scLefe(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	cpu.SetLef(true)
+func scLefe(p syscallParmsT) bool {
+	p.cpu.SetLef(true)
 	return true
 }

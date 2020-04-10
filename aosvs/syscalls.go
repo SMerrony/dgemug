@@ -32,12 +32,19 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
+type syscallParmsT struct {
+	cpu       *mvcpu.CPUT
+	PID       int
+	ringMask  dg.PhysAddrT
+	agentChan chan AgentReqT
+}
+
 type syscallDescT struct {
-	name        string                                      // AOS/VS System Call Name
-	alias       string                                      // AOS/VS 4-char Name Alias
-	syscallType int                                         // groupings as per Table 2-1 in Sys Call Dict
-	fn          func(*mvcpu.CPUT, int, chan AgentReqT) bool // implementation
-	fn16        func(*mvcpu.CPUT, int, chan AgentReqT) bool // 16-bit implementation - may be the same as fn
+	name        string                   // AOS/VS System Call Name
+	alias       string                   // AOS/VS 4-char Name Alias
+	syscallType int                      // groupings as per Table 2-1 in Sys Call Dict
+	fn          func(syscallParmsT) bool // implementation
+	fn16        func(syscallParmsT) bool // 16-bit implementation - may be the same as fn
 }
 
 // System Call Types as per Chap 2 of Sys Call Dictionary
@@ -69,9 +76,10 @@ var syscalls = map[dg.WordT]syscallDescT{
 	027:  {"?ILKUP", "?ILKU", scIPC, scIlkup, nil},
 	036:  {"?GTOD", "?GTOD", scSystem, scGtod, scGtod},
 	041:  {"?GDAY", "?GDAY", scSystem, scGday, scGday},
+	044:  {"?SSHPT", "?SSHP", scMemory, nil, nil},
 	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},
 	072:  {"?GUNM", "?GUNM", scProcess, scGunm, nil},
-	073:  {"?GSHPT", "?GSHP", scMemory, nil, nil},
+	073:  {"?GSHPT", "?GSHP", scMemory, scGshpt, scGshpt},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
 	0111: {"?GNAME", "?GNAM", scFileManage, scGname, scGname},
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
@@ -100,7 +108,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 }
 
 // syscall redirects System Call according to the syscalls map
-func syscall(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -112,11 +120,11 @@ func syscall(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) (o
 		logging.DebugPrint(logging.DebugLog, "%s System Call...\n", call.name)
 		log.Printf("%s System Call...\n", call.name)
 	}
-	return call.fn(cpu, PID, agent)
+	return call.fn(syscallParmsT{cpu, PID, ringMask, agent})
 }
 
 // syscall16 redirects a 16-bit System Call according to the syscalls map
-func syscall16(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall16(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -127,7 +135,7 @@ func syscall16(callID dg.WordT, PID int, agent chan AgentReqT, cpu *mvcpu.CPUT) 
 	if cpu.GetDebugLogging() {
 		log.Printf("%s System Call (16-bit)...\n", call.name)
 	}
-	return call.fn16(cpu, PID, agent)
+	return call.fn16(syscallParmsT{cpu, PID, ringMask, agent})
 }
 
 // readPacket just loads a chunk of memory into a slice of words
@@ -188,6 +196,6 @@ func writeBytes(bpAddr dg.DwordT, pc dg.PhysAddrT, arr []byte) {
 }
 
 // scDummy is a stub func for sys calls we are ignoring for now
-func scDummy(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scDummy(p syscallParmsT) bool {
 	return true
 }

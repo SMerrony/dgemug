@@ -44,6 +44,7 @@ var (
 	virtualRamMu     sync.RWMutex
 	lastUnsharedPage int = -1
 	firstSharedPage  int = 0x7fff_ffff // dummy high value
+	numSharedPages   int
 	// lastSharedPage   int
 )
 
@@ -64,6 +65,8 @@ func MapPage(page int, shared bool) {
 	virtualRam[page] = emptyPage
 	if !shared {
 		lastUnsharedPage = page
+	} else {
+		numSharedPages++
 	}
 	if shared && (page < firstSharedPage) {
 		firstSharedPage = page
@@ -98,6 +101,14 @@ func GetLastUnsharedPage() dg.DwordT {
 	p := lastUnsharedPage
 	virtualRamMu.RUnlock()
 	return dg.DwordT(p)
+}
+
+// GetNumSharedPages is a getter for the number of shared pages currently mapped
+func GetNumSharedPages() int {
+	virtualRamMu.RLock()
+	p := numSharedPages
+	virtualRamMu.RUnlock()
+	return p
 }
 
 func isAddrMapped(addr dg.PhysAddrT) (mapped bool) {

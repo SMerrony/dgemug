@@ -23,11 +23,9 @@ package aosvs
 
 import (
 	"time"
-
-	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-func scIfpu(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
+func scIfpu(p syscallParmsT) bool {
 	// TODO should reserve FPU save area
 	return true
 }
@@ -37,8 +35,8 @@ func scIfpu(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
 // 	return true
 // }
 
-func scWdelay(cpu *mvcpu.CPUT, PID int, agentChan chan AgentReqT) bool {
-	delayMs := int(cpu.GetAc(0))
+func scWdelay(p syscallParmsT) bool {
+	delayMs := int(p.cpu.GetAc(0))
 	time.Sleep(time.Millisecond * time.Duration(delayMs))
 	return true
 }

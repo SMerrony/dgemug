@@ -116,7 +116,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
-	proc.tasks[0] = createTask(proc.PID, 0, agentChan,
+	proc.tasks[0] = createTask(proc.PID, proc.ust.prType != 0, 0, agentChan,
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),

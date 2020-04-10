@@ -220,7 +220,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wpopb(cpu)
 
 	case instrWPOPJ:
-		dwd := wsPop(cpu, 0)
+		dwd := WsPop(cpu, 0)
 		cpu.pc = cpu.pc&ringMask32 | (dg.PhysAddrT(dwd) & 0x0fff_ffff)
 		cpu.SetOVR(false)
 
