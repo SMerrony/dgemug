@@ -60,6 +60,7 @@ type agOpenRespT struct {
 func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	resp.ac0 = 0
 	logging.DebugPrint(logging.ScLog, "DEBUG: ----- Agent received File Open request for %s\n", req.path)
+	// TODO currently returning same channel for these common generic files, they might need separate ones...
 	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
 		resp.channelNo = consoleChan
 		return resp
@@ -186,7 +187,7 @@ func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 	}
 	if filename[0] != '/' {
 		filename = perProcessData[req.PID].virtualRoot + "/" + filename
-		logging.DebugPrint(logging.ScLog, "DEBUG: ?RECREATE resolved %s to %s\n", req.aosFilename, filename)
+		logging.DebugPrint(logging.ScLog, "?RECREATE resolved %s to %s\n", req.aosFilename, filename)
 	}
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		resp.errCode = erfde
@@ -195,6 +196,47 @@ func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 		os.Truncate(filename, 0)
 		resp.ok = true
 	}
+	return resp
+}
+
+type agSharedOpenReqT struct {
+	PID      int
+	filename string
+	readonly bool
+}
+type agSharedOpenRespT struct {
+	ac0       dg.DwordT
+	channelNo dg.DwordT
+}
+
+func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
+	var (
+		fp     *os.File
+		flags  int
+		err    error
+		agChan agChannelT
+	)
+	agChan.path = req.filename
+	if req.readonly {
+		flags = os.O_RDONLY
+	} else {
+		flags = os.O_RDWR
+	}
+	if req.filename[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
+		logging.DebugPrint(logging.ScLog, "DEBUG: ----- Attempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
+		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.filename, flags, 0755)
+	} else {
+		fp, err = os.OpenFile(req.filename, flags, 0755)
+	}
+	if err != nil {
+		resp.ac0 = erfad // TODO add more errors here
+		return resp
+	}
+	agChan.file = fp
+	newChan := len(agChannels)
+	agChannels[newChan] = &agChan
+	resp.channelNo = dg.DwordT(newChan)
+
 	return resp
 }
 
@@ -215,6 +257,7 @@ func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
 				log.Panic("ERROR: Could not write to @CONSOLE")
 			}
 			resp.bytesTxfrd = dg.WordT(n)
+			logging.DebugPrint(logging.ScLog, "?WRITE wrote <%v> to @CONSOLE\n", req.bytes)
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?WRITE to unopened file")

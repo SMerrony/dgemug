@@ -152,7 +152,7 @@ func scRead(p syscallParmsT) bool {
 }
 
 func scRead16(p syscallParmsT) bool {
-	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
 	channel := int(memory.ReadWord(pktAddr + ich16))
 	specs := memory.ReadWord(pktAddr + isti16)
 	length := int(memory.ReadWord(pktAddr + ircl16))

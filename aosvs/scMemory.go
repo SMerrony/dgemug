@@ -23,6 +23,7 @@ package aosvs
 
 import (
 	"log"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -55,6 +56,47 @@ func scMemi(p syscallParmsT) bool {
 		p.cpu.SetAc(1, (dg.DwordT(lastPage<<10)|dg.DwordT(p.ringMask))-1)
 	case numPages < 0: // remove pages
 		log.Panicln("ERROR: Unmapping via ?MEMI not yet supported")
+	}
+	return true
+}
+
+// AOS/VS treats this as a memory operation, not a file one...
+func scSopen(p syscallParmsT) bool {
+	bpFilename := p.cpu.GetAc(0)
+	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
+	if p.cpu.GetAc(1) != 0xffff_ffff {
+		log.Panicln("ERROR: ?SOPEN of specific channel not yet implemented")
+	}
+	var sopenReq = agSharedOpenReqT{p.PID, filename, p.cpu.GetAc(2) == 0}
+	var areq = AgentReqT{agentSharedOpen, sopenReq, nil}
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	if areq.result.(agSharedOpenRespT).ac0 != 0 {
+		p.cpu.SetAc(0, areq.result.(agSharedOpenRespT).ac0)
+		return false
+	}
+	p.cpu.SetAc(1, areq.result.(agSharedOpenRespT).channelNo)
+	return true
+}
+
+func scSshpt(p syscallParmsT) bool { // TODO removing pages
+	firstPageNo := p.cpu.GetAc(0)
+	newSize := p.cpu.GetAc(1)
+	//initialLastPage := firstPageNo + dg.DwordT(memory.GetNumSharedPages())
+	if firstPageNo < memory.GetFirstSharedPage()&0x0003_ffff {
+		// try to add pages at start
+		var pg int
+		for pg = int(firstPageNo); pg < int(memory.GetFirstSharedPage()&0x0003_ffff); pg++ {
+			if memory.IsPageMapped(pg) {
+				p.cpu.SetAc(0, ermem)
+				return false
+			}
+			memory.MapPage(pg, true)
+		}
+	}
+	// now at end
+	for memory.GetNumSharedPages() < int(newSize) {
+		memory.MapPage(int(memory.GetLastSharedPage())+1, true)
 	}
 	return true
 }

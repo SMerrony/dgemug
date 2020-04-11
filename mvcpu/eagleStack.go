@@ -123,8 +123,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrSTATS:
-		// FIXME handle segments
-		memory.WriteDWord(dg.PhysAddrT(memory.ReadDWord(cpu.wsp)), cpu.ac[iPtr.ac])
+		memory.WriteDWord(cpu.wsp, cpu.ac[iPtr.ac])
 		cpu.SetOVR(false)
 
 	case instrWFPOP:

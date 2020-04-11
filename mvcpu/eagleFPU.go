@@ -36,7 +36,7 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		unconverted := cpu.fpac[iPtr.ac]
 		scaleFactor := int(int8(memory.GetDwbits(cpu.ac[1], 0, 8)))
 		if scaleFactor != 0 {
-			log.Fatalf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
+			log.Panicf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
 		}
 		dataType := uint8(memory.GetDwbits(cpu.ac[1], 24, 3))
 		size := int(uint8(memory.GetDwbits(cpu.ac[1], 27, 5)))
@@ -50,8 +50,17 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
 				cpu.ac[3]++
 			}
+		case 4: // <zeroes><int>
+			if unconverted < 0 {
+				size++
+			}
+			converted := fmt.Sprintf("%*.f", size, unconverted)
+			for c := 0; c < size; c++ {
+				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
+				cpu.ac[3]++
+			}
 		default:
-			log.Fatalf("ERROR: Decimal data type %d not yet supported\n", dataType)
+			log.Panicf("ERROR: Decimal data type %d not yet supported\n", dataType)
 		}
 
 	case instrWFLAD:
@@ -61,7 +70,7 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	default:
-		log.Fatalf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

@@ -42,6 +42,7 @@ const (
 	agentFileWrite
 	agentGetChars
 	agentGetMessage
+	agentSharedOpen
 )
 
 // AgentReqT is the type of messages passed to and from the pseudo-agent
@@ -62,6 +63,7 @@ type agChannelT struct {
 	path        string
 	isConsole   bool
 	read, write bool
+	forShared   bool               // indicated this has been ?SOPENed
 	rwc         io.ReadWriteCloser // stream I/O
 	file        *os.File           // file I/O
 }
@@ -72,7 +74,7 @@ var (
 	pidInUse       [maxPID]bool
 	perProcessData = map[int]perProcessDataT{}
 	agChannels     = map[int]*agChannelT{
-		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, rwc: nil, file: nil}, // @CONSOLE is always available
+		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, rwc: nil, file: nil}, // @CONSOLE is always available
 	}
 )
 
@@ -113,7 +115,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agGetChars(request.reqParms.(agGchrReqT))
 		case agentGetMessage:
 			request.result = agGetMessage(request.reqParms.(agGtMesReqT))
-
+		case agentSharedOpen:
+			request.result = agSharedOpen(request.reqParms.(agSharedOpenReqT))
 		default:
 			log.Panicf("ERROR: Agent received unknown request type %d\n", request.action)
 		}

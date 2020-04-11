@@ -76,6 +76,12 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
 		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
 
+	case instrFSD:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] -= cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
 	case instrFSLT:
 		if memory.TestQwbit(cpu.fpsr, fpsrN) {
 			cpu.pc++

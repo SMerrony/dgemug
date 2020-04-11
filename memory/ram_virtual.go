@@ -86,6 +86,14 @@ func GetFirstSharedPage() dg.DwordT {
 	return dg.DwordT(p)
 }
 
+// GetLastSharedPage calculates the last shared page mapped
+func GetLastSharedPage() dg.DwordT {
+	virtualRamMu.RLock()
+	lup := firstSharedPage + numSharedPages
+	virtualRamMu.RUnlock()
+	return dg.DwordT(lup)
+}
+
 // AddUnsharedPage appends an unshared page to virtual memory
 func AddUnsharedPage() int {
 	virtualRamMu.RLock()

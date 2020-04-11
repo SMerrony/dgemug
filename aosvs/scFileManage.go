@@ -32,7 +32,7 @@ import (
 
 func scCreate(p syscallParmsT) bool {
 	bpFilename := p.cpu.GetAc(0)
-	filename := strings.ToUpper(readString(bpFilename, p.cpu.GetPC()))
+	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
 	log.Fatalf("ERROR: ?CREATE called for %s - not yet implemented", filename)
 	return true
 }
@@ -56,21 +56,21 @@ func scDacl(p syscallParmsT) bool {
 
 func scGname(p syscallParmsT) bool {
 	bpFilename := p.cpu.GetAc(0)
-	filename := strings.ToUpper(readString(bpFilename, p.cpu.GetPC()))
+	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
 	if filename[0] == '@' {
 		filename = ":PER:" + filename[1:] // convert @ to :PER
 	}
 	filename = strings.ReplaceAll(filename, "/", ":") // convert any / to :
 	bpPathname := p.cpu.GetAc(1)
-	writeBytes(bpPathname, p.cpu.GetPC(), []byte(filename))
+	writeBytes(bpPathname, p.ringMask, []byte(filename))
 	p.cpu.SetAc(2, dg.DwordT(len(filename)))
-	logging.DebugPrint(logging.ScLog, "?GNAME returning %s for %s\n", readString(bpFilename, p.cpu.GetPC()), filename)
+	logging.DebugPrint(logging.ScLog, "?GNAME returning %s for %s\n", readString(bpFilename, p.ringMask), filename)
 	return true
 }
 
 func scRecreate(p syscallParmsT) bool {
 	bpFilename := p.cpu.GetAc(0)
-	filename := strings.ToUpper(readString(bpFilename, p.cpu.GetPC()))
+	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
 	var recReq = agRecreateReqT{PID: p.PID, aosFilename: filename}
 	var areq = AgentReqT{agentFileRecreate, recReq, nil}
 	p.agentChan <- areq

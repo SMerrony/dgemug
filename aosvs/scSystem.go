@@ -55,9 +55,9 @@ func scGtmes(p syscallParmsT) bool {
 	areq = <-p.agentChan
 	p.cpu.SetAc(0, areq.result.(agGtMesRespT).ac0)
 	p.cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
-	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1)
+	gresBA := memory.ReadDWord(pktAddr+gres) | dg.DwordT((p.ringMask)<<1)
 	if gresBA != 0xffff_ffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1))
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.ringMask)<<1))
 	}
 	return true
 }
@@ -71,7 +71,7 @@ func scGtmes16(p syscallParmsT) bool {
 	p.cpu.SetAc(1, areq.result.(agGtMesRespT).ac1)
 	gresBA := dg.DwordT(memory.ReadWord(pktAddr + gres16))
 	if gresBA != 0xffff && len(areq.result.(agGtMesRespT).result) > 0 {
-		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.cpu.GetPC()&0x7000_0000)<<1))
+		memory.WriteStringBA(areq.result.(agGtMesRespT).result, gresBA|dg.DwordT((p.ringMask)<<1))
 	}
 	return true
 }
