@@ -146,7 +146,7 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 		return resp
 	}
 	perProcessData[resp.PID] = perProcessDataT{invocationArgs: req.invocationArgs, virtualRoot: req.virtualRoot}
-	log.Printf("DEBUG: AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
+	logging.DebugPrint(logging.ScLog, "DEBUG: AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
 	return resp
 }
 
@@ -220,11 +220,12 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	// case gtsw:
 	case gsws:
 		// TODO faked for now
-		log.Println("WARNING: Faking empty ?GSWS response to ?GTMES system call")
+		logging.DebugPrint(logging.ScLog, "WARNING: Faking empty ?GSWS response to ?GTMES system call\n")
 		resp.ac0 = 0
 		resp.ac1 = 0
 	default:
 		log.Panicf("ERROR: ?GTMES request type %#x not yet supported\n", req.greq)
 	}
+	logging.DebugPrint(logging.ScLog, "?GTMES returning %s\n", resp.result)
 	return resp
 }

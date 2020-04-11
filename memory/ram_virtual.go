@@ -186,7 +186,7 @@ func ReadWord(addr dg.PhysAddrT) (wd dg.WordT) {
 	virtualRamMu.RLock()
 	page, found := virtualRam[int(addr>>10)]
 	if !found {
-		log.Fatalf("ERROR: Attempt to read from unmapped page %#x at address: %#x (%#o)", addr>>10, addr, addr)
+		log.Panicf("ERROR: Attempt to read from unmapped page %#x at address: %#x (%#o)", addr>>10, addr, addr)
 	}
 	wd = page.words[int(addr&0x3ff)]
 	virtualRamMu.RUnlock()

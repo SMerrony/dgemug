@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -63,7 +64,7 @@ func scGname(p syscallParmsT) bool {
 	bpPathname := p.cpu.GetAc(1)
 	writeBytes(bpPathname, p.cpu.GetPC(), []byte(filename))
 	p.cpu.SetAc(2, dg.DwordT(len(filename)))
-	log.Printf("DEBUG: ?GNAME returning %s for %s\n", readString(bpFilename, p.cpu.GetPC()), filename)
+	logging.DebugPrint(logging.ScLog, "?GNAME returning %s for %s\n", readString(bpFilename, p.cpu.GetPC()), filename)
 	return true
 }
 

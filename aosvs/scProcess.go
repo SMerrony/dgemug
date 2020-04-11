@@ -25,6 +25,7 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -62,6 +63,7 @@ func scGunm(p syscallParmsT) bool {
 		p.cpu.SetAc(0, 1)      // Claim not to be in SU mode
 		p.cpu.SetAc(1, 0x001f) // Claim to have nearly all privileges
 		memory.WriteStringBA("XYZZY", p.cpu.GetAc(2))
+		logging.DebugPrint(logging.ScLog, "?GUNM returning 'XYYZY'\n")
 	} else {
 		log.Panic("ERROR: ?GUNM request type not yet implemented")
 	}
