@@ -86,13 +86,13 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		switch noAccMode3Word.mode {
 		case absoluteMode: // do nothing
 		case pcMode:
-			eff += dg.DwordT(cpu.pc)
+			eff |= (dg.DwordT(cpu.pc) << 1)
 		case ac2Mode:
-			eff += cpu.ac[2]
+			eff |= (cpu.ac[2] << 1)
 		case ac3Mode:
-			eff += cpu.ac[3]
+			eff |= (cpu.ac[3] << 1)
 		}
-		wsPush(cpu, 0, eff)
+		wsPush(cpu, 0, eff<<1)
 		cpu.SetOVR(false)
 
 	case instrSTAFP:
@@ -255,15 +255,29 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrXPEFB:
 		noAccMode2Word := iPtr.variant.(noAccMode2WordT)
 		// FIXME check for overflow
-		eff := dg.DwordT(noAccMode2Word.disp16)
+		// eff := dg.DwordT(noAccMode2Word.disp16)
+		// switch noAccMode2Word.mode {
+		// case absoluteMode:
+		// case pcMode:
+		// 	eff += dg.DwordT(cpu.pc)
+		// case ac2Mode:
+		// 	eff += cpu.ac[2]
+		// case ac3Mode:
+		// 	eff += cpu.ac[3]
+		// }
+		// wsPush(cpu, 0, eff)
+		var eff dg.DwordT
 		switch noAccMode2Word.mode {
-		case absoluteMode: // do nothing
+		case absoluteMode:
+			eff = (dg.DwordT(cpu.pc&0x7000_0000) << 1) | dg.DwordT(noAccMode2Word.disp16)
 		case pcMode:
-			eff += dg.DwordT(cpu.pc)
+			eff = dg.DwordT(cpu.pc<<1) | dg.DwordT(noAccMode2Word.disp16)
 		case ac2Mode:
-			eff += cpu.ac[2]
+			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(noAccMode2Word.disp16)
+			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
 		case ac3Mode:
-			eff += cpu.ac[3]
+			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(noAccMode2Word.disp16)
+			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
 		}
 		wsPush(cpu, 0, eff)
 
