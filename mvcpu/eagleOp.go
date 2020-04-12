@@ -89,6 +89,14 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
 		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(int32(oneAccImm2Word.immS16))
 
+	case instrNNEG:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		s32 := int32(int16(cpu.ac[twoAcc1Word.acs]))
+		if s32 == minNegS16 {
+			cpu.SetOVR(true)
+		}
+		cpu.ac[twoAcc1Word.acd] = dg.DwordT(-s32)
+
 	case instrNSUB: // signed subtract
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		acDs16 := int16(cpu.ac[twoAcc1Word.acd])

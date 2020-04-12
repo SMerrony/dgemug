@@ -239,6 +239,7 @@ const (
 	instrNIO
 	instrNLDAI
 	instrNMUL
+	instrNNEG
 	instrNSALA
 	instrNSANA
 	instrNSBI
@@ -544,6 +545,7 @@ func InstructionsInit() {
 	instructionSet[instrNIO] = instrChars{"NIO", 0x6000, 0xff00, 1, IO_FLAGS_DEV_FMT, NOVA_IO, 0}
 	instructionSet[instrNLDAI] = instrChars{"NLDAI", 0xc629, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrNMUL] = instrChars{"NMUL", 0x8069, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
+	instructionSet[instrNNEG] = instrChars{"NNEG", 0x8509, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrNSALA] = instrChars{"NSALA", 0xe609, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrNSANA] = instrChars{"NSANA", 0xe629, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrNSBI] = instrChars{"NSBI", 0x85a9, 0x87ff, 1, IMM_ONEACC_FMT, EAGLE_OP, 0}
