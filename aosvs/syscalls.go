@@ -34,7 +34,7 @@ import (
 
 type syscallParmsT struct {
 	cpu       *mvcpu.CPUT
-	PID       int
+	PID, TID  int
 	ringMask  dg.PhysAddrT
 	agentChan chan AgentReqT
 }
@@ -96,7 +96,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
-	0333: {"?UIDSTAT", "?UIDS", scMultitasking, nil, nil},
+	0333: {"?UIDSTAT", "?UIDS", scMultitasking, scUidstat, nil},
 	0336: {"?RECREATE", "?RECR", scFileManage, scRecreate, scRecreate},
 	0415: {"?GECHR", "?GECH", scFileIO, scGechr, nil},
 	0500: {"?TASK", "?TASK", scMultitasking, nil, nil},
@@ -109,7 +109,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 }
 
 // syscall redirects System Call according to the syscalls map
-func syscall(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -121,11 +121,11 @@ func syscall(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentRe
 		log.Printf("%s System Call...\n", call.name)
 		logging.DebugPrint(logging.ScLog, "%s System Call...\n", call.name)
 	}
-	return call.fn(syscallParmsT{cpu, PID, ringMask, agent})
+	return call.fn(syscallParmsT{cpu, PID, TID, ringMask, agent})
 }
 
 // syscall16 redirects a 16-bit System Call according to the syscalls map
-func syscall16(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall16(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -137,7 +137,7 @@ func syscall16(callID dg.WordT, PID int, ringMask dg.PhysAddrT, agent chan Agent
 		log.Printf("%s System Call (16-bit)...\n", call.name)
 		logging.DebugPrint(logging.ScLog, "%s System Call (16-bit)...\n", call.name)
 	}
-	return call.fn16(syscallParmsT{cpu, PID, ringMask, agent})
+	return call.fn16(syscallParmsT{cpu, PID, TID, ringMask, agent})
 }
 
 // readPacket just loads a chunk of memory into a slice of words

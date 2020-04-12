@@ -22,7 +22,12 @@
 package aosvs
 
 import (
+	"log"
 	"time"
+
+	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
+	"github.com/SMerrony/dgemug/memory"
 )
 
 func scIfpu(p syscallParmsT) bool {
@@ -34,6 +39,20 @@ func scIfpu(p syscallParmsT) bool {
 
 // 	return true
 // }
+
+func scUidstat(p syscallParmsT) bool {
+	reqTID := p.cpu.GetAc(1)
+	if reqTID != 0xffff_ffff {
+		log.Panicln("?UIDSTAT request for another TID not yet implemented")
+	}
+	retPacketAddr := dg.PhysAddrT(p.cpu.GetAc(2))
+	memory.WriteWord(retPacketAddr, dg.WordT(p.PID)<<8|dg.WordT(p.TID))
+	memory.WriteWord(retPacketAddr+1, 0)
+	memory.WriteWord(retPacketAddr+2, dg.WordT(p.TID))
+	memory.WriteWord(retPacketAddr+3, 0)
+	logging.DebugPrint(logging.ScLog, "-------- Returning UTID: %#o, STID: %#o", dg.WordT(p.PID)<<8|dg.WordT(p.TID), p.TID)
+	return true
+}
 
 func scWdelay(p syscallParmsT) bool {
 	delayMs := int(p.cpu.GetAc(0))

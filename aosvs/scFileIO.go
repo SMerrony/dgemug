@@ -88,7 +88,7 @@ func scOpen(p syscallParmsT) bool {
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
 	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
@@ -100,7 +100,7 @@ func scOpen(p syscallParmsT) bool {
 		return false
 	}
 	memory.WriteWord(pktAddr+ich, areq.result.(agOpenRespT).channelNo)
-	logging.DebugPrint(logging.ScLog, "DEBUG: ----- Returned channel # %d\n", areq.result.(agOpenRespT).channelNo)
+	logging.DebugPrint(logging.ScLog, "----- Returned channel # %d\n", areq.result.(agOpenRespT).channelNo)
 	return true
 }
 
@@ -112,7 +112,7 @@ func scOpen16(p syscallParmsT) bool {
 	// recLen := memory.ReadWord(pktAddr+ircl)
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "DEBUG: ?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
 	var areq AgentReqT
 	var openReq = agOpenReqT{p.PID, path, options}
 	areq.action = agentFileOpen
@@ -137,7 +137,7 @@ func scRead(p syscallParmsT) bool {
 	if specs&ipkl != 0 {
 		log.Panic("ERROR: ?READ (32-bit) extended packet not yet implemented")
 	}
-	logging.DebugPrint(logging.ScLog, "DEBUG: ?READ (32-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
+	logging.DebugPrint(logging.ScLog, "?READ (32-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
 	var readReq = agReadReqT{channel, specs, length, readLine}
 	var areq = AgentReqT{agentFileRead, readReq, nil}
 	p.agentChan <- areq
@@ -161,7 +161,7 @@ func scRead16(p syscallParmsT) bool {
 	if specs&ipkl != 0 {
 		log.Panic("ERROR: ?READ (16-bit) extended packet not yet implemented")
 	}
-	logging.DebugPrint(logging.ScLog, "DEBUG: ?READ (16-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
+	logging.DebugPrint(logging.ScLog, "?READ (16-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
 	var readReq = agReadReqT{channel, specs, length, readLine}
 	var areq = AgentReqT{agentFileRead, readReq, nil}
 	p.agentChan <- areq

@@ -35,6 +35,7 @@ import (
 
 const (
 	agentAllocatePID = iota
+	agentAllocateTID
 	agentFileClose
 	agentFileOpen
 	agentFileRead
@@ -52,11 +53,15 @@ type AgentReqT struct {
 	result   interface{}
 }
 
-const maxPID = 255
+const (
+	maxPID = 255
+)
 
 type perProcessDataT struct {
 	invocationArgs []string
 	virtualRoot    string
+	sixteenBit     bool
+	tidsInUse      [maxTasksPerProc]bool
 }
 
 type agChannelT struct {
@@ -73,7 +78,8 @@ const consoleChan = 0
 var (
 	pidInUse       [maxPID]bool
 	perProcessData = map[int]perProcessDataT{}
-	agChannels     = map[int]*agChannelT{
+	// uniqueTIDs     []uint16
+	agChannels = map[int]*agChannelT{
 		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, rwc: nil, file: nil}, // @CONSOLE is always available
 	}
 )
@@ -101,6 +107,8 @@ func agentHandler(agentChan chan AgentReqT) {
 		switch request.action {
 		case agentAllocatePID:
 			request.result = agAllocatePID(request.reqParms.(agAllocatePIDReqT))
+		case agentAllocateTID:
+			request.result = agAllocateTID(request.reqParms.(agAllocateTIDReqT))
 		case agentFileClose:
 			request.result = agFileClose(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
@@ -134,9 +142,21 @@ func getNextFreePID() (pid int, ok bool) {
 	return 0, false // all PIDs in use
 }
 
+func getNextFreeTID(PID int) (TID uint8, ok bool) {
+	ppd := perProcessData[PID]
+	for t := 1; t < maxTasksPerProc; t++ { // Zero TID is invalid
+		if !ppd.tidsInUse[t] {
+			ppd.tidsInUse[t] = true
+			return uint8(t), true
+		}
+	}
+	return 0, false // all TIDs in use
+}
+
 type agAllocatePIDReqT struct {
 	invocationArgs []string
 	virtualRoot    string
+	sixteenBit     bool
 }
 type agAllocatePIDRespT struct {
 	PID int
@@ -148,8 +168,39 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 	if !resp.ok {
 		return resp
 	}
-	perProcessData[resp.PID] = perProcessDataT{invocationArgs: req.invocationArgs, virtualRoot: req.virtualRoot}
-	logging.DebugPrint(logging.ScLog, "DEBUG: AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
+	perProcessData[resp.PID] = perProcessDataT{
+		invocationArgs: req.invocationArgs,
+		virtualRoot:    req.virtualRoot,
+		sixteenBit:     req.sixteenBit,
+	}
+	logging.DebugPrint(logging.ScLog, "AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
+	if req.sixteenBit {
+		logging.DebugPrint(logging.ScLog, "----- 16-bit program type\n")
+	} else {
+		logging.DebugPrint(logging.ScLog, "----- 32-bit program type\n")
+	}
+	return resp
+}
+
+type agAllocateTIDReqT struct {
+	PID int
+}
+type agAllocateTIDRespT struct {
+	uniqueTID   uint16
+	tsw         dg.WordT
+	standardTID uint8
+	priority    dg.WordT
+}
+
+func agAllocateTID(req agAllocateTIDReqT) (resp agAllocateTIDRespT) {
+	var ok bool
+	resp.standardTID, ok = getNextFreeTID(req.PID)
+	if !ok {
+		return resp
+	}
+	resp.uniqueTID = uint16(req.PID)<<8 | uint16(resp.standardTID)
+	resp.tsw = 0      // TODO
+	resp.priority = 0 // TODO
 	return resp
 }
 
@@ -232,3 +283,16 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	logging.DebugPrint(logging.ScLog, "?GTMES returning %s\n", resp.result)
 	return resp
 }
+
+// type agUidstatReqT struct {
+// 	PID, TID int
+// }
+// type agUidstatRespT struct {
+// 	uniqueTID   uint16
+// 	tsw         dg.WordT
+// 	standardTID uint8
+// 	priority    dg.WordT
+// }
+// func agUidstat(req agUidstatReqT) (resp agUidstatRespT) {
+
+// }

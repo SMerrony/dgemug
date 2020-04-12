@@ -41,12 +41,12 @@ type taskT struct {
 	debugLogging             bool
 }
 
-func createTask(pid int, bit16 bool, tid int, agent chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
+func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
 	var task taskT
 	task.pid = pid
 	task.sixteenBit = bit16
-	task.tid = tid
-	task.agentChan = agent
+	// task.tid = tid
+	task.agentChan = agentChan
 	task.startAddr = startAddr
 	task.ringMask = startAddr & 0x7000_0000
 	task.wfp = wfp
@@ -56,7 +56,16 @@ func createTask(pid int, bit16 bool, tid int, agent chan AgentReqT, startAddr, w
 	task.wsfh = sfh
 	task.debugLogging = debugLogging
 
-	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", tid, startAddr)
+	// get pseudo-Agent to allocate TID
+	atreq := agAllocateTIDReqT{pid}
+	areq := AgentReqT{agentAllocateTID, atreq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	if areq.result.(agAllocateTIDRespT).standardTID == 0 {
+		log.Panicln("ERROR: Could not allocat TID for new task")
+	}
+	task.tid = int(areq.result.(agAllocateTIDRespT).standardTID)
+	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", task.tid, startAddr)
 	log.Printf("-----  Start Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", startAddr, wfp, wsp, wsb, wsl, sfh)
 	return &task
 }
@@ -107,11 +116,11 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			}
 			var scOk bool
 			if task.sixteenBit {
-				scOk = syscall16(callID, task.pid, task.ringMask, task.agentChan, &cpu)
+				scOk = syscall16(callID, task.pid, task.tid, task.ringMask, task.agentChan, &cpu)
 				nfp := memory.ReadWord(task.ringMask | memory.NfpLoc)
 				cpu.SetAc(3, dg.DwordT(nfp)|dg.DwordT(task.ringMask))
 			} else {
-				scOk = syscall(callID, task.pid, task.ringMask, task.agentChan, &cpu)
+				scOk = syscall(callID, task.pid, task.tid, task.ringMask, task.agentChan, &cpu)
 				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 			}
 			mvcpu.WsPop(&cpu, 7)
