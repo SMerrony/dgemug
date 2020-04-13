@@ -301,6 +301,10 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[twoAcc1Word.acs] = cpu.ac[twoAcc1Word.acd]
 		cpu.ac[twoAcc1Word.acd] = dwd
 
+	case instrWXOR:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.ac[twoAcc1Word.acd] = cpu.ac[twoAcc1Word.acd] ^ cpu.ac[twoAcc1Word.acs]
+
 	case instrWXORI:
 		oneAccImm3Word := iPtr.variant.(oneAccImm3WordT)
 		cpu.ac[oneAccImm3Word.acd] ^= dg.DwordT(oneAccImm3Word.immU32)
