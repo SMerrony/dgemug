@@ -69,6 +69,21 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
+	case instrXFLDD:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpQuad := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGdoubleToFloat64(fpQuad)
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+
+	case instrXFSTD:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpQuad := memory.Float64toDGdouble(cpu.fpac[oneAccModeInd2Word.acd])
+		memory.WriteDWord(addr, dg.DwordT(fpQuad>>32))
+		memory.WriteDWord(addr+2, dg.DwordT(fpQuad))
+
 	default:
 		log.Panicf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
