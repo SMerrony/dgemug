@@ -127,10 +127,10 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVR(false)
 
 	case instrWFPOP:
-		cpu.fpac[3] = float64(int(wsPopQWord(cpu, 0)))
-		cpu.fpac[2] = float64(int(wsPopQWord(cpu, 0)))
-		cpu.fpac[1] = float64(int(wsPopQWord(cpu, 0)))
-		cpu.fpac[0] = float64(int(wsPopQWord(cpu, 0)))
+		cpu.fpac[3] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
+		cpu.fpac[2] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
+		cpu.fpac[1] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
+		cpu.fpac[0] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
 		tmpQwd := wsPopQWord(cpu, 0)
 		cpu.fpsr = 0
 		any := false
@@ -161,10 +161,10 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrWFPSH:
 		wsPushQWord(cpu, cpu.fpsr) // TODO Is this right?
-		wsPushQWord(cpu, dg.QwordT(cpu.fpac[0]))
-		wsPushQWord(cpu, dg.QwordT(cpu.fpac[1]))
-		wsPushQWord(cpu, dg.QwordT(cpu.fpac[2]))
-		wsPushQWord(cpu, dg.QwordT(cpu.fpac[3]))
+		wsPushQWord(cpu, memory.Float64toDGdouble(cpu.fpac[0]))
+		wsPushQWord(cpu, memory.Float64toDGdouble(cpu.fpac[1]))
+		wsPushQWord(cpu, memory.Float64toDGdouble(cpu.fpac[2]))
+		wsPushQWord(cpu, memory.Float64toDGdouble(cpu.fpac[3]))
 
 	case instrWMSP:
 		sMove := int(int32(cpu.ac[iPtr.ac]) * 2)

@@ -29,24 +29,11 @@ import (
 )
 
 // Float64toDGsingle converts a standard Go float64 into the DG Single Precision format
-// func Float64toDGsingle(f float64) (s dg.DwordT) {
-// 	// // sign - first (LH) bit
-// 	// if f < 0.0 {
-// 	// 	SetDwbit(&s, 0)
-// 	// 	f *= -1.0
-// 	// 	log.Println("Negative")
-// 	// }
-// 	// // exponent - next 7 bits in excess-64
-// 	// exp := int8(math.Floor(math.Log10(f)))
-// 	// log.Printf("Exp: %d", exp)
-// 	// s |= dg.DwordT((exp+64)&0x7f) << 24
-// 	// // mantissa
-// 	// mantissa := int32(f / math.Pow10(int(exp)))
-// 	// log.Printf("Mantissa: %d", mantissa)
-// 	// s |= dg.DwordT(mantissa) >> 8 & 0x00ff_ffff
-// 	// return s
-
-// }
+func Float64toDGsingle(f float64) (s dg.DwordT) {
+	q := Float64toDGdouble(f)
+	s = dg.DwordT(q >> 32)
+	return s
+}
 
 // Float64toDGdouble converts a standard Go float64 into the DG Double Precision format
 func Float64toDGdouble(f float64) (q dg.QwordT) {
@@ -66,13 +53,9 @@ func Float64toDGdouble(f float64) (q dg.QwordT) {
 
 // DGsingleToFloat64 converts a DG Single Precison number to Go float64
 func DGsingleToFloat64(s dg.DwordT) (f float64) {
-	exp := int8((s&0x7f00_0000)>>24) - 64
-	mantissa := int64(s & 0x00ff_ffff)
-	f = float64(mantissa) * math.Pow10(int(exp))
-	if TestDwbit(s, 0) {
-		f = f * -1.0
-	}
-	return f
+	q := dg.QwordT(s)
+	q <<= 32
+	return DGdoubleToFloat64(q)
 }
 
 // DGdoubleToFloat64 converts a DG Double Precison number to Go float64
