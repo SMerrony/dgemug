@@ -490,6 +490,21 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc += 2
 		}
 
+	case instrXWDO:
+		threeWordDo := iPtr.variant.(threeWordDoT)
+		loopVarAddr := resolve15bitDisplacement(cpu, threeWordDo.ind, threeWordDo.mode, dg.WordT(threeWordDo.disp15), iPtr.dispOffset)
+		loopVar := int32(memory.ReadDWord(loopVarAddr))
+		loopVar++
+		memory.WriteDWord(loopVarAddr, dg.DwordT(loopVar))
+		acVar := int32(cpu.ac[threeWordDo.acd])
+		cpu.ac[threeWordDo.acd] = dg.DwordT(loopVar)
+		if loopVar > acVar {
+			// loop ends
+			cpu.pc = cpu.pc + 1 + dg.PhysAddrT(threeWordDo.offsetU16)
+		} else {
+			cpu.pc += dg.PhysAddrT(iPtr.instrLength)
+		}
+
 	case instrXWDSZ:
 		tmpAddr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, dg.WordT(iPtr.disp15), iPtr.dispOffset)
 		dwd := memory.ReadDWord(tmpAddr)
