@@ -964,7 +964,6 @@ const (
 //        5       ----
 //        6       6130    ^Y      ^X      ^K      ^Z,SPACE,^Z
 //        7-15  (FOR FUTURE EXPANSION)
-
 )
 
 const (
@@ -990,4 +989,22 @@ const (
 	faca = 0x8000 >> faab // APPEND
 	facr = 0x8000 >> farb // READ
 	face = 0x8000 >> faeb // EXECUTE
+)
+
+const (
+	// SYSTEM RECORD I/O PACKET FOR ALL DISK AND MAG. TAPE
+	// AND MCA REQUESTS FROM EITHER THE AGENT OR USER CONTEXTS.
+	//       USED FOR ?RDB/?WRB, ?PRDB/PWRB, ?SPAGE AND ?ALLOCATE
+	//
+	psti = 0        // RECORD COUNT (RIGHT), STATUS IN (LEFT)
+	psto = psti + 1 // RESERVED (LEFT) PRIORITY (RIGHT)
+	pcad = psto + 1 // WORD ADDRESS FOR DATA
+	pcdl = pcad + 1 // LOW ORDER PORTION OF pcad
+	prnh = pcdl + 1 // RECORD NUMBER (HIGH) LINK # (MCA)
+	prnl = prnh + 1 // RECORD NUMBER (LOW)  RETRY COUNT (MCA)
+	prcl = prnl + 1 // MAX LENGTH OF EACH RECORD (MAG TAPE)
+	//                 BYTE COUNT IN LAST BLOCK (DISK WRITES)
+	//                 BYTE COUNT (MCA)
+	pres = prcl + 1 // RESERVED WORD
+	pblt = pres + 1 // PACKET SIZE
 )

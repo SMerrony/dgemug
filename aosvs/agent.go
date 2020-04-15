@@ -44,6 +44,7 @@ const (
 	agentGetChars
 	agentGetMessage
 	agentSharedOpen
+	agentSharedRead
 )
 
 // AgentReqT is the type of messages passed to and from the pseudo-agent
@@ -125,6 +126,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agGetMessage(request.reqParms.(agGtMesReqT))
 		case agentSharedOpen:
 			request.result = agSharedOpen(request.reqParms.(agSharedOpenReqT))
+		case agentSharedRead:
+			request.result = agSharedRead(request.reqParms.(agSharedReadReqT))
 		default:
 			log.Panicf("ERROR: Agent received unknown request type %d\n", request.action)
 		}

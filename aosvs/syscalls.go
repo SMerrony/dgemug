@@ -77,18 +77,20 @@ var syscalls = map[dg.WordT]syscallDescT{
 	036:  {"?GTOD", "?GTOD", scSystem, scGtod, scGtod},
 	041:  {"?GDAY", "?GDAY", scSystem, scGday, scGday},
 	044:  {"?SSHPT", "?SSHP", scMemory, scSshpt, nil},
+	060:  {"?SPAGE", "?SPAG", scMemory, scSpage, nil},
 	063:  {"?SOPEN", "?SOPE", scMemory, scSopen, nil},
 	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},
 	072:  {"?GUNM", "?GUNM", scProcess, scGunm, nil},
 	073:  {"?GSHPT", "?GSHP", scMemory, scGshpt, scGshpt},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
 	0111: {"?GNAME", "?GNAM", scFileManage, scGname, scGname},
+	0116: {"?PNAME", "?PNAM", scProcess, nil, nil},
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
 	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
 	0167: {"?CON", "?CON", scConnection, nil, nil},
 	0170: {"?DCON", "?DCON", scConnection, nil, nil},
-	0171: {"?SERVE", "?SERV", scConnection, nil, nil},
+	0171: {"?SERVE", "?SERV", scConnection, scDummy, nil},
 	0172: {"?RESIGN", "?RESI", scConnection, nil, nil},
 	0263: {"?WDELAY", "?WDEL", scMultitasking, scWdelay, nil},
 	0265: {"?LEFE", "?LEFE", scUserDev, scLefe, scLefe},
@@ -203,5 +205,6 @@ func writeBytes(bpAddr dg.DwordT, pc dg.PhysAddrT, arr []byte) {
 
 // scDummy is a stub func for sys calls we are ignoring for now
 func scDummy(p syscallParmsT) bool {
+	logging.DebugPrint(logging.ScLog, "----- Call Ignored\n")
 	return true
 }

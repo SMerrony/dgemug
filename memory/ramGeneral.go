@@ -50,6 +50,7 @@ func ReadByteEclipseBA(pcAddr dg.PhysAddrT, byteAddr16 dg.WordT) dg.ByteT {
 }
 
 // WriteByte takes a normal word addr, low-byte flag and datum byte
+
 func WriteByte(wordAddr dg.PhysAddrT, loByte bool, b dg.ByteT) {
 	wd := ReadWord(wordAddr)
 	if loByte {

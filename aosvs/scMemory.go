@@ -79,6 +79,26 @@ func scSopen(p syscallParmsT) bool {
 	return true
 }
 
+func scSpage(p syscallParmsT) bool {
+	fileChan := int(p.cpu.GetAc(1))
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
+	diskBytesCount := int(memory.ReadWord(pktAddr+psti)) * 512
+	diskStartBlock := int64(memory.ReadDWord(pktAddr+prnh)) * 512
+	memStartAddr := dg.PhysAddrT(memory.ReadDWord(pktAddr + pcad))
+	asrRec := agSharedReadReqT{fileChan, diskBytesCount, diskStartBlock}
+	areq := AgentReqT{agentSharedRead, asrRec, nil}
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	if areq.result.(agSharedReadRespT).ac0 != 0 {
+		p.cpu.SetAc(0, areq.result.(agSharedReadRespT).ac0)
+		return false
+	}
+	//writeBytes(memStartAddr, p.ringMask, areq.result.(agSharedReadRespT).data)
+	words := memory.WordsFromBytes(areq.result.(agSharedReadRespT).data)
+	memory.MapSlice(memStartAddr, words, true)
+	return true
+}
+
 func scSshpt(p syscallParmsT) bool { // TODO removing pages
 	firstPageNo := p.cpu.GetAc(0)
 	newSize := p.cpu.GetAc(1)

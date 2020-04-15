@@ -223,7 +223,7 @@ func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
 		flags = os.O_RDWR
 	}
 	if req.filename[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
-		logging.DebugPrint(logging.ScLog, "DEBUG: ----- Attempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
+		logging.DebugPrint(logging.ScLog, "------ Attempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
 		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.filename, flags, 0755)
 	} else {
 		fp, err = os.OpenFile(req.filename, flags, 0755)
@@ -236,7 +236,41 @@ func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
 	newChan := len(agChannels)
 	agChannels[newChan] = &agChan
 	resp.channelNo = dg.DwordT(newChan)
+	logging.DebugPrint(logging.ScLog, "------ Returning channel: %d.\n", newChan)
+	return resp
+}
 
+type agSharedReadReqT struct {
+	chanNo   int
+	length   int
+	startPos int64
+}
+type agSharedReadRespT struct {
+	ac0  dg.DwordT
+	data []byte
+}
+
+func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
+	_, isOpen := agChannels[req.chanNo]
+	if isOpen {
+		buf := make([]byte, req.length)
+		logging.DebugPrint(logging.ScLog, "------ Attempting to Seek to byte: %d. on channel: %d.\n", req.startPos, req.chanNo)
+		_, err := agChannels[req.chanNo].file.Seek(req.startPos, 0)
+		if err != nil {
+			log.Panicf("ERROR: ?SPAGE positioning failed: %v", err)
+		}
+		n, err := agChannels[req.chanNo].file.Read(buf)
+		if n == 0 && err == io.EOF {
+			// It looks as if we should create pages here - can't find it in the docs though...
+			resp.data = make([]byte, req.length)
+			logging.DebugPrint(logging.ScLog, "------ Read no bytes from channnel #%d., returning %d. empty bytes\n", req.chanNo, req.length)
+		} else {
+			resp.data = buf
+			logging.DebugPrint(logging.ScLog, "------ Read %d. bytes from channnel #%d.\n", n, req.chanNo)
+		}
+	} else {
+		log.Panic("ERROR: attempt to ?SPAGE from unopened file")
+	}
 	return resp
 }
 

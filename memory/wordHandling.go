@@ -83,3 +83,16 @@ func SwapBytes(wd dg.WordT) (res dg.WordT) {
 	res = (wd >> 8) | ((wd & 0x00ff) << 8)
 	return res
 }
+
+// WordsFromBytes converts a slice of (Go) bytes into a slice of DG Words
+func WordsFromBytes(ba []byte) (wa []dg.WordT) {
+	wordsLen := len(ba) / 2
+	wa = make([]dg.WordT, wordsLen)
+	for wordAddr := 0; wordAddr < wordsLen; wordAddr++ {
+		wa[wordAddr] = dg.WordT(ba[wordAddr*2])<<8 | dg.WordT(ba[wordAddr*2+1])
+	}
+	if len(ba)%2 == 1 {
+		wa = append(wa, dg.WordT(ba[len(ba)-1])<<8)
+	}
+	return wa
+}
