@@ -21,6 +21,7 @@ package mvcpu
 
 import (
 	"log"
+	"math"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -87,6 +88,16 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.fpac[iPtr.ac] = -cpu.fpac[iPtr.ac]
 		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
 		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
+
+	case instrFRDS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		if memory.TestQwbit(cpu.fpsr, 8) { // FIXME the first assignment is not right...
+			cpu.fpac[twoAcc1Word.acd] = math.Float64frombits(math.Float64bits(cpu.fpac[twoAcc1Word.acs]) & 0xffff_ffff_0000_0000)
+		} else {
+			cpu.fpac[twoAcc1Word.acd] = math.Float64frombits(math.Float64bits(cpu.fpac[twoAcc1Word.acs]) & 0xffff_ffff_0000_0000)
+		}
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	case instrFRH:
 		cpu.ac[0] = memory.Float64toDGsingle(cpu.fpac[iPtr.ac]) >> 16

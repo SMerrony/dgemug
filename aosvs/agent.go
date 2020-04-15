@@ -62,6 +62,7 @@ type perProcessDataT struct {
 	invocationArgs []string
 	virtualRoot    string
 	sixteenBit     bool
+	name           string
 	tidsInUse      [maxTasksPerProc]bool
 }
 
@@ -160,6 +161,7 @@ type agAllocatePIDReqT struct {
 	invocationArgs []string
 	virtualRoot    string
 	sixteenBit     bool
+	name           string
 }
 type agAllocatePIDRespT struct {
 	PID int
@@ -175,8 +177,9 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 		invocationArgs: req.invocationArgs,
 		virtualRoot:    req.virtualRoot,
 		sixteenBit:     req.sixteenBit,
+		name:           req.name,
 	}
-	logging.DebugPrint(logging.ScLog, "AGENT assigned PID %d  Args: %v\n", resp.PID, req.invocationArgs)
+	logging.DebugPrint(logging.ScLog, "AGENT assigned PID %d  Name: %s Args: %v\n", resp.PID, req.name, req.invocationArgs)
 	if req.sixteenBit {
 		logging.DebugPrint(logging.ScLog, "----- 16-bit program type\n")
 	} else {
@@ -274,7 +277,11 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 			resp.result = argS + "\x00"
 			resp.ac0 = dg.DwordT(len(argS))
 		}
-	// case gtsw:
+	case gtsw:
+		// TODO faked for now
+		logging.DebugPrint(logging.ScLog, "WARNING: Faking empty ?GTSW response to ?GTMES system call\n")
+		resp.ac0 = 0xffff_ffff
+		resp.ac1 = 0
 	case gsws:
 		// TODO faked for now
 		logging.DebugPrint(logging.ScLog, "WARNING: Faking empty ?GSWS response to ?GTMES system call\n")

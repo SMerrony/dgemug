@@ -58,7 +58,7 @@ func IsPageMapped(page int) (locked bool) {
 // MapPage maps (allocates) a 1kW page of virtual memory for the process
 func MapPage(page int, shared bool) {
 	if IsPageMapped(page) {
-		log.Fatalf("ERROR: Attempt to map already-mapped memory page %#o", page)
+		log.Panicf("ERROR: Attempt to map already-mapped memory page %#o", page)
 	}
 	virtualRamMu.Lock()
 	var emptyPage pageT

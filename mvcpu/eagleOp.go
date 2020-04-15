@@ -109,6 +109,9 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.ac[twoAcc1Word.acd] = memory.SexWordToDword(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs]))
 
+	case instrSPSR:
+		cpu.psr = dg.WordT(cpu.ac[0] >> 16)
+
 	case instrSSPT: /* NO-OP - see p.8-5 of MV/10000 Sys Func Chars */
 		log.Println("INFO: SSPT is a No-Op on this machine, continuing")
 

@@ -70,6 +70,18 @@ func scGunm(p syscallParmsT) bool {
 	return true
 }
 
+func scPname(p syscallParmsT) bool {
+	switch p.cpu.GetAc(1) {
+	case 0xffff_ffff: // get PID of caller
+		p.cpu.SetAc(1, dg.DwordT(p.PID))
+	case 0:
+		log.Panic("ERROR: ?PNAME for target proc PID not yet implemented")
+	default:
+		log.Panic("ERROR: ?PNAME for target proc name not yet implemented")
+	}
+	return true
+}
+
 func scSysprv(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	funcCode := memory.ReadWord(pktAddr + sysprvPktFunc)

@@ -22,6 +22,7 @@ package mvcpu
 import (
 	"fmt"
 	"log"
+	"math"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -29,6 +30,45 @@ import (
 
 func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
+
+	case instrLFLDD:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd3Word.acd] = memory.DGdoubleToFloat64(qwd)
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
+	case instrLFLDS:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		dwd := memory.ReadDWord(addr)
+		cpu.fpac[oneAccModeInd3Word.acd] = memory.DGsingleToFloat64(dwd)
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
+	case instrLFSTS:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		memory.WriteDWord(addr, memory.Float64toDGsingle(cpu.fpac[oneAccModeInd3Word.acd]))
+
+	case instrLFMMS:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		single := memory.DGsingleToFloat64(memory.ReadDWord(addr))
+		cpu.fpac[oneAccModeInd3Word.acd] *= single
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
+	case instrWFFAD:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.ac[twoAcc1Word.acs] = dg.DwordT(int32(math.Round(cpu.fpac[twoAcc1Word.acd])))
+
+	case instrWFLAD:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] = float64(int32(cpu.ac[twoAcc1Word.acs])) // N.B INT32 conversion required!!!
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	case instrWSTI:
 		cpu.ac[2] = cpu.ac[3]
@@ -63,17 +103,27 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 			log.Panicf("ERROR: Decimal data type %d not yet supported\n", dataType)
 		}
 
-	case instrWFLAD:
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpu.fpac[twoAcc1Word.acd] = float64(int32(cpu.ac[twoAcc1Word.acs])) // N.B INT32 conversion required!!!
-		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
-		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
-
 	case instrXFLDD:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
 		fpQuad := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
 		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGdoubleToFloat64(fpQuad)
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+
+	case instrXFLDS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpSingle := memory.ReadDWord(addr)
+		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGsingleToFloat64(fpSingle)
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+
+	case instrXFMMS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpSingle := memory.ReadDWord(addr)
+		cpu.fpac[oneAccModeInd2Word.acd] *= memory.DGsingleToFloat64(fpSingle)
 		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
 
