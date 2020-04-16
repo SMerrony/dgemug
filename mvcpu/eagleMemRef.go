@@ -154,19 +154,21 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXLDB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
-		disp := int32(oneAccMode2Word.disp16 >> 1)
+		var eff dg.DwordT
 		switch oneAccMode2Word.mode {
 		case absoluteMode:
-			disp &= 0x1fff_ffff
-			disp |= int32(cpu.pc & 0x7000_0000)
-			// case ac2Mode:
-			// 	cpu.ac[2] >>= 1
-			// case ac3Mode:
-			// 	cpu.ac[3] >>= 1
-
+			eff = (dg.DwordT(cpu.pc&0x7000_0000) << 1) | dg.DwordT(oneAccMode2Word.disp16)
+		case pcMode:
+			eff = dg.DwordT(cpu.pc<<1) | dg.DwordT(oneAccMode2Word.disp16)
+		case ac2Mode:
+			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(oneAccMode2Word.disp16)
+			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
+		case ac3Mode:
+			eff = dg.DwordT(cpu.ac[3]<<1) | dg.DwordT(oneAccMode2Word.disp16)
+			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
 		}
-		addr := resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset)
-		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(memory.ReadByte(addr, oneAccMode2Word.bitLow)) & 0x00ff
+		//addr := resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset)
+		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(memory.ReadByte(dg.PhysAddrT(eff>>1), oneAccMode2Word.bitLow)) & 0x00ff
 
 	case instrXLEF:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
@@ -227,7 +229,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		if !ok {
 			return false
 		}
-		cpu.ac[oneAccModeInd2Word.acd] = memory.SexWordToDword(wd)
+		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(int32(int16(wd)))
 
 	case instrXNSTA:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)

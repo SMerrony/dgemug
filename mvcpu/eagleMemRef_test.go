@@ -281,8 +281,8 @@ func TestXLDB(t *testing.T) {
 	memory.WriteByte(100, true, 'B')
 	oneAccMode2Word.acd = 2
 	oneAccMode2Word.mode = absoluteMode
-	cpu.ac[2] = 400 << 1 // should not be used in absolute mode
-	oneAccMode2Word.disp16 = 100 << 1
+	cpu.ac[2] = 400 // should not be used in absolute mode
+	oneAccMode2Word.disp16 = 200
 	oneAccMode2Word.bitLow = false // get high byte 'A'
 	iPtr.variant = oneAccMode2Word
 	if !eagleMemRef(cpu, &iPtr) {
@@ -294,8 +294,8 @@ func TestXLDB(t *testing.T) {
 
 	oneAccMode2Word.acd = 2
 	oneAccMode2Word.mode = absoluteMode
-	cpu.ac[2] = 400 << 1 // should not be used in absolute mode
-	oneAccMode2Word.disp16 = 100 << 1
+	cpu.ac[2] = 400 // should not be used in absolute mode
+	oneAccMode2Word.disp16 = 200
 	oneAccMode2Word.bitLow = true // get low byte 'B'
 	iPtr.variant = oneAccMode2Word
 	if !eagleMemRef(cpu, &iPtr) {
