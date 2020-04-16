@@ -154,21 +154,8 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXLDB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
-		var eff dg.DwordT
-		switch oneAccMode2Word.mode {
-		case absoluteMode:
-			eff = (dg.DwordT(cpu.pc&0x7000_0000) << 1) | dg.DwordT(oneAccMode2Word.disp16)
-		case pcMode:
-			eff = dg.DwordT(cpu.pc<<1) | dg.DwordT(oneAccMode2Word.disp16)
-		case ac2Mode:
-			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(oneAccMode2Word.disp16)
-			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
-		case ac3Mode:
-			eff = dg.DwordT(cpu.ac[3]<<1) | dg.DwordT(oneAccMode2Word.disp16)
-			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
-		}
-		//addr := resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset)
-		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(memory.ReadByte(dg.PhysAddrT(eff>>1), oneAccMode2Word.bitLow)) & 0x00ff
+		eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
+		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(memory.ReadByte(eff>>1, oneAccMode2Word.bitLow)) & 0x00ff
 
 	case instrXLEF:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
@@ -176,6 +163,8 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXLEFB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
+		// eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
+		// cpu.ac[oneAccMode2Word.acd] = dg.DwordT(eff)
 		disp := int32(oneAccMode2Word.disp16)
 		if oneAccMode2Word.mode == absoluteMode {
 			disp &= 0x1fff_ffff
@@ -187,7 +176,6 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 			addr++
 		}
 		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(addr)
-
 	case instrXNADI, instrXNSBI:
 		immMode2Word := iPtr.variant.(immMode2WordT)
 		addr := resolve15bitDisplacement(cpu, immMode2Word.ind, immMode2Word.mode, dg.WordT(immMode2Word.disp15), iPtr.dispOffset)
@@ -238,13 +226,9 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXSTB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
+		eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
 		byt := dg.ByteT(cpu.ac[oneAccMode2Word.acd])
-		disp := int32(oneAccMode2Word.disp16)
-		if oneAccMode2Word.mode == absoluteMode {
-			disp &= 0x1fff_ffff
-			disp |= int32(cpu.pc & 0x7000_0000)
-		}
-		memory.WriteByte(resolve32bitEffAddr(cpu, ' ', oneAccMode2Word.mode, disp, iPtr.dispOffset), oneAccMode2Word.bitLow, byt)
+		memory.WriteByte(eff, oneAccMode2Word.bitLow, byt)
 
 	case instrXWADD, instrXWSUB, instrXWMUL:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)

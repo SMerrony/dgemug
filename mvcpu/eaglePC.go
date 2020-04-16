@@ -61,7 +61,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			dwd = dg.DwordT(iPtr.argCount) & 0x00007fff
 		}
-		wsPush(cpu, 0, dwd)
+		wsPush(cpu, dwd)
 		cpu.SetOVR(false)
 		cpu.pc = resolve31bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp31, iPtr.dispOffset)
 
@@ -106,7 +106,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLPSHJ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
-		wsPush(cpu, 0, dg.DwordT(cpu.pc)+3)
+		wsPush(cpu, dg.DwordT(cpu.pc)+3)
 		cpu.pc = resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
 
 	case instrLWDO: // Wide Do Until Greater Than
@@ -442,7 +442,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			dwd = dg.DwordT(noAccModeInd3WordXcall.argCount) & 0x00007fff
 		}
-		wsPush(cpu, 0, dwd)
+		wsPush(cpu, dwd)
 		cpu.pc = resolve15bitDisplacement(cpu, noAccModeInd3WordXcall.ind, noAccModeInd3WordXcall.mode,
 			dg.WordT(noAccModeInd3WordXcall.disp15), iPtr.dispOffset)
 
@@ -456,7 +456,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrXNDO: // Narrow Do Until Greater Than
 		threeWordDo := iPtr.variant.(threeWordDoT)
 		loopVarAddr := resolve15bitDisplacement(cpu, threeWordDo.ind, threeWordDo.mode, dg.WordT(threeWordDo.disp15), iPtr.dispOffset)
-		loopVar := int32(memory.SexWordToDword(memory.DwordGetLowerWord(memory.ReadDWord(loopVarAddr))))
+		loopVar := int32(int16(memory.ReadWord(loopVarAddr + 1)))
 		loopVar++
 		memory.WriteDWord(loopVarAddr, dg.DwordT(loopVar))
 		acVar := int32(cpu.ac[threeWordDo.acd])

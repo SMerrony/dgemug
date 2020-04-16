@@ -77,7 +77,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLPEF:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
-		wsPush(cpu, 0, dg.DwordT(resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)))
+		wsPush(cpu, dg.DwordT(resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)))
 		cpu.SetOVR(false)
 
 	case instrLPEFB:
@@ -92,7 +92,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		case ac3Mode:
 			eff |= (cpu.ac[3] << 1)
 		}
-		wsPush(cpu, 0, eff<<1)
+		wsPush(cpu, eff<<1)
 		cpu.SetOVR(false)
 
 	case instrSTAFP:
@@ -202,7 +202,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		lastAc := twoAcc1Word.acd
 		thisAc := firstAc
 		for {
-			wsPush(cpu, 0, cpu.ac[thisAc])
+			wsPush(cpu, cpu.ac[thisAc])
 			if thisAc == lastAc {
 				break
 			}
@@ -250,41 +250,18 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrXPEF:
-		wsPush(cpu, 0, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
+		wsPush(cpu, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
 
 	case instrXPEFB:
 		noAccMode2Word := iPtr.variant.(noAccMode2WordT)
 		// FIXME check for overflow
-		// eff := dg.DwordT(noAccMode2Word.disp16)
-		// switch noAccMode2Word.mode {
-		// case absoluteMode:
-		// case pcMode:
-		// 	eff += dg.DwordT(cpu.pc)
-		// case ac2Mode:
-		// 	eff += cpu.ac[2]
-		// case ac3Mode:
-		// 	eff += cpu.ac[3]
-		// }
-		// wsPush(cpu, 0, eff)
-		var eff dg.DwordT
-		switch noAccMode2Word.mode {
-		case absoluteMode:
-			eff = (dg.DwordT(cpu.pc&0x7000_0000) << 1) | dg.DwordT(noAccMode2Word.disp16)
-		case pcMode:
-			eff = dg.DwordT(cpu.pc<<1) | dg.DwordT(noAccMode2Word.disp16)
-		case ac2Mode:
-			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(noAccMode2Word.disp16)
-			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
-		case ac3Mode:
-			eff = dg.DwordT(cpu.ac[2]<<1) | dg.DwordT(noAccMode2Word.disp16)
-			eff |= (dg.DwordT(cpu.pc&0x7000_0000) << 1)
-		}
-		wsPush(cpu, 0, eff)
+		eff := resolve16bitByteAddr(cpu, noAccMode2Word.mode, noAccMode2Word.disp16, noAccMode2Word.lowByte)
+		wsPush(cpu, dg.DwordT(eff))
 
 	case instrXPSHJ:
 		// FIXME check for overflow
 		immMode2Word := iPtr.variant.(immMode2WordT)
-		wsPush(cpu, 0, dg.DwordT(cpu.pc+2))
+		wsPush(cpu, dg.DwordT(cpu.pc+2))
 		//cpu.pc = resolve32bitEffAddr(cpu, immMode2Word.ind, immMode2Word.mode, int32(immMode2Word.disp15), iPtr.dispOffset)
 		cpu.pc = (cpu.pc & ringMask32) | resolve15bitDisplacement(cpu, immMode2Word.ind, immMode2Word.mode, dg.WordT(immMode2Word.disp15), iPtr.dispOffset)
 		return true
@@ -309,11 +286,11 @@ func wsav(cpu *CPUT, u2wd *unique2WordT) {
 	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpu, 0, cpu.ac[0])          // 1
-	wsPush(cpu, 0, cpu.ac[1])          // 2
-	wsPush(cpu, 0, cpu.ac[2])          // 3
-	wsPush(cpu, 0, dg.DwordT(cpu.wfp)) // 4
-	wsPush(cpu, 0, dwd)                // 5
+	wsPush(cpu, cpu.ac[0])          // 1
+	wsPush(cpu, cpu.ac[1])          // 2
+	wsPush(cpu, cpu.ac[2])          // 3
+	wsPush(cpu, dg.DwordT(cpu.wfp)) // 4
+	wsPush(cpu, dwd)                // 5
 	cpu.wfp = cpu.wsp
 	cpu.ac[3] = dg.DwordT(cpu.wsp)
 	dwdCnt := uint(u2wd.immU16)
@@ -327,12 +304,12 @@ func wsPushSpecialReturnBlock(cpu *CPUT) {
 	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
-	wsPush(cpu, 0, cpu.ac[0])                            // 2
-	wsPush(cpu, 0, cpu.ac[1])                            // 3
-	wsPush(cpu, 0, cpu.ac[2])                            // 4
-	wsPush(cpu, 0, dg.DwordT(cpu.wfp))                   // 5
-	wsPush(cpu, 0, dwd)                                  // 6
+	wsPush(cpu, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
+	wsPush(cpu, cpu.ac[0])                            // 2
+	wsPush(cpu, cpu.ac[1])                            // 3
+	wsPush(cpu, cpu.ac[2])                            // 4
+	wsPush(cpu, dg.DwordT(cpu.wfp))                   // 5
+	wsPush(cpu, dwd)                                  // 6
 }
 
 // wssav is common to WSSVR and WSSVS
@@ -351,7 +328,7 @@ func wssav(cpu *CPUT, u2wd *unique2WordT) {
 }
 
 // wsPush - PUSH a doubleword onto the Wide Stack
-func wsPush(cpu *CPUT, seg dg.PhysAddrT, data dg.DwordT) {
+func wsPush(cpu *CPUT, data dg.DwordT) {
 	// TODO overflow/underflow handling - either here or in instruction?
 	cpu.wsp += 2
 	memory.WriteDWord(cpu.wsp, data)
@@ -445,12 +422,12 @@ func wspHandleFault(cpu *CPUT, instrLen int, primaryFault, secondaryFault int) {
 	if cpu.carry {
 		dwd |= 0x80000000
 	}
-	wsPush(cpu, 0, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
-	wsPush(cpu, 0, cpu.ac[0])                            // 2
-	wsPush(cpu, 0, cpu.ac[1])                            // 3
-	wsPush(cpu, 0, cpu.ac[2])                            // 4
-	wsPush(cpu, 0, dg.DwordT(cpu.wfp))                   // 5
-	wsPush(cpu, 0, dwd)                                  // 6
+	wsPush(cpu, memory.DwordFromTwoWords(cpu.psr, 0)) // 1
+	wsPush(cpu, cpu.ac[0])                            // 2
+	wsPush(cpu, cpu.ac[1])                            // 3
+	wsPush(cpu, cpu.ac[2])                            // 4
+	wsPush(cpu, dg.DwordT(cpu.wfp))                   // 5
+	wsPush(cpu, dwd)                                  // 6
 	// Step 3
 	memory.ClearWbit(&cpu.psr, 0) // OVK
 	memory.ClearWbit(&cpu.psr, 1) // OVR

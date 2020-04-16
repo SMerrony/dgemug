@@ -33,7 +33,7 @@ import (
 func scCreate(p syscallParmsT) bool {
 	bpFilename := p.cpu.GetAc(0)
 	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
-	log.Fatalf("ERROR: ?CREATE called for %s - not yet implemented", filename)
+	log.Panicf("ERROR: ?CREATE called for %s - not yet implemented", filename)
 	return true
 }
 
@@ -41,7 +41,7 @@ func scDacl(p syscallParmsT) bool {
 	// TODO this is all faked...
 	switch dg.WordT(p.cpu.GetAc(0)) { // make 16-bit safe
 	case 0xffff:
-		log.Fatal("ERROR: Setting new DefACL not yet implemented in ?DACL")
+		log.Panic("ERROR: Setting new DefACL not yet implemented in ?DACL")
 	case 0:
 		defacl := []byte("XYZZY")
 		defacl = append(defacl, 0)
@@ -49,7 +49,7 @@ func scDacl(p syscallParmsT) bool {
 		defacl = append(defacl, 0)
 		memory.WriteBytesBA(defacl, p.cpu.GetAc(1))
 	case 1:
-		log.Fatal("ERROR: Turning off DefACL not yet implemented in ?DACL")
+		log.Panic("ERROR: Turning off DefACL not yet implemented in ?DACL")
 	}
 	return true
 }

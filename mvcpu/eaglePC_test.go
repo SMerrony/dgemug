@@ -35,8 +35,8 @@ func TestISZTS(t *testing.T) {
 	iPtr.ix = instrISZTS
 	memory.MemInit(1000, false)
 
-	cpu.wsp = 100              // set the WSP
-	wsPush(cpu, 0, 0xfffffffe) // push -2
+	cpu.wsp = 100           // set the WSP
+	wsPush(cpu, 0xfffffffe) // push -2
 	cpu.pc = 7000
 
 	if !eaglePC(cpu, &iPtr) {

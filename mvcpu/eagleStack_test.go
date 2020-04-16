@@ -43,13 +43,13 @@ func TestAdvanceWSP(t *testing.T) {
 func TestWsPushAndPop(t *testing.T) {
 	cpu := new(CPUT)
 	memory.MemInit(1000, false)
-	wsPush(cpu, 0, 1)
+	wsPush(cpu, 1)
 	wsp := cpu.wsp
 	dw := memory.ReadDWord(wsp)
 	if dw != 1 {
 		t.Errorf("Expected WspLoc+1 to contain 1, contains %x", dw)
 	}
-	dw = wsPop(cpu, 0)
+	dw = WsPop(cpu, 0)
 	if dw != 1 {
 		t.Errorf("Expected POP to produce 1, got %x", dw)
 	}
@@ -58,8 +58,8 @@ func TestWsPushAndPop(t *testing.T) {
 func TestPopQWord(t *testing.T) {
 	cpu := new(CPUT)
 	memory.MemInit(1000, false)
-	wsPush(cpu, 0, 0x11112222)
-	wsPush(cpu, 0, 0x33334444)
+	wsPush(cpu, 0x11112222)
+	wsPush(cpu, 0x33334444)
 	r := wsPopQWord(cpu, 0)
 	if r != 0x1111222233334444 {
 		t.Errorf("Expected 0x1111222233334444, got %x", r)

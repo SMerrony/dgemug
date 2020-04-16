@@ -180,6 +180,25 @@ func resolve32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte boo
 	return wordAddr, loByte
 }
 
+func resolve16bitByteAddr(cpu *CPUT, mode int, disp16 int16, loByte bool) (eff dg.PhysAddrT) {
+	switch mode {
+	case absoluteMode:
+		eff = ((cpu.pc & 0x7000_0000) << 1) | dg.PhysAddrT(disp16)
+	case pcMode:
+		eff = dg.PhysAddrT(int(cpu.pc<<1) + int(disp16))
+	case ac2Mode:
+		eff = dg.PhysAddrT(int(cpu.ac[2]<<1) + int(disp16))
+		eff |= (cpu.pc & 0x7000_0000) << 1
+	case ac3Mode:
+		eff = dg.PhysAddrT(int(cpu.ac[3]<<1) + int(disp16))
+		eff |= (cpu.pc & 0x7000_0000) << 1
+	}
+	if loByte {
+		eff++
+	}
+	return eff
+}
+
 func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
 
 	switch mode {

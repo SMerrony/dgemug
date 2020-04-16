@@ -84,8 +84,9 @@ type lndo4WordT struct {
 	offsetU16 uint16
 }
 type noAccMode2WordT struct {
-	mode   int
-	disp16 uint16
+	mode    int
+	disp16  int16
+	lowByte bool
 }
 type noAccMode3WordT struct {
 	mode   int
@@ -338,11 +339,11 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 	case NOACC_MODE_2_WORD_FMT: // eg. XPEFB
 		var noAccMode2Word noAccMode2WordT
 		noAccMode2Word.mode = int(memory.GetWbits(opcode, 3, 2))
-		noAccMode2Word.disp16 = uint16(memory.ReadWord(pc + 1))
+		noAccMode2Word.disp16, noAccMode2Word.lowByte = decode16bitByteDisp(memory.ReadWord(pc + 1))
 		decodedInstr.variant = noAccMode2Word
 		if disassemble {
-			decodedInstr.disassembly += fmt.Sprintf(" %#o,%s [2-Word OpCode]",
-				noAccMode2Word.disp16, modeToString(noAccMode2Word.mode))
+			decodedInstr.disassembly += fmt.Sprintf(" %#o,%s %c[2-Word OpCode]",
+				noAccMode2Word.disp16, modeToString(noAccMode2Word.mode), loHiToByte(noAccMode2Word.lowByte))
 		}
 	case NOACC_MODE_3_WORD_FMT: // eg. LPEFB,
 		var noAccMode3Word noAccMode3WordT
