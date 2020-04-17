@@ -119,7 +119,7 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		immOneAcc := iPtr.variant.(immOneAccT)
 		wd := memory.DwordGetLowerWord(cpu.ac[immOneAcc.acd])
 		if immOneAcc.immU16 < 1 || immOneAcc.immU16 > 4 {
-			log.Fatal("Invalid immediate value in SBI")
+			log.Panic("Invalid immediate value in SBI")
 		}
 		wd -= dg.WordT(immOneAcc.immU16)
 		cpu.ac[immOneAcc.acd] = dg.DwordT(wd)
@@ -136,7 +136,7 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[twoAcc1Word.acd] = dwd & 0x0ffff
 
 	default:
-		log.Fatalf("ERROR: ECLIPSE_OP instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: ECLIPSE_OP instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

@@ -80,13 +80,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	if mode != absoluteMode {
 		// relative mode
 		// sign-extend to 32-bits
-		var t16 int16
-		if !memory.TestWbit(disp, 1) {
-			t16 = int16(disp)
-		} else {
-			t16 = int16(disp | 0x8000)
-		}
-		dispS32 = int32(t16)
+		dispS32 = int32(int16(disp<<1) >> 1)
 	}
 	switch mode {
 	case absoluteMode:
@@ -119,7 +113,6 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
-
 	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
 	}
@@ -173,13 +166,6 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 	return eff
 }
 
-// resolve32bitByteAddr returns the word address and low-byte flag for a given 32-bit byte address
-func resolve32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte bool) {
-	wordAddr = dg.PhysAddrT(byteAddr) >> 1
-	loByte = memory.TestDwbit(byteAddr, 31)
-	return wordAddr, loByte
-}
-
 func resolve16bitByteAddr(cpu *CPUT, mode int, disp16 int16, loByte bool) (eff dg.PhysAddrT) {
 	switch mode {
 	case absoluteMode:
@@ -188,9 +174,11 @@ func resolve16bitByteAddr(cpu *CPUT, mode int, disp16 int16, loByte bool) (eff d
 		eff = dg.PhysAddrT(int(cpu.pc<<1) + int(disp16))
 	case ac2Mode:
 		eff = dg.PhysAddrT(int(cpu.ac[2]<<1) + int(disp16))
+		eff &= 0x1fff_ffff
 		eff |= (cpu.pc & 0x7000_0000) << 1
 	case ac3Mode:
 		eff = dg.PhysAddrT(int(cpu.ac[3]<<1) + int(disp16))
+		eff &= 0x1fff_ffff
 		eff |= (cpu.pc & 0x7000_0000) << 1
 	}
 	if loByte {
@@ -200,7 +188,6 @@ func resolve16bitByteAddr(cpu *CPUT, mode int, disp16 int16, loByte bool) (eff d
 }
 
 func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
-
 	switch mode {
 	case absoluteMode:
 		eff = dg.PhysAddrT(disp)
@@ -211,7 +198,6 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 	case ac3Mode:
 		eff = dg.PhysAddrT(int32(cpu.ac[3]) + disp)
 	}
-
 	// handle indirection
 	if ind == '@' { //|| memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
 		indAddr, ok := memory.ReadDwordTrap(eff)
@@ -226,15 +212,11 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 		}
 		eff = dg.PhysAddrT(indAddr)
 	}
-
 	// check ATU
 	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
-	// } else {
-	// 	eff |= (cpu.pc & ringMask32)
-	// }
 	// log.Printf("... resolve32bitEffAddr got: %d. %s, returning %#x\n", disp, modeToString(mode), eff)
 	if cpu.debugLogging {
 		logging.DebugPrint(logging.DebugLog, "... resolve32bitEffAddr got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)

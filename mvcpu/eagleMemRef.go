@@ -161,7 +161,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
 		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset))
 
-	case instrXLEFB:
+	case instrXLEFB: // FIXME Now!  Something weird going on here - why doesn't the resolver work?
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
 		// eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
 		// cpu.ac[oneAccMode2Word.acd] = dg.DwordT(eff)
@@ -228,7 +228,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
 		eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
 		byt := dg.ByteT(cpu.ac[oneAccMode2Word.acd])
-		memory.WriteByte(eff, oneAccMode2Word.bitLow, byt)
+		memory.WriteByte(eff>>1, oneAccMode2Word.bitLow, byt)
 
 	case instrXWADD, instrXWSUB, instrXWMUL:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
@@ -285,17 +285,21 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	return true
 }
 
+// split32bitByteAddr returns the word address and low-byte flag for a given 32-bit byte address
+func split32bitByteAddr(byteAddr dg.DwordT) (wordAddr dg.PhysAddrT, loByte bool) {
+	wordAddr = dg.PhysAddrT(byteAddr) >> 1
+	loByte = memory.TestDwbit(byteAddr, 31)
+	return wordAddr, loByte
+}
+
 func readByteBA(ba dg.DwordT) dg.ByteT {
-	return memory.ReadByte(resolve32bitByteAddr(ba))
+	return memory.ReadByte(split32bitByteAddr(ba))
 }
 
 // memWriteByte writes the supplied byte to the address derived from the given byte addr
 func memWriteByteBA(b dg.ByteT, ba dg.DwordT) {
-	wordAddr, lowByte := resolve32bitByteAddr(ba)
+	wordAddr, lowByte := split32bitByteAddr(ba)
 	memory.WriteByte(wordAddr, lowByte, b)
-	// if cpu.debugLogging {
-	// 	logging.DebugPrint(logging.DebugLog, "DEBUG: memWriteByte wrote %c to word addr: %#o\n", b, wordAddr)
-	// }
 }
 
 func copyByte(srcBA, destBA dg.DwordT) {
