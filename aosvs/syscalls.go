@@ -101,6 +101,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
 	0311: {"?ERMSG", "?ERMS", scSystem, nil, nil},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
+	0316: {"?SEND", "?SEND", scFileIO, scSend, nil},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
 	0333: {"?UIDSTAT", "?UIDS", scMultitasking, scUidstat, nil},

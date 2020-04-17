@@ -176,6 +176,24 @@ func scRead16(p syscallParmsT) bool {
 	return true
 }
 
+func scSend(p syscallParmsT) bool {
+	msgLen := int(p.cpu.GetAc(2) & 0x00ff)
+	msg := memory.ReadBytes(p.cpu.GetAc(1), p.cpu.GetPC(), msgLen)
+	// flag := memory.GetDwbits(p.cpu.GetAc(2), 22, 2)
+	// switch flag {
+	// case 0x00: // AC0 contains a PID
+	// case 0x01: // AC0 is a bp to a proc name
+	// case 0x02: // AC0 is a bp to a console name
+	// case 0x03: // undefined
+	// }
+	agWrite := agWriteReqT{0, msg}
+	areq := AgentReqT{agentFileWrite, agWrite, nil}
+	logging.DebugPrint(logging.ScLog, "\tWriting <%s> to @CONSOLE\n", string(msg))
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	return true
+}
+
 func scWrite(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	channel := int(memory.ReadWord(pktAddr + ich))
