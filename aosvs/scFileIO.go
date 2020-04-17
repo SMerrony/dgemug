@@ -33,10 +33,14 @@ import (
 func scClose(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	channel := memory.ReadWord(pktAddr + ich)
-	var creq = agCloseReqT{channel}
+	var creq = agCloseReqT{int(channel)}
 	var areq = AgentReqT{agentFileClose, creq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
+	if areq.result.(agCloseRespT).errCode != 0 {
+		p.cpu.SetAc(0, dg.DwordT(areq.result.(agCloseRespT).errCode))
+		return false
+	}
 	return true
 }
 

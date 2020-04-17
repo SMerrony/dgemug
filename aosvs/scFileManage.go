@@ -31,9 +31,33 @@ import (
 )
 
 func scCreate(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	bpFilename := p.cpu.GetAc(0)
 	filename := strings.ToUpper(readString(bpFilename, p.ringMask))
-	log.Panicf("ERROR: ?CREATE called for %s - not yet implemented", filename)
+	fileType := memory.ReadWord(pktAddr+cftyp) & 0x00ff
+	switch fileType {
+	case fipc:
+		localPortNo := int(memory.ReadWord(pktAddr + cpor))
+		// not handling ?CTIM
+		var acl string
+		bpACL := memory.ReadDWord(pktAddr + cacp)
+		switch bpACL {
+		case 0xffff_ffff:
+			acl = "[DEFACL]"
+		case 0:
+			acl = ""
+		default:
+			acl = readString(bpACL, p.ringMask)
+		}
+		logging.DebugPrint(logging.ScLog, "----- IPC File: %s Local Port #: %d, ACL: %s\n", filename, localPortNo, acl)
+		crIPCreq := agCreateIPCReqT{p.PID, filename, localPortNo, acl}
+		areq := AgentReqT{agentCreateIPC, crIPCreq, nil}
+		p.agentChan <- areq
+		areq = <-p.agentChan
+	default:
+		log.Panicf("ERROR: ?CREATE called for %s - not yet implemented", filename)
+	}
+
 	return true
 }
 

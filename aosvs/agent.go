@@ -36,6 +36,7 @@ import (
 const (
 	agentAllocatePID = iota
 	agentAllocateTID
+	agentCreateIPC
 	agentFileClose
 	agentFileOpen
 	agentFileRead
@@ -43,6 +44,7 @@ const (
 	agentFileWrite
 	agentGetChars
 	agentGetMessage
+	agentIlkup
 	agentSharedOpen
 	agentSharedRead
 )
@@ -75,6 +77,13 @@ type agChannelT struct {
 	file        *os.File           // file I/O
 }
 
+type agIPCT struct {
+	ownerPID     int
+	name         string
+	localPortNo  int
+	globalPortNo int
+}
+
 const consoleChan = 0
 
 var (
@@ -84,6 +93,7 @@ var (
 	agChannels = map[int]*agChannelT{
 		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, rwc: nil, file: nil}, // @CONSOLE is always available
 	}
+	agIPCs = map[string]*agIPCT{} // key is unique pathname
 )
 
 // StartAgent fires of the pseudo-agent Goroutine and returns its msg channel
@@ -111,6 +121,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agAllocatePID(request.reqParms.(agAllocatePIDReqT))
 		case agentAllocateTID:
 			request.result = agAllocateTID(request.reqParms.(agAllocateTIDReqT))
+		case agentCreateIPC:
+			request.result = agCreateIPC(request.reqParms.(agCreateIPCReqT))
 		case agentFileClose:
 			request.result = agFileClose(request.reqParms.(agCloseReqT))
 		case agentFileOpen:
@@ -125,6 +137,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agGetChars(request.reqParms.(agGchrReqT))
 		case agentGetMessage:
 			request.result = agGetMessage(request.reqParms.(agGtMesReqT))
+		case agentIlkup:
+			request.result = agIlkup(request.reqParms.(agIlkupReqT))
 		case agentSharedOpen:
 			request.result = agSharedOpen(request.reqParms.(agSharedOpenReqT))
 		case agentSharedRead:

@@ -124,7 +124,7 @@ const (
 	erilb = 0137 // ILLEGAL LIBRARY NUMBER GIVEN
 	errfm = 0140 // ILLEGAL RECORD FORMAT
 	erarg = 0141 // TOO MANY OR TOO FEW ARGUMENTS TO PMGR
-	erigm = 0142 // ILLEGAL ?GTMES PARAMETERS
+	erigm = 0142 // ILLEGAL gtmes PARAMETERS
 	ericl = 0143 // ILLEGAL CLI MESSAGE
 	ermrd = 0144 // MESSAGE RECEIVE DISABLED
 	ernac = 0145 // NOT A CONSOLE DEVICE
@@ -142,11 +142,11 @@ const (
 	erirv = 0161 // ILLEGAL RETRY VALUE
 	erass = 0162 // ASSIGN ERROR - ALREADY YOUR DEVICE
 	erpet = 0163 // MAG TAPE REQ PAST LOGICAL END OF TAPE
-	ersts = 0164 // STACK TOO SMALL (?TASK)
-	ertmt = 0165 // TOO MANY TASKS REQUESTED (?TASK)
+	ersts = 0164 // STACK TOO SMALL (task)
+	ertmt = 0165 // TOO MANY TASKS REQUESTED (task)
 	ersoc = 0166 // SPOOLER OPEN RETRY COUNT EXCEEDED
 	eracl = 0167 // ILLEGAL ACL
-	erwpb = 0170 // ?STMAP BUFFER INVALID OR WRITE PROTECTED
+	erwpb = 0170 // stmap BUFFER INVALID OR WRITE PROTECTED
 	erinp = 0171 // IPC FILE NOT OPENED BY ANOTHER PROC
 	erfpu = 0172 // FPU HARDWARE NOT INSTALLED
 	erpnm = 0173 // ILLEGAL PROCESS NAME
@@ -160,7 +160,7 @@ const (
 	ereo1 = 0203 // FILE IS OPEN, CAN'T EXCLUSIVE OPEN
 	ereo2 = 0204 // FILE IS EXCLUSIVE OPENED, CAN'T OPEN
 	eripd = 0205 // INIT PRIVILEGE DENIED
-	ermim = 0206 // MULTIPLE ?IMSG CALLS TO SAME DCT
+	ermim = 0206 // MULTIPLE imsg CALLS TO SAME DCT
 	erlnk = 0207 // ILLEGAL LINK
 	eridf = 0210 // ILLEGAL DUMP FORMAT
 	erxna = 0211 // EXEC NOT AVAILABLE (MOUNT, ETC.)
@@ -187,7 +187,7 @@ const (
 	erfft = 0232 // USER FLOATING POINT STACK FAULT
 	eruae = 0233 // USER DATA AREA ALREADY EXISTS
 	eriso = 0234 // ILLEGAL SCREEN_EDIT REQUEST (PMGR)
-	erddh = 0235 // "?SEND" DESTINATION DEVICE HELD BY "^S"
+	erddh = 0235 // "send" DESTINATION DEVICE HELD BY "^S"
 	erovr = 0236 // DATA OVERRUN ERROR
 	ercpd = 0237 // CONTROL POINT DIRECTORY MAX SIZE EXCEEDED
 	ernsd = 0240 // SYS OR BOOT DISK NOT PART OF MASTER LD
@@ -226,10 +226,10 @@ const (
 	errna = ernuf + 1 // PMGR- REQUESTOR NOT TRACING AUTHORIZED
 	erpnl = errna + 1 // PMGR- PATHNAME LENGTH AREA
 	ersnf = erpnl + 1 // SYMBOL NOT FOUND IN .ST FILE
-	ersnr = ersnf + 1 // SOURCE NOT RESIDENT ON ?LMAP
-	erdnr = ersnr + 1 // DESTINATION NOT RESIDENT ON ?LMAP
+	ersnr = ersnf + 1 // SOURCE NOT RESIDENT ON lmap
+	erdnr = ersnr + 1 // DESTINATION NOT RESIDENT ON lmap
 	eribp = erdnr + 1 // BKPT SEEN IN USER PROGRAM WHEN DEBUG NOT INIT'ED
-	erbst = eribp + 1 // BAD SYMBOL TABLE FORMAT SEEN (?GTNA CALL)
+	erbst = eribp + 1 // BAD SYMBOL TABLE FORMAT SEEN (gtna CALL)
 	erpdo = erbst + 1 // PAGE FILE DIRECTORY OVERFLOW
 	ermwt = erpdo + 1 // MORE THAN ONE WS TRACE DEFINED ON TARGET
 	erhwt = ermwt + 1 // BOTH TRACE AND HISTOGRAM CALLED, OR > 1 TRACE
@@ -240,15 +240,15 @@ const (
 	erwsf = erwsb + 1 // WORKING SET NOT SWAPPABLE
 	erawm = erwsf + 1 // TRYING TO WIRE MORE PAGES THAN WS MAX
 	ertpw = erawm + 1 // TOO MANY PAGES WIRED
-	eracc = ertpw + 1 // ACCESS DENIED ON ?VALAD
+	eracc = ertpw + 1 // ACCESS DENIED ON valad
 	errnl = eracc + 1 // RING NOT LOADED
 	ertal = errnl + 1 // TOO MANY ARGUMENTS ON LCALL
-	erxbl = ertal + 1 // ?IXIT FROM BASE LEVEL
+	erxbl = ertal + 1 // ixit FROM BASE LEVEL
 	erppr = erxbl + 1 // PMGR PANIC REQUESTED BY NON-PMGR PROCESS
 	ersci = erppr + 1 // SYSTEM CALL AT INTERRUPT LEVEL
 	ernip = ersci + 1 // PMGR -- NOT AN IAC PMGR
 	ernid = ernip + 1 // PMGR -- NOT AN IAC-DRIVEN DEVICE
-	ersgo = ernid + 1 // ?SIGNL ALREADY OUTSTANDING
+	ersgo = ernid + 1 // signl ALREADY OUTSTANDING
 	erufr = ersgo + 1 // UNKNOWN REQUEST FUNCTION
 	erifs = erufr + 1 // ILLEGAL FED STRING
 	era1o = erifs + 1 // ATTEMPT TO 1ST OPEN AN OPEN FILE
@@ -991,11 +991,8 @@ const (
 	face = 0x8000 >> faeb // EXECUTE
 )
 
+// SYSTEM RECORD I/O PACKET FOR ALL DISK AND MAG. TAPEAND MCA REQUESTS FROM EITHER THE AGENT OR USER CONTEXTS. USED FOR rdb/wrb, prdb/PWRB, spage AND allocate
 const (
-	// SYSTEM RECORD I/O PACKET FOR ALL DISK AND MAG. TAPE
-	// AND MCA REQUESTS FROM EITHER THE AGENT OR USER CONTEXTS.
-	//       USED FOR ?RDB/?WRB, ?PRDB/PWRB, ?SPAGE AND ?ALLOCATE
-	//
 	psti = 0        // RECORD COUNT (RIGHT), STATUS IN (LEFT)
 	psto = psti + 1 // RESERVED (LEFT) PRIORITY (RIGHT)
 	pcad = psto + 1 // WORD ADDRESS FOR DATA
@@ -1007,4 +1004,111 @@ const (
 	//                 BYTE COUNT (MCA)
 	pres = prcl + 1 // RESERVED WORD
 	pblt = pres + 1 // PACKET SIZE
+)
+
+// SYSTEM ENTRY TYPES
+const (
+	// MISC
+	flnk = smin     // LINK
+	fsdf = flnk + 1 // SYSTEM DATA FILE
+	fmtf = fsdf + 1 // MAG TAPE FILE
+	fgfn = fmtf + 1 // GENERIC FILE NAME
+
+	// DIRECTORIES (DO NOT CHANGE THEIR ORDER)
+	fdir = 10.      // DISK DIRECTORY
+	fldu = fdir + 1 // LD ROOT DIRECTORY
+	fcpd = fldu + 1 // CONTROL POINT DIRECTORY
+	fmtv = fcpd + 1 // MAG TAPE VOLUME
+	fmdr = fmtv + 1 // RESERVED FOR RT32(MEM DIRS), NOT LEGAL FOR AOS
+	fgnr = fmdr + 1 // RESERVED FOR RT32, NOT LEGAL FOR AOS
+	ldir = fdir     // LOW DIR TYPE
+	hdir = fgnr     // HIGH DIR TYPE
+	lcpd = fldu     // LOW CONTROL POINT DIR TYPE
+	hcpd = fcpd     // HIGH CONTROL POINT DIR TYPE
+
+	// UNITS
+	fdku = 20.      // DISK UNIT
+	fmcu = fdku + 1 // MULTIPROCESSOR COMMUNICATIONS UNIT
+	fmtu = fmcu + 1 // MAG TAPE UNIT
+	flpu = fmtu + 1 // DATA CHANNEL LINE PRINTER
+	flpd = flpu + 1 // DATA CHANNEL LP2 UNIT
+	flpe = flpd + 1 // DATA CHANNEL LINE PRINTER (LASER)
+	fpgn = flpe + 1 // RESERVED FOR RT32(PROCESS GROUP)
+	fltu = flpu + 1 // LABELLED MAG TAPE UNIT
+	// ***** NO LONGER USED *****
+	lunt = fdku // LOW UNIT TYPE
+	hunt = fpgn // HIGH UNIT TYPE
+
+	// IPC ENTRY TYPES
+	fipc = 30. // IPC PORT ENTRY
+
+	// DGC ENTRY TYPES
+	fudf = dmin     // USER DATA FILE
+	fprg = fudf + 1 // PROGRAM FILE
+	fupf = fprg + 1 // USER PROFILE FILE
+	fstf = fupf + 1 // SYMBOL TABLE FILE
+	ftxt = fstf + 1 // TEXT FILE
+	flog = ftxt + 1 // SYSTEM LOG FILE (ACCOUNTING FILE)
+	fncc = flog + 1 // FORTRAN CARRIAGE CONTROL FILE
+	flcc = fncc + 1 // FORTRAN CARRIAGE CONTROL FILE
+	ffcc = flcc + 1 // FORTRAN CARRIAGE CONTROL FILE
+	focc = ffcc + 1 // FORTRAN CARRIAGE CONTROL FILE
+	fprv = focc + 1 // AOS/VS PROGRAM FILE
+	fwrd = fprv + 1 // WORD PROCESSING
+	fafi = fwrd + 1 // APL FILE
+	faws = fafi + 1 // APL WORKSPACE FILE
+	fbci = faws + 1 // BASIC CORE IMAGE FILE
+	fdcf = fbci + 1 // DEVICE CONFIGURATION FILE (NETWORKING)
+	flcf = fdcf + 1 // LINK CONFIGURATION FILE (NETWORKING)
+	flug = flcf + 1 // LOGICAL UNIT GROUP FILE (SNA)
+	frtl = flug + 1 // AOS/RT32 RESERVED FILE TYPE RANGE (LO)
+	frth = frtl + 4 // AOS/RT32 RESERVED FILE TYPE RANGE (HI)
+	funx = frth + 1 // VS/UNIX FILE
+	fbbs = funx + 1 // BUSINESS BASIC SYMBOL FILE
+	fvlf = fbbs + 1 // BUSINESS BASIC VOLUME LABEL FILE
+	fdbf = fvlf + 1 // BUSINESS BASIC DATA BASE FILE
+
+	// CEO FILE TYPES
+	fgkm = fdbf + 1 // DG GRAPHICS KERNAL METAFILE
+	fvdm = fgkm + 1 // VIRTUAL DEVICE METAFILE
+	fnap = fvdm + 1 // NAPLPS STANDARD GRAPH FILE
+	ftrv = fnap + 1 // TRENDVIEW COMMAND FILE
+	fspd = ftrv + 1 // SPREADSHEET FILE
+	fqry = fspd + 1 // PRESENT QUERY MACRO
+	fdtb = fqry + 1 // PHD DATA TABLE
+	ffmt = fdtb + 1 // PHD FORMAT FILE
+	fwpt = ffmt + 1 // TEXT INTERCHANGE FORMAT
+	fdif = fwpt + 1 // DATA INTERCHANGE FORMAT
+	fvif = fdif + 1 // VOICE IMAGE FILE
+	fimg = fvif + 1 // FACSIMILE IMAGE
+	fprf = fimg + 1 // PRINT READY FILE
+
+	// MORE DGC ENTRY TYPES
+	fpip = fprf + 1 // PIPE FILE
+	fttx = fpip + 1 // TELETEX FILE
+	fdxf = fttx + 1 // RESERVED FOR DXA
+	fdxr = fdxf + 1 // RESERVED FOR DXA
+	fcwp = fdxr + 1 // CEO WORD PROCESSOR FILE
+	fcwt = fcwp     // CEOwrite WORD PROCESSOR FILE
+	frpt = fcwp + 1 // PHD REPORT FILE
+)
+
+//  PACKET FOR DIRECTORY ENTRY CREATION (?CREATE)
+const (
+	cftyp = 0        // ENTRY TYPE (RH) AND RECORD FORMAT (LH)
+	cpor  = 1        // PORT NUMBER (IPC TYPES ONLY)
+	chfs  = 1        // HASH FRAME SIZE (DIRECTORY TYPES ONLY)
+	chid  = 1        // HOST ID (frem TYPE FILES ONLY )
+	ccps  = 1        // FILE CONTROL PARAMETER (OTHERS)
+	ctim  = 2        // POINTER TO TIME BLOCK
+	ctil  = ctim + 1 // LOWER PORTION OF ctim
+	cacp  = ctil + 1 // POINTER TO INITIAL ACL
+	cacl  = cacp + 1 // LOWER PORTION OF cacp
+	cmsh  = cacl + 1 // MAX SPACE ALLOCATED (fcpd)
+	cmsl  = cmsh + 1 // MAX SPACE ALLOCATED (LOW)
+	cdeh  = cacl + 1 // RESERVED
+	cdel  = cdeh + 1 // FILE ELEMENT SIZE
+	cmil  = cdel + 1 // MAXIMUM INDEX LEVEL DEPTH
+	cmrs  = cmil + 1 // RESERVED
+	clth  = cmrs + 1 // LENGTH OF THE PARAMETER BLOCK
 )

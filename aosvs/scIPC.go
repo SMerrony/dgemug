@@ -22,18 +22,30 @@
 package aosvs
 
 import (
-	"log"
 	"strings"
+
+	"github.com/SMerrony/dgemug/dg"
 )
 
 func scIlkup(p syscallParmsT) bool {
 	bpPathname := p.cpu.GetAc(0)
 	path := strings.ToUpper(readString(bpPathname, p.cpu.GetPC()))
-	// trap SWAT checking...
-	if path == "?10.SWAT.IPC" {
-		p.cpu.SetAc(0, erfde)
+	agIlkupReq := agIlkupReqT{p.PID, path}
+	areq := AgentReqT{agentIlkup, agIlkupReq, nil}
+	p.agentChan <- areq
+	areq = <-p.agentChan
+	resp := areq.result.(agIlkupRespT)
+	if resp.errCode != 0 {
+		p.cpu.SetAc(0, dg.DwordT(resp.errCode))
 		return false
 	}
-	log.Panicf("?ILKUP of %s not yet implemented", path)
+	p.cpu.SetAc(1, dg.DwordT(resp.globalPortNo))
+	p.cpu.SetAc(2, dg.DwordT(resp.ipcType))
+	// // trap SWAT checking...
+	// if path == "?10.SWAT.IPC" {
+	// 	p.cpu.SetAc(0, erfde)
+	// 	return false
+	// }
+	// log.Panicf("?ILKUP of %s not yet implemented", path)
 	return true
 }

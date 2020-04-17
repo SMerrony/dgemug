@@ -32,7 +32,7 @@ import (
 )
 
 type agCloseReqT struct {
-	chanNo dg.WordT
+	chanNo int
 }
 type agCloseRespT struct {
 	errCode dg.WordT
@@ -42,7 +42,20 @@ func agFileClose(req agCloseReqT) (resp agCloseRespT) {
 	if req.chanNo == 0 {
 		resp.errCode = 0
 	} else {
-		log.Panicf("ERROR: real file closing not yet implemented")
+		logging.DebugPrint(logging.ScLog, "\tChannel # %d\n", req.chanNo)
+		agChan, isOpen := agChannels[req.chanNo]
+		if isOpen {
+			if agChan.isConsole {
+				logging.DebugPrint(logging.ScLog, "\tIgnoring ?CLOSE on console channel\n")
+			} else {
+				agChan.file.Close()
+				delete(agChannels, req.chanNo)
+				logging.DebugPrint(logging.ScLog, "\tFile closed\n")
+			}
+		} else {
+			logging.DebugPrint(logging.ScLog, "\tFILE WAS NOT OPEN\n")
+			resp.errCode = eracu
+		}
 	}
 	return resp
 }
@@ -59,7 +72,6 @@ type agOpenRespT struct {
 
 func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	resp.ac0 = 0
-	logging.DebugPrint(logging.ScLog, "DEBUG: ----- Agent received File Open request for %s\n", req.path)
 	// TODO currently returning same channel for these common generic files, they might need separate ones...
 	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
 		resp.channelNo = consoleChan
@@ -100,7 +112,7 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 		flags |= os.O_APPEND
 	}
 	if req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
-		logging.DebugPrint(logging.ScLog, "DEBUG: ----- Attempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
+		logging.DebugPrint(logging.ScLog, "\tAttempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
 		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.path, flags, 0755)
 	} else {
 		fp, err = os.OpenFile(req.path, flags, 0755)
@@ -154,7 +166,7 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 		} else {
 			switch {
 			case req.specs&ipst != 0:
-				log.Fatal("Absolute positining NYI")
+				log.Panic("Absolute positining NYI")
 			}
 			buf := make([]byte, req.length)
 			n, err := agChannels[req.chanNo].file.Read(buf)
@@ -183,11 +195,11 @@ type agRecreateRespT struct {
 func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 	filename := strings.ReplaceAll(req.aosFilename, ":", "/") // convert any : to /
 	if filename[0] == '@' {
-		log.Fatalf("ERROR: ?RECREATE in :PER not yet implemented (file: %s)", filename)
+		log.Panicf("ERROR: ?RECREATE in :PER not yet implemented (file: %s)", filename)
 	}
 	if filename[0] != '/' {
 		filename = perProcessData[req.PID].virtualRoot + "/" + filename
-		logging.DebugPrint(logging.ScLog, "?RECREATE resolved %s to %s\n", req.aosFilename, filename)
+		logging.DebugPrint(logging.ScLog, "\tResolved %s to %s\n", req.aosFilename, filename)
 	}
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		resp.errCode = erfde
@@ -223,7 +235,7 @@ func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
 		flags = os.O_RDWR
 	}
 	if req.filename[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
-		logging.DebugPrint(logging.ScLog, "------ Attempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
+		logging.DebugPrint(logging.ScLog, "\tAttempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
 		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.filename, flags, 0755)
 	} else {
 		fp, err = os.OpenFile(req.filename, flags, 0755)
@@ -236,7 +248,7 @@ func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
 	newChan := len(agChannels)
 	agChannels[newChan] = &agChan
 	resp.channelNo = dg.DwordT(newChan)
-	logging.DebugPrint(logging.ScLog, "------ Returning channel: %d.\n", newChan)
+	logging.DebugPrint(logging.ScLog, "\tReturning channel: %d.\n", newChan)
 	return resp
 }
 
@@ -254,7 +266,7 @@ func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
 	_, isOpen := agChannels[req.chanNo]
 	if isOpen {
 		buf := make([]byte, req.length)
-		logging.DebugPrint(logging.ScLog, "------ Attempting to Seek to byte: %d. on channel: %d.\n", req.startPos, req.chanNo)
+		logging.DebugPrint(logging.ScLog, "\tAttempting to Seek to byte: %d. on channel: %d.\n", req.startPos, req.chanNo)
 		_, err := agChannels[req.chanNo].file.Seek(req.startPos, 0)
 		if err != nil {
 			log.Panicf("ERROR: ?SPAGE positioning failed: %v", err)
@@ -263,10 +275,10 @@ func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
 		if n == 0 && err == io.EOF {
 			// It looks as if we should create pages here - can't find it in the docs though...
 			resp.data = make([]byte, req.length)
-			logging.DebugPrint(logging.ScLog, "------ Read no bytes from channnel #%d., returning %d. empty bytes\n", req.chanNo, req.length)
+			logging.DebugPrint(logging.ScLog, "\tRead no bytes from channnel #%d., returning %d. empty bytes\n", req.chanNo, req.length)
 		} else {
 			resp.data = buf
-			logging.DebugPrint(logging.ScLog, "------ Read %d. bytes from channnel #%d.\n", n, req.chanNo)
+			logging.DebugPrint(logging.ScLog, "\tRead %d. bytes from channnel #%d.\n", n, req.chanNo)
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?SPAGE from unopened file")
