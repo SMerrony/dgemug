@@ -77,13 +77,15 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		lobyte := memory.TestDwbit(dg.DwordT(oneAccMode3Word.u32), 31)
 		memory.WriteByte(addr, lobyte, dg.ByteT(cpu.ac[oneAccMode3Word.acd]))
 
-	case instrLWADD, instrLWSUB:
+	case instrLWADD, instrLWMUL, instrLWSUB:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		var s32 int32
 		switch iPtr.ix {
 		case instrLWADD:
 			s32 = int32(memory.ReadDWord(addr)) + int32(cpu.ac[oneAccModeInd3Word.acd])
+		case instrLWMUL:
+			s32 = int32(memory.ReadDWord(addr)) * int32(cpu.ac[oneAccModeInd3Word.acd])
 		case instrLWSUB:
 			s32 = int32(cpu.ac[oneAccModeInd3Word.acd]) - int32(memory.ReadDWord(addr))
 		}

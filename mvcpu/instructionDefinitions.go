@@ -197,6 +197,7 @@ const (
 	instrLDB
 	instrLDSP
 	instrLEF
+	instrLFAMD
 	instrLFDMS
 	instrLFLDD
 	instrLFLDS
@@ -233,6 +234,7 @@ const (
 	instrLWDSZ
 	instrLWISZ
 	instrLWLDA
+	instrLWMUL
 	instrLWSTA
 	instrLWSUB
 	instrMOV
@@ -517,6 +519,7 @@ func InstructionsInit() {
 	instructionSet[instrLDB] = instrChars{"LDB", 0x85c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_MEMREF, 0}
 	instructionSet[instrLDSP] = instrChars{"LDSP", 0x8519, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLEF] = instrChars{"LEF", 0x6000, 0xe000, 1, NOVA_ONEACC_EFF_ADDR_FMT, ECLIPSE_MEMREF, 0}
+	instructionSet[instrLFAMD] = instrChars{"LFAMD", 0x80d9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFDMS] = instrChars{"LFDMS", 0x81e9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFLDD] = instrChars{"LFLDD", 0x82d9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFLDS] = instrChars{"LFLDS", 0x82c9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
@@ -553,6 +556,7 @@ func InstructionsInit() {
 	instructionSet[instrLWDSZ] = instrChars{"LWDSZ", 0x86f9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWISZ] = instrChars{"LWISZ", 0x86e9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWLDA] = instrChars{"LWLDA", 0x83f9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrLWMUL] = instrChars{"LWMUL", 0x8398, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWSTA] = instrChars{"LWSTA", 0x84f9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWSUB] = instrChars{"LWSUB", 0x8358, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrMOV] = instrChars{"MOV", 0x8200, 0x8700, 1, NOVA_TWOACC_MULT_OP_FMT, NOVA_OP, 0}
