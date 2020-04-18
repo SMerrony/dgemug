@@ -332,7 +332,9 @@ func wsPush(cpu *CPUT, data dg.DwordT) {
 	// TODO overflow/underflow handling - either here or in instruction?
 	cpu.wsp += 2
 	memory.WriteDWord(cpu.wsp, data)
-	logging.DebugPrint(logging.DebugLog, "... wsPush pushed %#o onto the Wide Stack at location: %#o\n", data, cpu.wsp)
+	if cpu.debugLogging {
+		logging.DebugPrint(logging.DebugLog, "... wsPush pushed %#o onto the Wide Stack at location: %#o\n", data, cpu.wsp)
+	}
 }
 
 func wsPushQWord(cpu *CPUT, qw dg.QwordT) {
@@ -346,7 +348,9 @@ func wsPushQWord(cpu *CPUT, qw dg.QwordT) {
 func WsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 	dword = memory.ReadDWord(cpu.wsp)
 	cpu.wsp -= 2
-	logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
+	if cpu.debugLogging {
+		logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
+	}
 	return dword
 }
 
@@ -382,7 +386,9 @@ func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
 // advanceWSP increases the WSP by the given amount of DWords
 func advanceWSP(cpu *CPUT, dwdCnt uint) {
 	cpu.wsp += dg.PhysAddrT(dwdCnt * 2)
-	logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpu.wsp)
+	if cpu.debugLogging {
+		logging.DebugPrint(logging.DebugLog, "... WSP advanced by %#o DWords to %#o\n", dwdCnt, cpu.wsp)
+	}
 }
 
 // wspCheckBounds does a pre-flight check to see if the intended change of WSP would cause a stack fault

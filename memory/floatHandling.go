@@ -22,7 +22,6 @@
 package memory
 
 import (
-	"log"
 	"math"
 
 	"github.com/SMerrony/dgemug/dg"
@@ -81,7 +80,7 @@ func DGdoubleToFloat64(q dg.QwordT) (f float64) {
 		mantissa >>= 1
 		exponent++
 	}
-	log.Printf("exp: %v, mant: %v\n", exponent, mantissa)
+	//log.Printf("exp: %v, mant: %v\n", exponent, mantissa)
 	// d = (d & 0x8000_0000_0000_0000) | (exponent << 52) | (mantissa & 0x000f_ffff_ffff_ffff)
 	r := uint64(q&0x8000_0000_0000_0000) | (exponent << 52) | (mantissa & 0x000f_ffff_ffff_ffff)
 	f = math.Float64frombits(r)

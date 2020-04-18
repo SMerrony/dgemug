@@ -33,6 +33,15 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	switch iPtr.ix {
 
+	case instrDERR: // TODO stack overflow checking
+		derr := iPtr.variant.(derrT)
+		wsPush(cpu, dg.DwordT(cpu.pc))
+		wsPush(cpu, dg.DwordT(derr.errCode))
+		cpu.pc = cpu.pc&ringMask32 | dg.PhysAddrT(memory.ReadWord(cpu.pc&ringMask32|047))
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "..... DERR handler at: %#x\n", cpu.pc)
+		}
+
 	case instrDSZTS, instrISZTS:
 		// tmpAddr := dg.PhysAddrT(memory.ReadDWord(cpu.wsp))
 		tmpAddr := dg.PhysAddrT(cpu.wsp)
@@ -528,7 +537,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	default:
-		log.Fatalf("ERROR: EAGLE_PC instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: EAGLE_PC instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

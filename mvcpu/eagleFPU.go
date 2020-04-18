@@ -31,6 +31,14 @@ import (
 func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
+	case instrLFAMD:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd3Word.acd] += memory.DGdoubleToFloat64(qwd)
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
 	case instrLFLDD:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
@@ -47,10 +55,13 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
 
-	case instrLFSTS:
+	case instrLFMMD:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
-		memory.WriteDWord(addr, memory.Float64toDGsingle(cpu.fpac[oneAccModeInd3Word.acd]))
+		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd3Word.acd] *= memory.DGdoubleToFloat64(qwd)
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
 
 	case instrLFMMS:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
@@ -59,6 +70,11 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.fpac[oneAccModeInd3Word.acd] *= single
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
+	case instrLFSTS:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		memory.WriteDWord(addr, memory.Float64toDGsingle(cpu.fpac[oneAccModeInd3Word.acd]))
 
 	case instrWFFAD:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)

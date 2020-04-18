@@ -201,6 +201,7 @@ const (
 	instrLFDMS
 	instrLFLDD
 	instrLFLDS
+	instrLFMMD
 	instrLFMMS
 	instrLFSTS
 	instrLJMP
@@ -523,6 +524,7 @@ func InstructionsInit() {
 	instructionSet[instrLFDMS] = instrChars{"LFDMS", 0x81e9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFLDD] = instrChars{"LFLDD", 0x82d9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFLDS] = instrChars{"LFLDS", 0x82c9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
+	instructionSet[instrLFMMD] = instrChars{"LFMMD", 0x81d9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFMMS] = instrChars{"LFMMS", 0x81c9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLFSTS] = instrChars{"LFSTS", 0x82e9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_FPU, 1}
 	instructionSet[instrLJMP] = instrChars{"LJMP", 0xa6d9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
