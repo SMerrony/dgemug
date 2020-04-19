@@ -1112,3 +1112,63 @@ const (
 	cmrs  = cmil + 1 // RESERVED
 	clth  = cmrs + 1 // LENGTH OF THE PARAMETER BLOCK
 )
+
+const (
+	// :::EXEC PARAMETERS
+	//
+	// DEFINITIONS FOR ?EXEC (EXEC REQUEST)
+	//
+
+	// FUNCTION CODES
+	xfmun = 01  // MOUNT A UNIT
+	xfmlt = 02  // MOUNT A LABELED TAPE
+	xfdun = 03  // DISMOUNT A UNIT OR LABELED TAPE
+	xfoth = 04  // SUBMIT A BATCH JOB FOR OTHER USER
+	xfsub = 05  // SUBMIT A BATCH JOB
+	xflpt = 06  // SUBMIT A PRINT FILE
+	xfptp = 07  // SUBMIT A PAPER TAPE PUNCH FILE
+	xfxts = 010 // Status report, Large PID
+	xfplt = 011 // SUBMIT A PLOT FILE
+	xfham = 012 // SUBMIT A HAMLET FILE
+	xfsna = 013 // SUBMIT AN SNA/RJE FILE
+	xffta = 014 // SUBMIT A FTA REQUEST
+	xfxun = 015 // EXTENDED MOUNT A UNIT
+	xfxml = 016 // EXTENDED MOUNT A LABELED TAPE
+	xfhol = 017 // HOLD A QUEUE ENTRY
+	xfunh = 020 // UNHOLD A QUEUE ENTRY
+	xfcan = 021 // CANCEL A QUEUE ENTRY
+	xfsts = 022 // OBTAIN RELATIONSHIP TO EXEC
+	xfqst = 023 // GET QUEUE TYPE FROM QUEUE NAME
+
+	// THE FOLLOWING FUNCTIONS ARE RESERVED FOR INTERNAL USE
+	xflo  = 024 // LABELED TAPE OPEN
+	xflc  = 025 // LABELED TAPE CLOSE
+	xfme  = 026 // MOUNT ERROR
+	xfnv  = 027 // MOUNT NEXT VOLUME
+	xf30r = 030 // Reserved
+	xfsv  = 031 // MOUNT SPECIFIC VOLUME
+	xfmnt = 032 // Submit a job to a MOUNT queue
+	xfbat = 033 // Submit a job to a BATCH queue
+	xfmod = 034 // Modify parameters of a queued job
+	xfsqt = 035 // Get queue type by sequence number
+	xfnqn = 036 // Get list of queue names
+	xfqds = 037 // Given a queuename,
+	//  get info on all jobs in queue
+	xfxdu = 040 // Extended Dismount
+
+	// END OF INTERNAL FUNCTIONS
+
+	xfusr = 041 // SUBMIT A REQUEST TO A USER QUEUE
+
+	xfmin = xfmun // LOWEST  ASSIGNED FUNCTION CODE
+	xfmax = xfusr // HIGHEST ASSIGNED FUNCTION CODE
+)
+
+//PACKET OFFSETS FOR ?xfxts
+const (
+	xfp1  = 2         // FIRST PARAMETER
+	xfp2  = 3         // SECOND PARAMETER
+	xfp2l = xfp2 + 1  // LOWER PORTION OF xfp2
+	xfp3  = xfp2l + 1 // 3RD PARAMETER - RESERVED
+	xfp4  = xfp3 + 1  // 15-BIT PID
+)

@@ -87,6 +87,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0113: {"?SUSER", "?SUSE", scProcess, scDummy, nil},
 	0116: {"?PNAME", "?PNAM", scProcess, scPname, nil},
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
+	0142: {"?IS.R", "?IS.R", scIPC, nil, nil},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
 	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
 	0167: {"?CON", "?CON", scConnection, nil, nil},
@@ -99,7 +100,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0301: {"?CLOSE", "?CLOS", scFileIO, scClose, nil},
 	0302: {"?READ", "?READ", scFileIO, scRead, scRead16},
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
-	0311: {"?ERMSG", "?ERMS", scSystem, nil, nil},
+	0311: {"?ERMSG", "?ERMS", scSystem, scErmsg, nil},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
 	0316: {"?SEND", "?SEND", scFileIO, scSend, nil},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
@@ -112,6 +113,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0505: {"?KILAD", "?KILA", scMultitasking, scDummy, nil},
 	0527: {"?DRSCH", "?DRSC", scMultitasking, scDummy, scDummy}, // Suspend all other tasks
 	0542: {"?IFPU", "?IFPU", scMultitasking, scIfpu, scIfpu},
+	0550: {"?DFRSCH", "?DFRS", scMultitasking, scDummy, nil},
 	0573: {"?SYSPRV", "?SYSP", scProcess, scSysprv, nil},
 	0576: {"?XPSTAT", "?XPST", scProcess, scXpstat, nil},
 }

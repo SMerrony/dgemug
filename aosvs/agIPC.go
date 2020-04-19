@@ -66,9 +66,11 @@ func agIlkup(req agIlkupReqT) (resp agIlkupRespT) {
 	logging.DebugPrint(logging.ScLog, "\tChecking for virtual IPC %s\n", path)
 	if !found {
 		resp.errCode = erfde
+		logging.DebugPrint(logging.ScLog, "\tIPC Lookup failed\n")
 	} else {
 		resp.globalPortNo = agIPC.globalPortNo
 		resp.ipcType = fipc // TODO ???
+		logging.DebugPrint(logging.ScLog, "\tIPC Lookup succeeded\n")
 	}
 	return resp
 }

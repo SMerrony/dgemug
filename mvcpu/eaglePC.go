@@ -238,6 +238,14 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.wsp = cpu.wfp
 		wpopb(cpu)
 
+	case instrWSANA:
+		oneAccImm3Word := iPtr.variant.(oneAccImm3WordT)
+		if uint32(cpu.ac[oneAccImm3Word.acd])&oneAccImm3Word.immU32 != 0 {
+			cpu.pc += 4
+		} else {
+			cpu.pc += 3
+		}
+
 	case instrWSEQ: // Signedness doen't matter for equality testing
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		var dwd dg.DwordT

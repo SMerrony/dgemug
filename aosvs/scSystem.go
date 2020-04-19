@@ -22,15 +22,35 @@
 package aosvs
 
 import (
-	"log"
 	"time"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
+func scErmsg(p syscallParmsT) bool {
+	// fake an error message for now
+	msg := "VSemuG Dummy Error Message"
+	bp := p.cpu.GetAc(2)
+	memory.WriteStringBA(msg, bp)
+	p.cpu.SetAc(0, dg.DwordT(len(msg)))
+	return true
+}
+
 func scExec(p syscallParmsT) bool {
-	log.Println("WARNING: ?EXEC system call not yet implemented")
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
+	execFunc := memory.ReadWord(pktAddr)
+	switch execFunc {
+	case xfxts:
+		memory.WriteWord(pktAddr+xfp1, 9) // PID 9
+		bp := memory.ReadDWord(pktAddr + xfp2)
+		if bp != 0 {
+			memory.WriteStringBA("CON10", bp) // Claim to be @CON10
+		}
+	default:
+		logging.DebugPrint(logging.ScLog, "WARNING: ?EXEC system call not yet implemented - fn code was: %#o\n", execFunc)
+	}
 	return true
 }
 

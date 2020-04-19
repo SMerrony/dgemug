@@ -317,7 +317,7 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[twoAcc1Word.acd] = 0 | dg.DwordT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs]))
 
 	default:
-		log.Fatalf("ERROR: EAGLE_OP instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: EAGLE_OP instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 
