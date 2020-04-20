@@ -29,7 +29,7 @@ import (
 
 func scIlkup(p syscallParmsT) bool {
 	bpPathname := p.cpu.GetAc(0)
-	path := strings.ToUpper(readString(bpPathname, p.cpu.GetPC()))
+	path := strings.ToUpper(readString(bpPathname, p.ringMask))
 	agIlkupReq := agIlkupReqT{p.PID, path}
 	areq := AgentReqT{agentIlkup, agIlkupReq, nil}
 	p.agentChan <- areq

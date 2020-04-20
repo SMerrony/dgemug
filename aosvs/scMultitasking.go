@@ -46,11 +46,11 @@ func scUidstat(p syscallParmsT) bool {
 		log.Panicln("?UIDSTAT request for another TID not yet implemented")
 	}
 	retPacketAddr := dg.PhysAddrT(p.cpu.GetAc(2))
-	memory.WriteWord(retPacketAddr, dg.WordT(p.PID)<<8|dg.WordT(p.TID))
+	memory.WriteWord(retPacketAddr, dg.WordT(p.TID))
 	memory.WriteWord(retPacketAddr+1, 0)
 	memory.WriteWord(retPacketAddr+2, dg.WordT(p.TID))
 	memory.WriteWord(retPacketAddr+3, 0)
-	logging.DebugPrint(logging.ScLog, "-------- Returning UTID: %#o, STID: %#o\n", dg.WordT(p.PID)<<8|dg.WordT(p.TID), p.TID)
+	logging.DebugPrint(logging.ScLog, "-------- Returning UTID: %#o, STID: %#o\n", dg.WordT(p.TID), p.TID)
 	return true
 }
 

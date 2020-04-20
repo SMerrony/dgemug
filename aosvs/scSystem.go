@@ -101,6 +101,7 @@ func scGtod(p syscallParmsT) bool {
 	p.cpu.SetAc(0, dg.DwordT(now.Second()))
 	p.cpu.SetAc(1, dg.DwordT(now.Minute()))
 	p.cpu.SetAc(2, dg.DwordT(now.Hour()))
+	logging.DebugPrint(logging.ScLog, "\tH: %d., M: %d., S: %d.\n", p.cpu.GetAc(2), p.cpu.GetAc(1), p.cpu.GetAc(0))
 	return true
 }
 

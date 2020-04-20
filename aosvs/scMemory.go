@@ -39,9 +39,9 @@ func scGshpt(p syscallParmsT) bool {
 func scMem(p syscallParmsT) bool {
 	highUnshared := memory.GetLastUnsharedPage() //& 0x0003_ffff // assumed in current ring
 	lowShared := memory.GetFirstSharedPage()     //& 0x0003_ffff
-	available := lowShared - highUnshared
+	available := lowShared - highUnshared - 8
 	inUse := highUnshared & (0x0fff_ffff >> 10)
-	p.cpu.SetAc(0, available-inUse-1)
+	p.cpu.SetAc(0, available)
 	p.cpu.SetAc(1, inUse)
 	p.cpu.SetAc(2, dg.DwordT(highUnshared<<10)-1)
 	logging.DebugPrint(logging.ScLog, "\tMax Unshared Available: %d., Unshared in Use: %d., Highestin Use: %#o (%#x)\n",

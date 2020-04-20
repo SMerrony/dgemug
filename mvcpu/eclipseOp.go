@@ -65,6 +65,19 @@ func eclipseOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[immOneAcc.acd] = dg.DwordT(memory.DwordGetUpperWord(dwd))
 		cpu.ac[dplus1] = dg.DwordT(memory.DwordGetLowerWord(dwd))
 
+	case instrDIVS:
+		dividend := int64(int16(memory.DwordGetLowerWord(cpu.ac[0]))) << 16
+		dividend += int64(uint16(memory.DwordGetLowerWord(cpu.ac[1])))
+		divisor := int64(int16(cpu.ac[2]))
+		quotient := dividend / divisor
+		if quotient < minNegS16 || quotient > maxPosS16 {
+			cpu.carry = true
+		} else {
+			cpu.carry = false
+			cpu.ac[0] = dg.DwordT(dividend%divisor) & 0x0000_ffff
+			cpu.ac[1] = dg.DwordT(quotient) & 0x0000_ffff
+		}
+
 	case instrDIVX:
 		dividend := int32(int16(cpu.ac[1]))
 		divisor := int32(int16(cpu.ac[2]))

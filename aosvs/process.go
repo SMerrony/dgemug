@@ -53,10 +53,10 @@ type ustT struct {
 	debugAddr           dg.PhysAddrT
 	revision            dg.DwordT
 	taskCount           dg.WordT
-	impureBlocks        dg.DwordT
+	impureBlocks        dg.WordT
 	sharedStartBlock    dg.DwordT // this seems to be a page #, not a block #
 	intAddr             dg.PhysAddrT
-	sharedBlockCount    dg.DwordT // this seems to be a page count, not blocks
+	sharedBlockCount    dg.WordT // this seems to be a page count, not blocks
 	prType              dg.WordT
 	sharedStartPageInPR dg.DwordT
 }
@@ -88,7 +88,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	// Announce ourself to pseudo-Agent and get PID
 	var areq AgentReqT
 	areq.action = agentAllocatePID
-	areq.reqParms = agAllocatePIDReqT{invocationArgs: args, virtualRoot: vRoot, sixteenBit: proc.ust.prType > 3}
+	areq.reqParms = agAllocatePIDReqT{invocationArgs: args, virtualRoot: vRoot, sixteenBit: proc.ust.prType&0x8000 != 0}
 	agentChan <- areq
 	areq = <-agentChan
 	if !areq.result.(agAllocatePIDRespT).ok {
@@ -116,7 +116,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
-	proc.tasks[0] = createTask(proc.PID, proc.ust.prType > 3, agentChan,
+	proc.tasks[0] = createTask(proc.PID, proc.ust.prType&0x8000 != 0, agentChan,
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
 		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
@@ -166,19 +166,23 @@ func (proc *ProcessT) Run() (errorCode dg.DwordT, termMessage string, flags dg.B
 }
 
 func (proc *ProcessT) loadUST(progWds []dg.WordT) {
-	proc.ust.extVarWdCnt = progWds[ust+ustez]
-	proc.ust.extVarP0Start = progWds[ust+ustes]
-	proc.ust.symsStart = memory.DwordFromTwoWords(progWds[ust+ustss], progWds[ust+ustss+1])
-	proc.ust.symsEnd = memory.DwordFromTwoWords(progWds[ust+ustse], progWds[ust+ustse+1])
-	proc.ust.debugAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustda], progWds[ust+ustda+1]))
-	proc.ust.revision = memory.DwordFromTwoWords(progWds[ust+ustrv], progWds[ust+ustrv+1])
-	proc.ust.taskCount = progWds[ust+usttc]
-	proc.ust.impureBlocks = memory.DwordFromTwoWords(progWds[ust+ustbl], progWds[ust+ustbl+1])
-	proc.ust.sharedStartBlock = memory.DwordFromTwoWords(progWds[ust+ustst], progWds[ust+ustst+1])
-	proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
-	proc.ust.sharedBlockCount = memory.DwordFromTwoWords(progWds[ust+ustsz], progWds[ust+ustsz+1])
+	// proc.ust.extVarWdCnt = progWds[ust+ustez]
+	// proc.ust.extVarP0Start = progWds[ust+ustes]
+	// proc.ust.symsStart = memory.DwordFromTwoWords(progWds[ust+ustss], progWds[ust+ustss+1])
+	// proc.ust.symsEnd = memory.DwordFromTwoWords(progWds[ust+ustse], progWds[ust+ustse+1])
+	// proc.ust.debugAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustda], progWds[ust+ustda+1]))
+	// proc.ust.revision = memory.DwordFromTwoWords(progWds[ust+ustrv], progWds[ust+ustrv+1])
+	// proc.ust.taskCount = progWds[ust+usttc]
+	// proc.ust.impureBlocks = progWds[ust+ustbl]
+	// proc.ust.sharedStartBlock = memory.DwordFromTwoWords(progWds[ust+ustst], progWds[ust+ustst+1])
+	// proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
+	// proc.ust.sharedBlockCount = progWds[ust+ustsz]
+	// proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1])
 	proc.ust.prType = progWds[ust+ustpr]
-	proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1])
+	proc.ust.sharedStartBlock = dg.DwordT(progWds[0x10f])
+	proc.ust.sharedBlockCount = progWds[0x113]
+	proc.ust.sharedStartPageInPR = dg.DwordT(progWds[0x11a])
+	proc.ust.taskCount = progWds[0x10a]
 }
 
 func (proc *ProcessT) printUST() {

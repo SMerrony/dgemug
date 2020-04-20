@@ -202,7 +202,7 @@ func scWrite(p syscallParmsT) bool {
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
 	recLen := int16(memory.ReadWord(pkt + ircl))
-	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad), 0, int(recLen))
+	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad), p.ringMask, int(recLen))
 	if specsWd&rtds != 0 {
 		nullPosn := bytes.IndexByte(byteslice, 0)
 		if nullPosn == -1 {
@@ -228,7 +228,7 @@ func scWrite16(p syscallParmsT) bool {
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
 	recLen := int16(memory.ReadWord(pkt + ircl16))
-	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad16), 0, int(recLen))
+	byteslice := memory.ReadBytes(dg.DwordT(memory.ReadWord(pkt+ibad16)), p.ringMask, int(recLen))
 	if specsWd&rtds != 0 {
 		nullPosn := bytes.IndexByte(byteslice, 0)
 		if nullPosn == -1 {

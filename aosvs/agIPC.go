@@ -70,7 +70,7 @@ func agIlkup(req agIlkupReqT) (resp agIlkupRespT) {
 	} else {
 		resp.globalPortNo = agIPC.globalPortNo
 		resp.ipcType = fipc // TODO ???
-		logging.DebugPrint(logging.ScLog, "\tIPC Lookup succeeded\n")
+		logging.DebugPrint(logging.ScLog, "\tIPC Lookup succeeded: %v\n", agIPC)
 	}
 	return resp
 }
