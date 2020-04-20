@@ -25,8 +25,8 @@ import (
 	"github.com/SMerrony/dgemug/dg"
 )
 
+// SYSTEM ERROR CODES
 const (
-	// SYSTEM ERROR CODES
 	ericm = 01   // ILLEGAL SYSTEM COMMAND
 	erfno = 02   // CHANNEL NOT OPEN
 	eropr = 03   // CHANNEL ALREADY OPEN
@@ -169,14 +169,11 @@ const (
 	errbo = 0214 // REFUSED BY OPERATOR
 	erwmt = 0215 // VOLUME NOT MOUNTED
 	erisv = 0216 // ILLEGAL SWITCH VALUE (>65K DECIMAL)
-
 	// THE NEXT FOUR ERROR CODES MUST BE CONTIGUOUSLY NUMBERED
-
 	erifn = 0217 // INPUT FILE  DOES NOT EXIST
 	erofn = 0220 // OUTPUT FILE  DOES NOT EXIST
 	erlfn = 0221 // LIST FILE  DOES NOT EXIST
 	erdfn = 0222 // DATA FILE DOES NOT EXIST
-
 	ergfe = 0223 // RECURSIVE GENERIC FILE OPEN FAILURE
 	ernmw = 0224 // NO MESSAGE WAITING
 	ernud = 0225 // USER DATA AREA DOES NOT EXIST
@@ -205,14 +202,11 @@ const (
 	erltk = 0252 // LAST TASK WAS KILLED
 	erlrf = 0253 // RESOURCE LOAD OR RELEASE FAILURE
 	ernnl = 0254 // ZERO LENGTH FILENAME SPECIFIED
-
 	// FOLLOWING ARE AOS/VS ONLY ERROR CODES
 	// THEY ARE IN A SEPARATE GROUP FROM THE AOS ERROR CODES
 	// THEY ARE IN GROUP 77, HENCE CODES ARE 77*1000+X
-
 	erxxx = 077 * 01000 // FIRST CODE FOR AOS/VS
 	// HARDWARE POINTER VALIDATION ERRORS
-
 	ervwp = erxxx     // INVALID ADDRESS PASSED AS SYSTEM CALL ARGUMENT
 	ervbp = ervwp + 1 // INVALID BYTE POINTER PASSED AS SYS CALL ARGUMENT
 	erdpt = ervbp + 1 // DIFFERENT TYPE PROCESS(32/16 BIT) WITHOUT PRIVILEGE
@@ -310,7 +304,6 @@ const (
 	ernml = ercll + 1 // NO MICROCODE LOADED IN THIS JP
 	eregn = ernml + 1 // END OF GET NEXT SEQUENCE
 	erctd = eregn + 1 // CORRUPTED TASK CONTROL BLOCK DATA DETECTED
-
 	eriwr = erctd + 1 // INVALID WINDOW REFERENCE.
 	erwnn = eriwr + 1 // MAXIMUM NUMBER OF WINDOWS EXCEEDED.
 	erwmd = erwnn + 1 // WINDOW MARKED FOR DELETION.
@@ -324,12 +317,10 @@ const (
 	ernsp = eruwe + 1 // HARDWARE/MICROCODE DOES NOT SUPPORT PIXEL MAPS
 	erifl = ernsp + 1 // IAC FAILURE
 	ertmo = erifl + 1 // TOO MANY OPENS ON THIS DEVICE.
-
 )
 
+// System Constants
 const (
-	// System Constants
-
 	// System Implementation Numbers
 	saos   = 1    // AOS SYSTEM
 	savs   = 2    // AOS/VS SYSTEM
@@ -339,7 +330,6 @@ const (
 	savsii = 6    // AOS/VS II SYSTEM
 	sin    = savs // THIS IS AOS/VS
 	// 6-7 RESERVED
-
 	l32b = 0 // 32 BIT USER FLAG
 	l16b = 1 // 16 BIT USER FLAG
 
@@ -459,11 +449,30 @@ const (
 
 	// BIT POINTER TO TASK DEF BITS
 	dfbrc = dflgs*16 + 1 // RESOURCE CALL
+)
 
-	//  GENERAL USER I/O PACKET
-	//
-	//        USED FOR open/read/write/close
-	//
+//  LOGICAL RECORD FORMAT TYPES
+const (
+	ordy = 1 // DYNAMIC
+	ords = 2 // DATA SENSITIVE
+	orfx = 3 // FIXED LENGTH
+	orvr = 4 // VARIABLE LENGTH
+	orun = 5 // UNDEFINED
+	orvb = 6 // IBM VARIABLE BLOCK - VARIABLE RECORD
+)
+
+// Record Format Field definitions
+const (
+	rtdy = 1 // DYNAMIC
+	rtds = 2 // DATA SENSITIVE
+	rtfx = 3 // FIXED LENGTH
+	rtvr = 4 // VARIABLE LENGTH
+	rtun = 5 // UNDEFINED
+	rtvb = 6 // IBM VARIABLE BLOCK - VARIABLE RECORD
+)
+
+//  GENERAL USER I/O PACKET USED FOR ?open/?read/?write/?close
+const (
 	ich  dg.PhysAddrT = 0             // CHANNEL NUMBER
 	isti              = ich + 1       // STATUS WORD (IN)
 	isto              = isti + 1      // RIGHT=FILE TYPE, LEFT=RESERVED
@@ -528,9 +537,8 @@ const (
 	Rfec = 1 << 4 // 1B3             // ERROR CODE FLAGIF SET, AC0 CONTAINS ERROR CODE
 )
 
+// PACKET TO GET INITIAL MESSAGE (gtmes)
 const (
-	// PACKET TO GET INITIAL MESSAGE (gtmes)
-	//
 	greq dg.PhysAddrT = 0        // REQUEST TYPE (SEE BELOW)
 	gnum              = greq + 1 // ARGUMENT NUMBER
 	gsw               = gnum + 1 // BYTE PTR TO POSSIBLE SWITCH
@@ -547,7 +555,7 @@ const (
 	garg          = gcnt + 1 // GET ARGUMENT
 	gtsw          = garg + 1 // TEST SWITCH
 	gsws          = gtsw + 1 // TEST SWITCHES
-	gdlc          = 1 << 15  //1B0             // DISABLE LOWER TO UPPERCASE CONVERSION
+	gdlc          = 1 << 15  //1B0 DISABLE LOWER TO UPPERCASE CONVERSION
 
 	// FLAGS RETURNED ON gflg TYPE CALLS
 	gfcf = 1 << 15 // 1B0             // CLI FORMAT
@@ -560,7 +568,6 @@ const (
 	gfxb = 1 << 13 //1B2             // ON=BATCH, OFF=INTERACTIVE
 	// IN ADDITION, IF CLI IS INVOKED WITH gfcf 0, BOTH gfxb & gfex
 	// EQUAL TO ZERO => EXECUTE COMMAND PASSED IN MESSAGE AND RETURN.
-
 )
 
 const (
@@ -665,11 +672,9 @@ const (
 
 )
 
+//  PERIPHERAL DEVICE CHARACTERISTICS
 const (
-	//  PERIPHERAL DEVICE CHARACTERISTICS
-
 	//        The following parameters are for the characteristic packet offsets
-
 	ch1  = 0  // word 1 (offset 0)
 	ch2  = 1  // word 2 (offset 1)
 	ch3  = 2  // word 3 (offset 2)
@@ -687,13 +692,11 @@ const (
 	ch15 = 14 // word 15 (offset 14)
 
 	//        Packet length parameters
-
 	clmin = 3  //  MIN LENGTH OF CHARACTERISTICS PACKET
 	clmax = 15 //  MAX LENGTH OF CHARACTERISTICS PACKET
 	bmlth = 20 //  LENGTH OF INQUIRE PACKET
 
 	//        ch1 - offset 0
-
 	cst  = 0  // SIMULATE TABS
 	csff = 1  // SIMULATE FORM FEEDS
 	cepi = 2  // REQUIRE EVEN PARITY ON INPUT
@@ -722,7 +725,6 @@ const (
 	ceoc = 0x8000 >> ceb0 // 0x8000 >> ceb0       // CNTRL SPECIAL ECHO BIT MASK
 
 	//        ch2 - offset 1
-
 	culc = 0 // INPUT UPPER/LOWER CASE DEVICE
 	cpm  = 1 // DEVICE IS IN PAGE MODE
 	cnrm = 2 // DISABLE MESSAGE RECEPTION
@@ -744,9 +746,7 @@ const (
 	//                15    // BIT 15 USED IN PARU.16.SR FOR TRA/TPA
 
 	//        DEFINE DEVICE TYPE MASK.
-
 	dtype = 0x8000>>cdt0 + 0x8000>>cdt1 + 0x8000>>cdt2 + 0x8000>>cdt3
-
 	tty   = 0                                          // 4010A CONSOLE DEVICE TYPE
 	crt1  = 0x8000 >> cdt3                             // 4010I CONSOLE DEVICE TYPE
 	crt2  = 0x8000 >> cdt2                             // 6012  CONSOLE DEVICE TYPE
@@ -768,11 +768,9 @@ const (
 	//
 	//        HIGH BYTE IS LPP (LINES PER PAGE)
 	//        LOW  BYTE IS CPL (CHARACTERS PER LINE)
-
 	cpgsz = ch3 // Page size
 
 	//        ch4 - offset 3
-
 	cval = 0 // INDICATES THAT THE CONTENTS OF THIS
 	// OFFSET ARE VALID(USED ON RETURN
 	// FROM gechr.)  IN GENERAL, cval= 1
@@ -795,12 +793,10 @@ const (
 	chofc  = hrdflc // HARDWARE OUTPUT FLOW CONTROL
 
 	//        SPLIT BAUD RATE VALUES:
-
 	csben = 0x8000>>ctck + 0x8000>>brfct                // ENABLE SPLIT BAUD
 	csbds = 0x8000>>ctck + 0x8000>>crck + 0x8000>>brfct // DISABLE SPLIT BAUD
 
 	//        STOP BIT FIELD VALUES ARE:
-
 	csmsk = 0x8000>>cst0 + 0x8000>>cst1 // STOP BIT FIELD MASK
 
 	// cs10=  0bcst0+0x8000 >> cst1         // 1 STOP BIT
@@ -808,7 +804,6 @@ const (
 	// cs20=  0x8000 >> cst0+0x8000 >> cst1         // 2 STOP BITS
 
 	//        PARITY BIT FIELD VALUES ARE:
-
 	// cpmsk= 0x8000 >> cpen+0x8000 >> cpty         // PARITY FIELD MASK
 
 	// cpr0=  0bcpen                 // DISABLE PARITY CHECKING
@@ -816,9 +811,7 @@ const (
 	// cpr2=  1bcpen+1bcpty         // ENABLE EVEN PARITY
 
 	// //        BAUD RATES ARE:
-
 	// brmsk= 0x8000 >> br0bt)!17B(br4bit)        // BAUD RATE MASK
-
 	// cr50=  0B(br0bit)+0.B(br4bit)        // 50
 	// cr75=  0B(br0bit)+1.B(br4bit)        // 75
 	// cr110= 0B(br0bit)+2.B(br4bit)        // 110
@@ -841,16 +834,13 @@ const (
 	//                            2- 15           //  - RESERVED
 
 	// //        DATA LENGTH FIELD VALUES ARE:
-
 	// clmsk= 1bclt0+1bclt1         // DATA LENGTH FIELD MASK
-
 	// cln5=  0bclt0+0bclt1         // 5 BITS
 	// cln6=  0bclt0+1bclt1         // 6 BITS
 	// cln7=  1bclt0+0bclt1         // 7 BITS
 	// cln8=  1bclt0+1bclt1         // 8 BITS
 
 	//        ch5 - offset 4
-
 	shco    = 0  // SHARED CONSOLE OWNERSHIP CHARACTERISTIC
 	xofc    = 1  // XON XOFF OUTPUT FLOW CONTROL
 	xifc    = 2  // XON XOFF INPUT  FLOW CONTROL

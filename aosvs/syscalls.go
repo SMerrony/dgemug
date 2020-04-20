@@ -128,7 +128,8 @@ func syscall(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan Ag
 		log.Panicf("ERROR: System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
-		log.Printf("%s System Call...\n", call.name)
+		//log.Printf("%s System Call...\n", call.name)
+		logging.DebugPrint(logging.DebugLog, "%s System Call...\n", call.name)
 		logging.DebugPrint(logging.ScLog, "%s System Call...\n", call.name)
 	}
 	return call.fn(syscallParmsT{cpu, PID, TID, ringMask, agent})
@@ -144,7 +145,8 @@ func syscall16(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan 
 		log.Panicf("ERROR: 16-bit System call No. %s not yet implemented at PC=%#x", call.name, cpu.GetPC())
 	}
 	if cpu.GetDebugLogging() {
-		log.Printf("%s System Call (16-bit)...\n", call.name)
+		//log.Printf("%s System Call (16-bit)...\n", call.name)
+		logging.DebugPrint(logging.DebugLog, "%s System Call (16-bit)...\n", call.name)
 		logging.DebugPrint(logging.ScLog, "%s System Call (16-bit)...\n", call.name)
 	}
 	return call.fn16(syscallParmsT{cpu, PID, TID, ringMask, agent})

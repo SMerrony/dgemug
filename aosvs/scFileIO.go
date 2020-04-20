@@ -22,6 +22,7 @@
 package aosvs
 
 import (
+	"bytes"
 	"log"
 	"strings"
 
@@ -186,7 +187,7 @@ func scSend(p syscallParmsT) bool {
 	// case 0x02: // AC0 is a bp to a console name
 	// case 0x03: // undefined
 	// }
-	agWrite := agWriteReqT{0, msg}
+	agWrite := agWriteReqT{0, false, false, int16(msgLen), msg, 0}
 	areq := AgentReqT{agentFileWrite, agWrite, nil}
 	logging.DebugPrint(logging.ScLog, "\tWriting <%s> to @CONSOLE\n", string(msg))
 	p.agentChan <- areq
@@ -195,27 +196,53 @@ func scSend(p syscallParmsT) bool {
 }
 
 func scWrite(p syscallParmsT) bool {
-	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
-	channel := int(memory.ReadWord(pktAddr + ich))
-	bytes := readBytes(memory.ReadDWord(pktAddr+ibad), p.cpu.GetPC())
-	// log.Println("DEBUG: ?WRITE")
-	var writeReq = agWriteReqT{channel, bytes}
+	pkt := dg.PhysAddrT(p.cpu.GetAc(2))
+	channel := int(memory.ReadWord(pkt + ich))
+	specsWd := memory.ReadWord(pkt + isti)
+	extendedPkt := specsWd&ipkl != 0
+	absPositioning := specsWd&ipst != 0
+	recLen := int16(memory.ReadWord(pkt + ircl))
+	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad), 0, int(recLen))
+	if specsWd&rtds != 0 {
+		nullPosn := bytes.IndexByte(byteslice, 0)
+		if nullPosn == -1 {
+			//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
+			nullPosn = int(recLen)
+		}
+		byteslice = byteslice[:nullPosn]
+		recLen = int16(nullPosn)
+	}
+	position := int32(memory.ReadDWord(pkt + irnh))
+	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
-	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
+	memory.WriteWord(pkt+irlr, areq.result.(agWriteRespT).bytesTxfrd)
 	return true
 }
 
 func scWrite16(p syscallParmsT) bool {
-	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
-	channel := int(memory.ReadWord(pktAddr + ich16))
-	bytes := readBytes(dg.DwordT(memory.ReadWord(pktAddr+ibad16)), p.ringMask)
-	// log.Println("DEBUG: ?WRITE")
-	var writeReq = agWriteReqT{channel, bytes}
+	pkt := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
+	channel := int(memory.ReadWord(pkt + ich16))
+	specsWd := memory.ReadWord(pkt + isti16)
+	extendedPkt := specsWd&ipkl != 0
+	absPositioning := specsWd&ipst != 0
+	recLen := int16(memory.ReadWord(pkt + ircl16))
+	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad16), 0, int(recLen))
+	if specsWd&rtds != 0 {
+		nullPosn := bytes.IndexByte(byteslice, 0)
+		if nullPosn == -1 {
+			//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
+			nullPosn = int(recLen)
+		}
+		byteslice = byteslice[:nullPosn]
+		recLen = int16(nullPosn)
+	}
+	position := int32(memory.ReadDWord(pkt + irnh16))
+	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
-	memory.WriteWord(pktAddr+irlr, areq.result.(agWriteRespT).bytesTxfrd)
+	memory.WriteWord(pkt+irlr16, areq.result.(agWriteRespT).bytesTxfrd)
 	return true
 }

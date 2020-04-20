@@ -287,26 +287,36 @@ func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
 }
 
 type agWriteReqT struct {
-	chanNo int
-	bytes  []byte
+	channel    int
+	isExtended bool
+	isAbsolute bool
+	recLen     int16
+	bytes      []byte
+	position   int32
 }
 type agWriteRespT struct {
 	bytesTxfrd dg.WordT
 }
 
 func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
-	agChan, isOpen := agChannels[req.chanNo]
+	logging.DebugPrint(logging.ScLog, "----- Chan: %d., Extended: %v, Posn: %#x, Len: %d.\n", req.channel, req.isExtended, req.position, req.recLen)
+
+	agChan, isOpen := agChannels[req.channel]
 	if isOpen {
 		if agChan.isConsole {
-			n, err := agChan.rwc.Write(req.bytes)
-			if err != nil {
-				log.Panic("ERROR: Could not write to @CONSOLE")
-			}
-			resp.bytesTxfrd = dg.WordT(n)
-			logging.DebugPrint(logging.ScLog, "?WRITE wrote <%v> to @CONSOLE\n", req.bytes)
+			resp.bytesTxfrd = dg.WordT(agWriteToUserConsole(agChan, req.bytes))
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?WRITE to unopened file")
 	}
 	return resp
+}
+
+func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
+	n, err := agChan.rwc.Write(b)
+	if err != nil {
+		log.Panic("ERROR: Could not write to @CONSOLE")
+	}
+	logging.DebugPrint(logging.ScLog, "-----  wrote %d., bytes <%v> to @CONSOLE\n", n, b)
+	return n
 }

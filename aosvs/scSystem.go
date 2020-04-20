@@ -82,7 +82,7 @@ func scGtmes(p syscallParmsT) bool {
 	return true
 }
 func scGtmes16(p syscallParmsT) bool {
-	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.cpu.GetPC() & 0x7000_0000)
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
 	var gtMesReq = agGtMesReqT{p.PID, memory.ReadWord(pktAddr + greq16), memory.ReadWord(pktAddr + gnum16), dg.DwordT(memory.ReadWord(pktAddr + gsw16))}
 	var areq = AgentReqT{agentGetMessage, gtMesReq, nil}
 	p.agentChan <- areq
