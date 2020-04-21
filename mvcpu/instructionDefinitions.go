@@ -387,6 +387,7 @@ const (
 	instrXNDSZ
 	instrXNISZ
 	instrXNLDA
+	instrXNMUL
 	instrXNSBI
 	instrXNSTA
 	instrXNSUB
@@ -715,6 +716,7 @@ func InstructionsInit() {
 	instructionSet[instrXNDSZ] = instrChars{"XNDSZ", 0xa609, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXNISZ] = instrChars{"XNISZ", 0x8639, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXNLDA] = instrChars{"XNLDA", 0x8329, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrXNMUL] = instrChars{"XNMUL", 0x8098, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXNSBI] = instrChars{"XNSBI", 0x8458, 0x87ff, 2, IMM_MODE_2_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXNSTA] = instrChars{"XNSTA", 0x8339, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXNSUB] = instrChars{"XNSUB", 0x8058, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
