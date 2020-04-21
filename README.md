@@ -9,6 +9,11 @@ Dginstr generates Go instruction definitions from a CSV source.
 
 This command can be installed by performing a `go install` from its directory.  This is required prior to building any of the related emulators.
 
+## cmd/vsemug
+VSemuG is an attempt at a user-level AOS/VS emulator.  
+
+It is mainly intended to provide a testbed for the mvcpu package and is unlikely to be especially useful (or complete) in its own right.
+
 ## devices
 Emulation of various DG peripherals:
  * Bus
