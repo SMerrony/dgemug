@@ -490,6 +490,15 @@ const (
 	idll              = idel + 1      // LOWER BITS OF idel
 	iosz int          = int(idll) + 1 // LENGTH OF STANDARD I/O PACKET
 
+	etsp = idll + 1 // SCREEN MANAGEMENT PACKET
+	etsl = etsp + 1 // LOWER PORTION OF etsp
+	etft = etsl + 1 // SELECTED FIELD TRANSLATION PACKET
+	etfl = etft + 1 // LOWER PORTION OF etft
+	etlt = etfl + 1 // LABELED TAPE PACKET
+	etll = etlt + 1 // LOWER PORTION OF etlt
+	enet = etll + 1 // RESERVED
+	enel = enet + 1 // RESERVED
+
 	//  isti FLAGS: BIT DEFINITIONS
 	iplb = 0  // PACKET LENGTH BIT (0 => SHORT PACKET)
 	icfb = 1  // CHANGE FORMAT BIT (0 => DEFAULT)
@@ -525,6 +534,29 @@ const (
 	ofin = 0x8000 >> opib // OPEN FOR INPUT
 	ofot = 0x8000 >> opob // OPEN FOR OUTPUT
 	ofio = ofin + ofot    // OPEN FOR INPUT AND OUTPUT
+)
+
+// SCREEN MANAGEMENT PACKET OFFSETS
+const (
+	esfc = 0 // STATUS/FUNCTION
+	esep = 1 // EDIT POSITION
+	escr = 2 // <COLUMN><ROW> FOR CURSOR POS.
+	esln = 3 // LENGTH SCREEN MANAGEMENT PACKET
+
+	// STATUS/FUNCTION BITS
+
+	esse = 0x8000       // SCREEN EDIT
+	esrd = 0x8000 >> 1  // REDISPLAY
+	esnr = 0x8000 >> 2  // DROP TYPE-AHEAD
+	esed = 0x8000 >> 3  // NO ECHO FOR DELIMITERS
+	escp = 0x8000 >> 4  // CURSOR POSITIONING
+	esdd = 0x8000 >> 5  // READ ENDED IN DOUBLE DELIMITER
+	esrp = 0x8000 >> 6  // RETURN CURSOR POSITION AFTER I/O
+	esne = 0x8000 >> 7  // NO ECHO ON INPUT
+	esgt = 0x8000 >> 8  // GET TYPED AHEAD CHARACTERS
+	esbe = 0x8000 >> 9  // READ TERMED ON INPUT BUFFER EMPTY
+	espe = 0x8000 >> 10 // ACCEPT POINTER INPUT
+	esbb = 0x8000 >> 11 // NO ECHO ON PREDISPLAY
 )
 
 // FLAGS FOR RETURN TO CLI (return)

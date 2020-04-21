@@ -140,7 +140,12 @@ func scRead(p syscallParmsT) bool {
 	dest := memory.ReadDWord(pktAddr + ibad)
 	readLine := (memory.ReadWord(pktAddr+isti) & ibin) == 0
 	if specs&ipkl != 0 {
-		log.Panic("ERROR: ?READ (32-bit) extended packet not yet implemented")
+		if memory.TestDwbit(memory.ReadDWord(pktAddr+etsp), 0) {
+			smPktAddr := dg.PhysAddrT(memory.ReadDWord(pktAddr+etsp) & 0x7fff_ffff)
+			memory.WriteDWord(pktAddr+etsp, dg.DwordT(smPktAddr))
+			flagWd := memory.ReadWord(smPktAddr)
+			logging.DebugPrint(logging.ScLog, "\t?ESSE: %v\n", flagWd&esse == 0)
+		}
 	}
 	logging.DebugPrint(logging.ScLog, "?READ (32-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
 	var readReq = agReadReqT{channel, specs, length, readLine}
