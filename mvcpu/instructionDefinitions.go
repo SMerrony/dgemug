@@ -144,11 +144,16 @@ const (
 	instrFAS
 	instrFCLE
 	instrFCMP
+	instrFDS
+	instrFEXP
 	instrFFAS
+	instrFHLV
 	instrFLAS
 	instrFLDS
 	instrFLST
 	instrFMD
+	instrFMOV
+	instrFMS
 	instrFNEG
 	instrFNS
 	instrFPOP
@@ -364,6 +369,7 @@ const (
 	instrWSZBO
 	instrWUSGT
 	instrWUGTI
+	instrWULEI
 	instrWXCH
 	instrWXOR
 	instrWXORI
@@ -371,6 +377,7 @@ const (
 	instrXCH
 	instrXCT
 	instrXFAMD
+	instrXFAMS
 	instrXFLDD
 	instrXFLDS
 	instrXFMMD
@@ -473,11 +480,16 @@ func InstructionsInit() {
 	instructionSet[instrFAS] = instrChars{"FAS", 0x8028, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFCLE] = instrChars{"FCLE", 0xd6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFCMP] = instrChars{"FCMP", 0x8728, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFDS] = instrChars{"FDS", 0x81a8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFEXP] = instrChars{"FEXP", 0xa668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFFAS] = instrChars{"FFAS", 0x85a8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFHLV] = instrChars{"FHLV", 0xe668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFLAS] = instrChars{"FLAS", 0x8528, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFLDS] = instrChars{"FLDS", 0x8428, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, ECLIPSE_FPU, 1}
 	instructionSet[instrFLST] = instrChars{"FLST", 0xa6e8, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFMD] = instrChars{"FMD", 0x8168, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFMOV] = instrChars{"FMOV", 0x8768, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFMS] = instrChars{"FMS", 0x8128, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFNEG] = instrChars{"FNEG", 0xe628, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFNS] = instrChars{"FNS", 0x86a8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_PC, 0}
 	instructionSet[instrFPOP] = instrChars{"FPOP", 0xeee8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_STACK, 0}
@@ -693,6 +705,7 @@ func InstructionsInit() {
 	instructionSet[instrWSZBO] = instrChars{"WSZBO", 0x8399, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWUSGT] = instrChars{"WUSGT", 0x80a9, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWUGTI] = instrChars{"WUGTI", 0xc699, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_PC, 0}
+	instructionSet[instrWULEI] = instrChars{"WULEI", 0xc6b9, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_PC, 0}
 	instructionSet[instrWXCH] = instrChars{"WXCH", 0x8369, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWXOR] = instrChars{"WXOR", 0x8479, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWXORI] = instrChars{"WXORI", 0x86b9, 0xe7ff, 3, ONEACC_IMM_3_WORD_FMT, EAGLE_OP, 0}
@@ -700,6 +713,7 @@ func InstructionsInit() {
 	instructionSet[instrXCH] = instrChars{"XCH", 0x81c8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrXCT] = instrChars{"XCT", 0xa6f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrXFAMD] = instrChars{"XFAMD", 0x8019, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
+	instructionSet[instrXFAMS] = instrChars{"XFAMS", 0x8009, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFLDD] = instrChars{"XFLDD", 0x8219, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFLDS] = instrChars{"XFLDS", 0x8209, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFMMD] = instrChars{"XFMMD", 0x8039, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}

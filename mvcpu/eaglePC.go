@@ -432,6 +432,14 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc += 3
 		}
 
+	case instrWULEI:
+		oneAccImm3Word := iPtr.variant.(oneAccImm3WordT)
+		if uint32(cpu.ac[oneAccImm3Word.acd]) <= oneAccImm3Word.immU32 {
+			cpu.pc += 4
+		} else {
+			cpu.pc += 3
+		}
+
 	case instrWUSGT:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		if twoAcc1Word.acs == twoAcc1Word.acd {
@@ -473,16 +481,21 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrXNDO: // Narrow Do Until Greater Than
 		threeWordDo := iPtr.variant.(threeWordDoT)
 		loopVarAddr := resolve15bitDisplacement(cpu, threeWordDo.ind, threeWordDo.mode, dg.WordT(threeWordDo.disp15), iPtr.dispOffset)
-		loopVar := int32(int16(memory.ReadWord(loopVarAddr + 1)))
+		//loopVar := int32(int16(memory.ReadWord(loopVarAddr + 1)))
+		loopVar := int32(int16(memory.ReadWord(loopVarAddr)))
 		loopVar++
-		memory.WriteDWord(loopVarAddr, dg.DwordT(loopVar))
+		//memory.WriteDWord(loopVarAddr, dg.DwordT(loopVar))
+		memory.WriteWord(loopVarAddr, dg.WordT(loopVar))
 		acVar := int32(cpu.ac[threeWordDo.acd])
+		log.Printf("\t loopVar: %#x, acVar: %#x\n", loopVar, acVar)
 		cpu.ac[threeWordDo.acd] = dg.DwordT(loopVar)
 		if loopVar > acVar {
 			// loop ends
 			cpu.pc = cpu.pc + 1 + dg.PhysAddrT(threeWordDo.offsetU16)
+			log.Println("\tExiting loop")
 		} else {
 			cpu.pc += dg.PhysAddrT(iPtr.instrLength)
+			log.Println("\tLooping...")
 		}
 
 	case instrXNDSZ: // unsigned narrow increment and skip if zero

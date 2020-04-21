@@ -59,6 +59,20 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 			memory.ClearQwbit(&cpu.fpsr, fpsrZ)
 		}
 
+	case instrFDS:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] /= cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
+	case instrFEXP:
+		qwd := memory.Float64toDGdouble(cpu.fpac[iPtr.ac])
+		qwd &= 0x80FF_FFFF_FFFF_FFFF
+		qwd |= dg.QwordT(cpu.ac[0]&0x0000_7f00) << 48
+		cpu.fpac[iPtr.ac] = memory.DGdoubleToFloat64(qwd)
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
+
 	case instrFFAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT) // N.B. Not the usual AC order
 		s32 := int32(cpu.fpac[twoAcc1Word.acd])
@@ -66,6 +80,11 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 			memory.SetQwbit(&cpu.fpsr, fpsrMof)
 		}
 		cpu.ac[twoAcc1Word.acs] = dg.DwordT(s32)
+
+	case instrFHLV:
+		cpu.fpac[iPtr.ac] /= 2.0
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
 
 	case instrFLAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -79,6 +98,18 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGsingleToFloat64(memory.ReadDWord(addr))
 
 	case instrFMD:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] *= cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
+	case instrFMOV:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		cpu.fpac[twoAcc1Word.acd] = cpu.fpac[twoAcc1Word.acs]
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
+	case instrFMS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.fpac[twoAcc1Word.acd] *= cpu.fpac[twoAcc1Word.acs]
 		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)

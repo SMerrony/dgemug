@@ -25,16 +25,16 @@ The NADGUG library provides a good range of freely-available test targets...
   | 21        | 32 | Unmapped write in LCALL                       | LCALL/Stack/Mem |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
-  | DND       | 32 | Does a ?READ, result looks funky              | ?READ (length: -1) |
+  | DND       | 32 | Unmapped Read in LCALL                        | LCALL/Stack/Mem  |
   | EMPIRE    | 32 | EMPIRE1.PR - Unmapped write in XWSTA          | |
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
-  | FOOBAR    | 32 | Extended ?READ nyi                            | Extended ?READ |
+  | FOOBAR    | 32 | Unmapped write in XWSTA                       |  |
   | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | LCALL/Stack/Mem |
   | MMM       | 32 | Unmapped write in XWSTA                       | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
-  | QUEST     | 32 | QUEST_SERVER.PR - Unmapped read in ?WRITE     |  |
+  | QUEST     | 32 | QUEST_SERVER.PR - instr FSGT nyi              | FSGT |
   | QUEST     | 32 | QUEST.PR - Extended ?READ nyi                 | Extended ?READ  |
   | SCRABBLE  | 32 | Instruction XCT nyi                           | XCT |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |

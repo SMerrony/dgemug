@@ -507,7 +507,7 @@ func wctr(cpu *CPUT) {
 	var transTable [256]dg.ByteT
 	var c dg.DwordT
 	for c = 0; c < 256; c++ {
-		transTable[c] = readByteBA(transTablePtr + c)
+		transTable[c] = readByteBA(transTablePtr<<1 + c)
 	}
 
 	for cpu.ac[1] != 0 {
