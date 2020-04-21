@@ -39,11 +39,12 @@ func scGshpt(p syscallParmsT) bool {
 func scMem(p syscallParmsT) bool {
 	highUnshared := memory.GetLastUnsharedPage() //& 0x0003_ffff // assumed in current ring
 	lowShared := memory.GetFirstSharedPage()     //& 0x0003_ffff
-	available := lowShared - highUnshared - 8
+	available := lowShared - highUnshared - 4
 	inUse := highUnshared & (0x0fff_ffff >> 10)
 	p.cpu.SetAc(0, available)
 	p.cpu.SetAc(1, inUse)
-	p.cpu.SetAc(2, dg.DwordT(highUnshared<<10)-1)
+	//p.cpu.SetAc(2, dg.DwordT(highUnshared<<10)-1)
+	p.cpu.SetAc(3, inUse+dg.DwordT(p.ringMask)-1)
 	logging.DebugPrint(logging.ScLog, "\tMax Unshared Available: %d., Unshared in Use: %d., Highestin Use: %#o (%#x)\n",
 		available, inUse, highUnshared<<10, highUnshared<<10)
 	logging.DebugPrint(logging.ScLog, "\tN.B. Lowest shared page is %#o (%#x)\n", lowShared<<10, lowShared<<10)
@@ -52,6 +53,7 @@ func scMem(p syscallParmsT) bool {
 
 func scMemi(p syscallParmsT) bool {
 	numPages := int32(p.cpu.GetAc(0))
+	logging.DebugPrint(logging.ScLog, "\tRequested page count: %d, (%#x)\n", numPages, p.cpu.GetAc(0))
 	var lastPage int
 	switch {
 	case numPages > 0: // add pages
@@ -61,7 +63,7 @@ func scMemi(p syscallParmsT) bool {
 			numPages--
 		}
 		p.cpu.SetAc(1, (dg.DwordT(lastPage<<10)|dg.DwordT(p.ringMask))-1)
-		logging.DebugPrint(logging.ScLog, "\tHighsest in use is now  %#o (%#x)\n", memory.GetLastUnsharedPage(), memory.GetLastUnsharedPage())
+		logging.DebugPrint(logging.ScLog, "\tHighest in use is now  %#o (%#x)\n", memory.GetLastUnsharedPage(), memory.GetLastUnsharedPage())
 	case numPages < 0: // remove pages
 		log.Panicln("ERROR: Unmapping via ?MEMI not yet supported")
 	}

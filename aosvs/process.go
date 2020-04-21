@@ -166,23 +166,24 @@ func (proc *ProcessT) Run() (errorCode dg.DwordT, termMessage string, flags dg.B
 }
 
 func (proc *ProcessT) loadUST(progWds []dg.WordT) {
-	// proc.ust.extVarWdCnt = progWds[ust+ustez]
-	// proc.ust.extVarP0Start = progWds[ust+ustes]
-	// proc.ust.symsStart = memory.DwordFromTwoWords(progWds[ust+ustss], progWds[ust+ustss+1])
-	// proc.ust.symsEnd = memory.DwordFromTwoWords(progWds[ust+ustse], progWds[ust+ustse+1])
-	// proc.ust.debugAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustda], progWds[ust+ustda+1]))
-	// proc.ust.revision = memory.DwordFromTwoWords(progWds[ust+ustrv], progWds[ust+ustrv+1])
-	// proc.ust.taskCount = progWds[ust+usttc]
-	// proc.ust.impureBlocks = progWds[ust+ustbl]
-	// proc.ust.sharedStartBlock = memory.DwordFromTwoWords(progWds[ust+ustst], progWds[ust+ustst+1])
-	// proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
-	// proc.ust.sharedBlockCount = progWds[ust+ustsz]
-	// proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1])
-	proc.ust.prType = progWds[ust+ustpr]
-	proc.ust.sharedStartBlock = dg.DwordT(progWds[0x10f])
-	proc.ust.sharedBlockCount = progWds[0x113]
-	proc.ust.sharedStartPageInPR = dg.DwordT(progWds[0x11a])
-	proc.ust.taskCount = progWds[0x10a]
+	proc.ust.extVarWdCnt = progWds[ust+ustez]
+	proc.ust.extVarP0Start = progWds[ust+ustes]
+	proc.ust.symsStart = memory.DwordFromTwoWords(progWds[ust+ustss], progWds[ust+ustss+1])
+	proc.ust.symsEnd = memory.DwordFromTwoWords(progWds[ust+ustse], progWds[ust+ustse+1])
+	proc.ust.debugAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustda], progWds[ust+ustda+1]))
+	proc.ust.revision = memory.DwordFromTwoWords(progWds[ust+ustrv], progWds[ust+ustrv+1])
+	proc.ust.taskCount = progWds[ust+usttc] // 266.
+	proc.ust.impureBlocks = progWds[ust+ustbl]
+	proc.ust.sharedStartBlock = memory.DwordFromTwoWords(progWds[ust+ustst], progWds[ust+ustst+1]) // 0x10f 271. 0417
+	proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
+	proc.ust.sharedBlockCount = progWds[ust+ustsz]                                                    // 0x113 275. 0423
+	proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1]) // 0x11a 282. 0432
+
+	// proc.ust.prType = progWds[ust+ustpr]
+	// proc.ust.sharedStartBlock = dg.DwordT(progWds[0x10f])    // 271. 0417
+	// proc.ust.sharedBlockCount = progWds[0x113]               // 275. 0423
+	// //proc.ust.sharedStartPageInPR = dg.DwordT(progWds[0x11a]) // 282. 0432
+	// //proc.ust.taskCount = progWds[0x10a]                      // 266. 0412
 }
 
 func (proc *ProcessT) printUST() {

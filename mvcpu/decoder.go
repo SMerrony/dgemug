@@ -419,7 +419,7 @@ func InstructionDecode(opcode dg.WordT, pc dg.PhysAddrT, lefMode bool, ioOn bool
 		fourthWord = memory.ReadWord(pc + 3)
 		decodedInstr.ind = decodeIndirect(memory.TestWbit(secondWord, 0))
 		decodedInstr.disp31 = decode31bitDisp(secondWord, thirdWord, decodedInstr.mode)
-		decodedInstr.argCount = int(fourthWord)
+		decodedInstr.argCount = int(int16(fourthWord))
 		if disassemble {
 			decodedInstr.disassembly += fmt.Sprintf(" %c%#o%s,%#o [4-Word OpCode]",
 				decodedInstr.ind, decodedInstr.disp31, modeToString(decodedInstr.mode),

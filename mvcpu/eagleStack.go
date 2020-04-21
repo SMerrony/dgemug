@@ -92,7 +92,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		case ac3Mode:
 			eff |= (cpu.ac[3] << 1)
 		}
-		wsPush(cpu, eff<<1)
+		wsPush(cpu, eff)
 		cpu.SetOVR(false)
 
 	case instrSTAFP:
