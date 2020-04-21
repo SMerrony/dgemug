@@ -83,6 +83,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	072:  {"?GUNM", "?GUNM", scProcess, scGunm, nil},
 	073:  {"?GSHPT", "?GSHP", scMemory, scGshpt, scGshpt},
 	074:  {"?GHRZ", "?GHRZ", scSystem, scGhrz, scGhrz},
+	0102: {"?GLIST", "?GLIS", scFileManage, nil, nil},
 	0111: {"?GNAME", "?GNAM", scFileManage, scGname, scGname},
 	0113: {"?SUSER", "?SUSE", scProcess, scDummy, nil},
 	0116: {"?PNAME", "?PNAM", scProcess, scPname, nil},

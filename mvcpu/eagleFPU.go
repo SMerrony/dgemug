@@ -39,6 +39,14 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
 
+	case instrLFDMD:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd3Word.acd] /= memory.DGdoubleToFloat64(qwd)
+		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
 	case instrLFLDD:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
@@ -70,6 +78,13 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.fpac[oneAccModeInd3Word.acd] *= single
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
+
+	case instrLFSTD:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		qwd := memory.Float64toDGdouble(cpu.fpac[oneAccModeInd3Word.acd])
+		memory.WriteDWord(addr, dg.DwordT(qwd>>32))
+		memory.WriteDWord(addr+2, dg.DwordT(qwd))
 
 	case instrLFSTS:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
@@ -119,6 +134,14 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 			log.Panicf("ERROR: Decimal data type %d not yet supported\n", dataType)
 		}
 
+	case instrXFAMD:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpQuad := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd2Word.acd] += memory.DGdoubleToFloat64(fpQuad)
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+
 	case instrXFLDD:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
@@ -132,6 +155,14 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
 		fpSingle := memory.ReadDWord(addr)
 		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGsingleToFloat64(fpSingle)
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+
+	case instrXFMMD:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpQuad := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
+		cpu.fpac[oneAccModeInd2Word.acd] *= memory.DGdoubleToFloat64(fpQuad)
 		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
 
