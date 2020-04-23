@@ -591,7 +591,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
-			log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
+			//log.Printf("%s %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
 
 		// EXECUTE

@@ -23,6 +23,7 @@ The NADGUG library provides a good range of freely-available test targets...
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
   | 21        | 32 | Unmapped write in LCALL                       | LCALL/Stack/Mem |
+  | ADVENTURE | 32 | Unmapped read in LCALL                        | Is this a true 32-bit binary? |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Unmapped Read in LCALL                        | LCALL/Stack/Mem  |
@@ -34,8 +35,8 @@ The NADGUG library provides a good range of freely-available test targets...
   | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | LCALL/Stack/Mem |
   | MMM       | 32 | Unmapped write in XWSTA                       | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
-  | QUEST     | 32 | QUEST_SERVER.PR - instr FSGT nyi              | FSGT |
-  | QUEST     | 32 | QUEST.PR - Extended ?READ nyi                 | Extended ?READ  |
+  | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         |  |
+  | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
   | SCRABBLE  | 32 | Instruction XCT nyi                           | XCT |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
   | YAHTZEE   | 32 | Displays prompt, extended ?READ nyi           | Extended ?READ |
@@ -47,7 +48,6 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
-  | ADVENTURE | 16 | Sys Call 0272 nyi                             | Call not listed in docs... |
   | ASTEROIDS | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | BRUTUS    | 16 | Tries to map already-mapped page in ?MEMI     | ?Not enough room between areas? check ?MEM | 
   | CONQUEST  | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |

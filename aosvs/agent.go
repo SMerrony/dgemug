@@ -33,6 +33,7 @@ import (
 	"github.com/SMerrony/dgemug/logging"
 )
 
+// pseudo-Agent function calls...
 const (
 	agentAllocatePID = iota
 	agentAllocateTID
@@ -68,13 +69,15 @@ type perProcessDataT struct {
 	tidsInUse      [maxTasksPerProc]bool
 }
 
+// agChannelT holds status of a file opened by the Agent for a user proc
 type agChannelT struct {
-	path        string
-	isConsole   bool
-	read, write bool
-	forShared   bool               // indicated this has been ?SOPENed
-	rwc         io.ReadWriteCloser // stream I/O
-	file        *os.File           // file I/O
+	path         string
+	isConsole    bool
+	read, write  bool
+	forShared    bool               // indicated this has been ?SOPENed
+	recordLength int                // default I/O record length set at ?OPEN time
+	rwc          io.ReadWriteCloser // stream I/O
+	file         *os.File           // file I/O
 }
 
 type agIPCT struct {
@@ -84,14 +87,21 @@ type agIPCT struct {
 	globalPortNo int
 }
 
-const consoleChan = 0
+// fixed channel #s for @CONSOLE, @INPUT and @OUTPUT
+const (
+	consoleChan = 0
+	inputChan   = 1
+	outputChan  = 2
+)
 
 var (
 	pidInUse       [maxPID]bool
 	perProcessData = map[int]perProcessDataT{}
 	// uniqueTIDs     []uint16
 	agChannels = map[int]*agChannelT{
-		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, rwc: nil, file: nil}, // @CONSOLE is always available
+		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
+		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
+		outputChan:  {path: "@OUTPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
 	}
 	agIPCs = map[string]*agIPCT{} // key is unique pathname
 )
@@ -101,9 +111,12 @@ func StartAgent(conn net.Conn) chan AgentReqT {
 	// fake some in-use PIDs so they are not used
 	pidInUse[0], pidInUse[1], pidInUse[2], pidInUse[3], pidInUse[4] = true, true, true, true, true
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
-	agChannels[0].rwc = conn
+	agChannels[consoleChan].rwc = conn
+	agChannels[inputChan].rwc = conn
+	agChannels[outputChan].rwc = conn
 
 	go agentHandler(agentChan)
+
 	return agentChan
 }
 

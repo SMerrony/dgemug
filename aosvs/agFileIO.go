@@ -61,9 +61,10 @@ func agFileClose(req agCloseReqT) (resp agCloseRespT) {
 }
 
 type agOpenReqT struct {
-	PID  int
-	path string
-	mode dg.WordT
+	PID    int
+	path   string
+	mode   dg.WordT
+	recLen int
 }
 type agOpenRespT struct {
 	channelNo dg.WordT
@@ -72,11 +73,6 @@ type agOpenRespT struct {
 
 func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	resp.ac0 = 0
-	// TODO currently returning same channel for these common generic files, they might need separate ones...
-	if req.path == "@CONSOLE" || req.path == "@OUTPUT" || req.path == "@INPUT" {
-		resp.channelNo = consoleChan
-		return resp
-	}
 	var (
 		fp     *os.File
 		flags  int
@@ -111,16 +107,39 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	if req.mode&apnd != 0 {
 		flags |= os.O_APPEND
 	}
-	if req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
+	switch {
+	case req.path[0] == '@':
+		switch req.path {
+		case "@CONSOLE":
+			if req.recLen > 0 {
+				agChannels[consoleChan].recordLength = req.recLen
+			}
+			resp.channelNo = consoleChan
+		case "@INPUT":
+			if req.recLen > 0 {
+				agChannels[inputChan].recordLength = req.recLen
+			}
+			resp.channelNo = inputChan
+		case "@OUTPUT":
+			if req.recLen > 0 {
+				agChannels[outputChan].recordLength = req.recLen
+			}
+			resp.channelNo = outputChan
+		default:
+			log.Panicf("ERROR: Pseudo-Agent cannot handle generic file %s\n", req.path)
+		}
+		return resp
+	case req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "":
 		logging.DebugPrint(logging.ScLog, "\tAttempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
 		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.path, flags, 0755)
-	} else {
+	default:
 		fp, err = os.OpenFile(req.path, flags, 0755)
 	}
 	if err != nil {
 		resp.ac0 = erfad
 		return resp
 	}
+	agChan.recordLength = req.recLen
 	agChan.file = fp
 	newChan := len(agChannels)
 	agChannels[newChan] = &agChan
@@ -142,10 +161,16 @@ type agReadRespT struct {
 func agFileRead(req agReadReqT) (resp agReadRespT) {
 	agChan, isOpen := agChannels[req.chanNo]
 	if isOpen {
-		if agChan.isConsole {
-			if !req.readLine {
-				log.Panic("ERROR: Fixed-length Input from @CONSOLE not yet implemented")
+		recLen := req.length
+		if recLen == -1 {
+			if agChan.recordLength == -1 {
+				log.Panicf("ERROR: Default length file read on file with no default length set at ?OPEN")
+			} else {
+				recLen = agChan.recordLength
 			}
+		}
+		if agChan.isConsole {
+			logging.DebugPrint(logging.ScLog, "?READ from CONSOLE device...\n")
 			buff := make([]byte, 0)
 			for {
 				oneByte := make([]byte, 1, 1)
@@ -156,7 +181,10 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 				if l == 0 {
 					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
 				}
-				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\n' || oneByte[0] == '\r' {
+				if oneByte[0] == 0 {
+					continue
+				}
+				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break
 				}
 				// TODO DELete
@@ -168,7 +196,7 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 			case req.specs&ipst != 0:
 				log.Panic("Absolute positining NYI")
 			}
-			buf := make([]byte, req.length)
+			buf := make([]byte, recLen)
 			n, err := agChannels[req.chanNo].file.Read(buf)
 			if n == 0 && err == io.EOF {
 				resp.ac0 = ereof
@@ -290,21 +318,36 @@ type agWriteReqT struct {
 	channel    int
 	isExtended bool
 	isAbsolute bool
-	recLen     int16
+	isDataSens bool
+	recLen     int
 	bytes      []byte
 	position   int32
 }
 type agWriteRespT struct {
+	errCode    int
 	bytesTxfrd dg.WordT
 }
 
 func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
-	logging.DebugPrint(logging.ScLog, "----- Chan: %d., Extended: %v, Posn: %#x, Len: %d.\n", req.channel, req.isExtended, req.position, req.recLen)
+	logging.DebugPrint(logging.ScLog, "\tChan: %d., Extended: %v, Posn: %#x, Data Sensitive: %v, Len: %d.\n", req.channel, req.isExtended, req.position, req.isDataSens, req.recLen)
 
 	agChan, isOpen := agChannels[req.channel]
+	bytes := req.bytes
 	if isOpen {
+		if req.isDataSens {
+			maxLen := req.recLen
+			if req.recLen == -1 {
+				maxLen = agChannels[req.channel].recordLength
+			}
+			var tooLong bool
+			bytes, tooLong = getDataSensitivePortion(bytes, maxLen)
+			if tooLong {
+				resp.errCode = erltl
+				return resp
+			}
+		}
 		if agChan.isConsole {
-			resp.bytesTxfrd = dg.WordT(agWriteToUserConsole(agChan, req.bytes))
+			resp.bytesTxfrd = dg.WordT(agWriteToUserConsole(agChan, bytes))
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?WRITE to unopened file")
@@ -317,6 +360,16 @@ func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
 	if err != nil {
 		log.Panic("ERROR: Could not write to @CONSOLE")
 	}
-	logging.DebugPrint(logging.ScLog, "-----  wrote %d., bytes <%v> to @CONSOLE\n", n, b)
+	logging.DebugPrint(logging.ScLog, "\twrote %d., bytes <%v> to @CONSOLE\n", n, b)
 	return n
+}
+
+func getDataSensitivePortion(ba []byte, maxLen int) (res []byte, tooLong bool) {
+	tooLong = false
+	for ix, b := range ba {
+		if b == 0 || b == dg.ASCIINL || b == dg.ASCIICR || b == dg.ASCIIFF {
+			return ba[:ix], false
+		}
+	}
+	return nil, true
 }

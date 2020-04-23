@@ -22,7 +22,6 @@
 package aosvs
 
 import (
-	"bytes"
 	"log"
 	"strings"
 
@@ -90,12 +89,12 @@ func scOpen(p syscallParmsT) bool {
 	options := memory.ReadWord(pktAddr + isti)
 	fileType := memory.ReadWord(pktAddr + isto)
 	// blockSize := memory.ReadWord(pktAddr+imrs)
-	// recLen := memory.ReadWord(pktAddr+ircl)
+	recLen := int(int16(memory.ReadWord(pktAddr + ircl)))
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x, RecLen: %d.\n", path, fileType, options, recLen)
 	var areq AgentReqT
-	var openReq = agOpenReqT{p.PID, path, options}
+	var openReq = agOpenReqT{p.PID, path, options, recLen}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	p.agentChan <- areq
@@ -114,12 +113,12 @@ func scOpen16(p syscallParmsT) bool {
 	options := memory.ReadWord(pktAddr + isti16)
 	fileType := memory.ReadWord(pktAddr + isto16)
 	// blockSize := memory.ReadWord(pktAddr+imrs16)
-	// recLen := memory.ReadWord(pktAddr+ircl)
+	recLen := int(int16(memory.ReadWord(pktAddr + ircl16)))
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x\n", path, fileType, options)
+	logging.DebugPrint(logging.ScLog, "?OPEN (16-bit) Pathname: %s, Type: %#x, Options: %#x, RecLen: %d.\n", path, fileType, options, recLen)
 	var areq AgentReqT
-	var openReq = agOpenReqT{p.PID, path, options}
+	var openReq = agOpenReqT{p.PID, path, options, recLen}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	p.agentChan <- areq
@@ -136,15 +135,32 @@ func scRead(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	channel := int(memory.ReadWord(pktAddr + ich))
 	specs := memory.ReadWord(pktAddr + isti)
-	length := int(memory.ReadWord(pktAddr + ircl))
+	length := int(int16(memory.ReadWord(pktAddr + ircl)))
 	dest := memory.ReadDWord(pktAddr + ibad)
-	readLine := (memory.ReadWord(pktAddr+isti) & ibin) == 0
+	readLine := (memory.ReadWord(pktAddr+isti) & ibin) != 0
 	if specs&ipkl != 0 {
 		if memory.TestDwbit(memory.ReadDWord(pktAddr+etsp), 0) {
 			smPktAddr := dg.PhysAddrT(memory.ReadDWord(pktAddr+etsp) & 0x7fff_ffff)
 			memory.WriteDWord(pktAddr+etsp, dg.DwordT(smPktAddr))
 			flagWd := memory.ReadWord(smPktAddr)
-			logging.DebugPrint(logging.ScLog, "\t?ESSE: %v\n", flagWd&esse == 0)
+			if flagWd != 0 {
+				logging.DebugPrint(logging.ScLog, "\t?ESSE: %v\n", flagWd&esse != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESRD: %v\n", flagWd&esrd != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESNR: %v\n", flagWd&esnr != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESED: %v\n", flagWd&esed != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESCP: %v\n", flagWd&escp != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESDD: %v\n", flagWd&esdd != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESRP: %v\n", flagWd&esrp != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESNE: %v\n", flagWd&esne != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESGT: %v\n", flagWd&esgt != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESBE: %v\n", flagWd&esbe != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESPE: %v\n", flagWd&espe != 0)
+				logging.DebugPrint(logging.ScLog, "\t?ESEP: %#x\n", memory.ReadWord(smPktAddr+1))
+				logging.DebugPrint(logging.ScLog, "\t?ESCR: %#x\n", memory.ReadWord(smPktAddr+2))
+				logging.DebugPrint(logging.ScLog, "\tExtended packet ignored...\n")
+			} else {
+				logging.DebugPrint(logging.ScLog, "\tFlag word is zero - ignoring\n")
+			}
 		}
 	}
 	logging.DebugPrint(logging.ScLog, "?READ (32-bit) Channel: %#x, Specs: %#x, Bytes: %#x, Dest: %#x, Line Mode: %v\n", channel, specs, length, dest, readLine)
@@ -165,7 +181,7 @@ func scRead16(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | p.ringMask
 	channel := int(memory.ReadWord(pktAddr + ich16))
 	specs := memory.ReadWord(pktAddr + isti16)
-	length := int(memory.ReadWord(pktAddr + ircl16))
+	length := int(int16(memory.ReadWord(pktAddr + ircl16)))
 	dest := dg.DwordT(memory.ReadWord(pktAddr + ibad16))
 	readLine := (memory.ReadWord(pktAddr+isti16) & ibin) == 0
 	if specs&ipkl != 0 {
@@ -192,7 +208,7 @@ func scSend(p syscallParmsT) bool {
 	// case 0x02: // AC0 is a bp to a console name
 	// case 0x03: // undefined
 	// }
-	agWrite := agWriteReqT{0, false, false, int16(msgLen), msg, 0}
+	agWrite := agWriteReqT{0, false, false, true, int(int16(msgLen)), msg, 0}
 	areq := AgentReqT{agentFileWrite, agWrite, nil}
 	logging.DebugPrint(logging.ScLog, "\tWriting <%s> to @CONSOLE\n", string(msg))
 	p.agentChan <- areq
@@ -206,22 +222,26 @@ func scWrite(p syscallParmsT) bool {
 	specsWd := memory.ReadWord(pkt + isti)
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
-	recLen := int16(memory.ReadWord(pkt + ircl))
+	recLen := int(int16(memory.ReadWord(pkt + ircl)))
 	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad), p.ringMask, int(recLen))
-	if specsWd&rtds != 0 {
-		nullPosn := bytes.IndexByte(byteslice, 0)
-		if nullPosn == -1 {
-			//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
-			nullPosn = int(recLen)
-		}
-		byteslice = byteslice[:nullPosn]
-		recLen = int16(nullPosn)
-	}
+	// if specsWd&rtds != 0 {
+	// 	nullPosn := bytes.IndexByte(byteslice, 0)
+	// 	if nullPosn == -1 {
+	// 		log.Panicln("ERROR: No trailing NULL found in Data Sensitive data")
+	// 		nullPosn = int(recLen)
+	// 	}
+	// 	byteslice = byteslice[:nullPosn]
+	// 	recLen = int16(nullPosn)
+	// }
 	position := int32(memory.ReadDWord(pkt + irnh))
-	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, recLen, byteslice, position}
+	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, specsWd&rtds != 0, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
+	if areq.result.(agWriteRespT).errCode != 0 {
+		p.cpu.SetAc(0, dg.DwordT(areq.result.(agWriteRespT).errCode))
+		return false
+	}
 	memory.WriteWord(pkt+irlr, areq.result.(agWriteRespT).bytesTxfrd)
 	return true
 }
@@ -232,19 +252,19 @@ func scWrite16(p syscallParmsT) bool {
 	specsWd := memory.ReadWord(pkt + isti16)
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
-	recLen := int16(memory.ReadWord(pkt + ircl16))
+	recLen := int(int16(memory.ReadWord(pkt + ircl16)))
 	byteslice := memory.ReadBytes(dg.DwordT(memory.ReadWord(pkt+ibad16)), p.ringMask, int(recLen))
-	if specsWd&rtds != 0 {
-		nullPosn := bytes.IndexByte(byteslice, 0)
-		if nullPosn == -1 {
-			//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
-			nullPosn = int(recLen)
-		}
-		byteslice = byteslice[:nullPosn]
-		recLen = int16(nullPosn)
-	}
+	// if specsWd&rtds != 0 {
+	// 	nullPosn := bytes.IndexByte(byteslice, 0)
+	// 	if nullPosn == -1 {
+	// 		//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
+	// 		nullPosn = int(recLen)
+	// 	}
+	// 	byteslice = byteslice[:nullPosn]
+	// 	recLen = int16(nullPosn)
+	// }
 	position := int32(memory.ReadDWord(pkt + irnh16))
-	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, recLen, byteslice, position}
+	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, specsWd&rtds != 0, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
