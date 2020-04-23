@@ -88,7 +88,9 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrFLAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpu.fpac[twoAcc1Word.acd] = float64(int16(twoAcc1Word.acs)) // TODO not quite right...
+		cpu.fpac[twoAcc1Word.acd] = float64(int16(twoAcc1Word.acs))
+		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
 	case instrFLDS:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
@@ -96,6 +98,8 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		addr &= 0x7fff
 		addr |= (cpu.pc & ringMask32)
 		cpu.fpac[oneAccModeInd2Word.acd] = memory.DGsingleToFloat64(memory.ReadDWord(addr))
+		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
 
 	case instrFMD:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -138,6 +142,16 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.fpac[twoAcc1Word.acd] -= cpu.fpac[twoAcc1Word.acs]
 		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
+
+	case instrFSGE:
+		if !memory.TestQwbit(cpu.fpsr, fpsrN) {
+			cpu.pc++
+		}
+
+	case instrFSGT:
+		if !memory.TestQwbit(cpu.fpsr, fpsrZ) && !memory.TestQwbit(cpu.fpsr, fpsrN) {
+			cpu.pc++
+		}
 
 	case instrFSLT:
 		if memory.TestQwbit(cpu.fpsr, fpsrN) {
