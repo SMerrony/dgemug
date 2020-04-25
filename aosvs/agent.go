@@ -66,11 +66,13 @@ type perProcessDataT struct {
 	virtualRoot    string
 	sixteenBit     bool
 	name           string
+	rwc            io.ReadWriteCloser // stream I/O port for proc's CONSOLE
 	tidsInUse      [maxTasksPerProc]bool
 }
 
 // agChannelT holds status of a file opened by the Agent for a user proc
 type agChannelT struct {
+	openerPID    int
 	path         string
 	isConsole    bool
 	read, write  bool

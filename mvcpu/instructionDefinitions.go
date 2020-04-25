@@ -144,6 +144,7 @@ const (
 	instrFAS
 	instrFCLE
 	instrFCMP
+	instrFAB
 	instrFDS
 	instrFEXP
 	instrFFAS
@@ -480,6 +481,7 @@ func InstructionsInit() {
 	instructionSet[instrFAS] = instrChars{"FAS", 0x8028, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFCLE] = instrChars{"FCLE", 0xd6e8, 0xffff, 1, UNIQUE_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFCMP] = instrChars{"FCMP", 0x8728, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFAB] = instrChars{"FAB", 0xc628, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFDS] = instrChars{"FDS", 0x81a8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFEXP] = instrChars{"FEXP", 0xa668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFFAS] = instrChars{"FFAS", 0x85a8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}

@@ -30,6 +30,11 @@ import (
 func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
+	case instrFAB:
+		cpu.fpac[iPtr.ac] = math.Abs(cpu.fpac[iPtr.ac])
+		cpu.SetN(false)
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+
 	case instrFAD:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.fpac[twoAcc1Word.acd] += cpu.fpac[twoAcc1Word.acs]

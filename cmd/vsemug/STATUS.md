@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 21 Apr 2020
+* Last Updated: 23 Apr 2020
 * Last Significant Progress: 5 Apr 2020 (fixed another bug in decoder)
   
 ## What Works? :+1:
@@ -26,16 +26,16 @@ The NADGUG library provides a good range of freely-available test targets...
   | ADVENTURE | 32 | Unmapped read in LCALL                        | Is this a true 32-bit binary? |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
-  | DND       | 32 | Unmapped Read in LCALL                        | LCALL/Stack/Mem  |
+  | DND       | 32 | Instruction XCT nyi                           | XCT |
   | EMPIRE    | 32 | EMPIRE1.PR - Unmapped write in XWSTA          | |
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Unmapped write in XWSTA                       |  |
-  | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | LCALL/Stack/Mem |
+  | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | LCALL/Stack/Mem <== Good debugging candidate <== |
   | MMM       | 32 | Unmapped write in XWSTA                       | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
-  | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         |  |
+  | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
   | SCRABBLE  | 32 | Instruction XCT nyi                           | XCT |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |

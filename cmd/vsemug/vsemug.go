@@ -43,7 +43,7 @@ import (
 
 // program options - Change arg slicing in main if these are changed
 var (
-	consoleAddrFlag = flag.String("consoleaddr", "localhost:10001", "network interface/port for @CONSOLE")
+	consoleAddrFlag = flag.String("consoleaddr", "localhost:10001", "network interface/port for @CONSOLE for 1st process, others will be assigned sequentially")
 	prFlag          = flag.String("pr", "", "program to run at startup")
 )
 

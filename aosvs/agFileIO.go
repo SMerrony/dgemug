@@ -201,6 +201,14 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 			if n == 0 && err == io.EOF {
 				resp.ac0 = ereof
 			} else {
+				if req.specs&rtds != 0 {
+					tooLong := false
+					buf, tooLong = getDataSensitivePortion(buf, recLen)
+					if tooLong {
+						resp.ac0 = erltl
+						return resp
+					}
+				}
 				resp.data = buf
 			}
 		}
@@ -334,18 +342,6 @@ func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
 	agChan, isOpen := agChannels[req.channel]
 	bytes := req.bytes
 	if isOpen {
-		if req.isDataSens {
-			maxLen := req.recLen
-			if req.recLen == -1 {
-				maxLen = agChannels[req.channel].recordLength
-			}
-			var tooLong bool
-			bytes, tooLong = getDataSensitivePortion(bytes, maxLen)
-			if tooLong {
-				resp.errCode = erltl
-				return resp
-			}
-		}
 		if agChan.isConsole {
 			resp.bytesTxfrd = dg.WordT(agWriteToUserConsole(agChan, bytes))
 		}

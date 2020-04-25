@@ -222,19 +222,24 @@ func scWrite(p syscallParmsT) bool {
 	specsWd := memory.ReadWord(pkt + isti)
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
+	dataSens := specsWd&rtds != 0
 	recLen := int(int16(memory.ReadWord(pkt + ircl)))
 	byteslice := memory.ReadBytes(memory.ReadDWord(pkt+ibad), p.ringMask, int(recLen))
-	// if specsWd&rtds != 0 {
-	// 	nullPosn := bytes.IndexByte(byteslice, 0)
-	// 	if nullPosn == -1 {
-	// 		log.Panicln("ERROR: No trailing NULL found in Data Sensitive data")
-	// 		nullPosn = int(recLen)
-	// 	}
-	// 	byteslice = byteslice[:nullPosn]
-	// 	recLen = int16(nullPosn)
-	// }
+	if dataSens {
+		// this is done here to avoid passing excess data into the Agent
+		maxLen := recLen
+		if recLen == -1 {
+			maxLen = agChannels[channel].recordLength
+		}
+		var tooLong bool
+		byteslice, tooLong = getDataSensitivePortion(byteslice, maxLen)
+		if tooLong {
+			p.cpu.SetAc(0, dg.DwordT(erltl))
+			return false
+		}
+	}
 	position := int32(memory.ReadDWord(pkt + irnh))
-	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, specsWd&rtds != 0, recLen, byteslice, position}
+	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, dataSens, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}
 	p.agentChan <- areq
 	areq = <-p.agentChan
@@ -252,17 +257,21 @@ func scWrite16(p syscallParmsT) bool {
 	specsWd := memory.ReadWord(pkt + isti16)
 	extendedPkt := specsWd&ipkl != 0
 	absPositioning := specsWd&ipst != 0
+	dataSens := specsWd&rtds != 0
 	recLen := int(int16(memory.ReadWord(pkt + ircl16)))
 	byteslice := memory.ReadBytes(dg.DwordT(memory.ReadWord(pkt+ibad16)), p.ringMask, int(recLen))
-	// if specsWd&rtds != 0 {
-	// 	nullPosn := bytes.IndexByte(byteslice, 0)
-	// 	if nullPosn == -1 {
-	// 		//log.Panicln("ERROR: No trailing NULL found in Dynamic Length data")
-	// 		nullPosn = int(recLen)
-	// 	}
-	// 	byteslice = byteslice[:nullPosn]
-	// 	recLen = int16(nullPosn)
-	// }
+	if dataSens {
+		maxLen := recLen
+		if recLen == -1 {
+			maxLen = agChannels[channel].recordLength
+		}
+		var tooLong bool
+		byteslice, tooLong = getDataSensitivePortion(byteslice, maxLen)
+		if tooLong {
+			p.cpu.SetAc(0, dg.DwordT(erltl))
+			return false
+		}
+	}
 	position := int32(memory.ReadDWord(pkt + irnh16))
 	var writeReq = agWriteReqT{channel, extendedPkt, absPositioning, specsWd&rtds != 0, recLen, byteslice, position}
 	var areq = AgentReqT{agentFileWrite, writeReq, nil}

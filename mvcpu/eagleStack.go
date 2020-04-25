@@ -127,11 +127,11 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetOVR(false)
 
 	case instrWFPOP:
-		cpu.fpac[3] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
-		cpu.fpac[2] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
-		cpu.fpac[1] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
-		cpu.fpac[0] = memory.DGdoubleToFloat64(wsPopQWord(cpu, 0))
-		tmpQwd := wsPopQWord(cpu, 0)
+		cpu.fpac[3] = memory.DGdoubleToFloat64(wsPopQWord(cpu))
+		cpu.fpac[2] = memory.DGdoubleToFloat64(wsPopQWord(cpu))
+		cpu.fpac[1] = memory.DGdoubleToFloat64(wsPopQWord(cpu))
+		cpu.fpac[0] = memory.DGdoubleToFloat64(wsPopQWord(cpu))
+		tmpQwd := wsPopQWord(cpu)
 		cpu.fpsr = 0
 		any := false
 		// set the ANY bit?
@@ -183,7 +183,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		lastAc := twoAcc1Word.acd
 		thisAc := firstAc
 		for {
-			cpu.ac[thisAc] = WsPop(cpu, 0)
+			cpu.ac[thisAc] = WsPop(cpu)
 			if thisAc == lastAc {
 				break
 			}
@@ -277,12 +277,12 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 // wsav is common to WSAVR and WSAVS
 func wsav(cpu *CPUT, u2wd *unique2WordT) {
-	// ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(u2wd.immU16)*2+12, true)
-	// if !ok {
-	// 	log.Printf("DEBUG: Stack fault trapped by wsav(), codes %d and %d", faultCode, secondaryFault)
-	// 	wspHandleFault(cpu, faultCode, secondaryFault)
-	// }
-	dwd := cpu.ac[3] & 0x7fffffff
+	ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(u2wd.immU16)*2+12, true)
+	if !ok {
+		log.Printf("DEBUG: Stack fault trapped by WSSVR/S, codes %d and %d", faultCode, secondaryFault)
+		wspHandleFault(cpu, 2, faultCode, secondaryFault)
+	}
+	dwd := cpu.ac[3] & 0x7fff_ffff
 	if cpu.carry {
 		dwd |= 0x80000000
 	}
@@ -316,7 +316,7 @@ func wsPushSpecialReturnBlock(cpu *CPUT) {
 func wssav(cpu *CPUT, u2wd *unique2WordT) {
 	ok, faultCode, secondaryFault := wspCheckBounds(cpu, int(u2wd.immU16)*2+12, true)
 	if !ok {
-		log.Fatalf("DEBUG: Stack fault trapped by wssav(), codes %d and %d", faultCode, secondaryFault)
+		log.Panicf("DEBUG: Stack fault trapped by wssav(), codes %d and %d", faultCode, secondaryFault)
 	}
 	wsPushSpecialReturnBlock(cpu)
 	cpu.wfp = cpu.wsp
@@ -345,7 +345,7 @@ func wsPushQWord(cpu *CPUT, qw dg.QwordT) {
 }
 
 // WsPop - POP a doubleword off the Wide Stack
-func WsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
+func WsPop(cpu *CPUT) (dword dg.DwordT) {
 	dword = memory.ReadDWord(cpu.wsp)
 	cpu.wsp -= 2
 	if cpu.debugLogging {
@@ -358,27 +358,26 @@ func WsPop(cpu *CPUT, seg dg.PhysAddrT) (dword dg.DwordT) {
 func wpopb(cpu *CPUT) {
 	wspSav := cpu.wsp
 	// pop off 6 double words
-	dwd := WsPop(cpu, 0) // 1
+	dwd := WsPop(cpu) // 1
 	cpu.carry = memory.TestDwbit(dwd, 0)
-	cpu.pc = dg.PhysAddrT(dwd & 0x7fffffff)
-	cpu.ac[3] = WsPop(cpu, 0) // 2
+	cpu.pc = dg.PhysAddrT(dwd & 0x7fff_ffff)
+	cpu.ac[3] = WsPop(cpu) // 2
 	// replace WFP with popped value of AC3
 	cpu.wfp = dg.PhysAddrT(cpu.ac[3])
-	cpu.ac[2] = WsPop(cpu, 0) // 3
-	cpu.ac[1] = WsPop(cpu, 0) // 4
-	cpu.ac[0] = WsPop(cpu, 0) // 5
-	dwd = WsPop(cpu, 0)       // 6
+	cpu.ac[2] = WsPop(cpu) // 3
+	cpu.ac[1] = WsPop(cpu) // 4
+	cpu.ac[0] = WsPop(cpu) // 5
+	dwd = WsPop(cpu)       // 6
 	cpu.psr = memory.DwordGetUpperWord(dwd)
-	// TODO Set WFP is crossing rings
-	wsFramSz2 := (int(dwd&0x00007fff) * 2) + 12
+	// TODO Set WFP if crossing rings
+	wsFramSz2 := ((dwd & 0x0000_7fff) << 1) + 12
 	cpu.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
 }
 
 // wsPopQWord - POP a Quad-word off the Wide Stack
-func wsPopQWord(cpu *CPUT, seg dg.PhysAddrT) dg.QwordT {
-	var qw dg.QwordT
-	rhDWord := WsPop(cpu, seg)
-	lhDWord := WsPop(cpu, seg)
+func wsPopQWord(cpu *CPUT) (qw dg.QwordT) {
+	rhDWord := WsPop(cpu)
+	lhDWord := WsPop(cpu)
 	qw = dg.QwordT(lhDWord)<<32 | dg.QwordT(rhDWord)
 	return qw
 }

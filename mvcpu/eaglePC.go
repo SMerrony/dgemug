@@ -66,9 +66,16 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 4
 		var dwd dg.DwordT
 		if iPtr.argCount >= 0 {
-			dwd = memory.DwordFromTwoWords(cpu.psr, dg.WordT(iPtr.argCount))
+			dwd = dg.DwordT(iPtr.argCount)
 		} else {
-			dwd = dg.DwordT(iPtr.argCount) & 0x00007fff
+			//dwd = dg.DwordT(iPtr.argCount) & 0x00007fff
+			dwd = memory.ReadDWord(cpu.wsp) & 0x0000_7fff
+		}
+		dwd |= dg.DwordT(cpu.psr) << 16
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 2, false)
+		if !ok {
+			//log.Panicf("DEBUG: Stack fault trapped in LCALL, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
 		}
 		wsPush(cpu, dwd)
 		cpu.SetOVR(false)
@@ -100,6 +107,21 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 3
 		cpu.pc = cpu.pc&ringMask32 | resolve31bitDisplacement(cpu, noAccModeInd3Word.ind, noAccModeInd3Word.mode, noAccModeInd3Word.disp31, iPtr.dispOffset)
+
+	case instrLNDO:
+		lndo4Word := iPtr.variant.(lndo4WordT)
+		count := int32(cpu.ac[lndo4Word.acd])
+		memVarAddr := resolve31bitDisplacement(cpu, lndo4Word.ind, lndo4Word.mode, lndo4Word.disp31, iPtr.dispOffset)
+		memVar := int32(int16(memory.ReadWord(memVarAddr))) + 1
+		memory.WriteWord(memVarAddr, dg.WordT(memVar))
+		cpu.ac[lndo4Word.acd] = dg.DwordT(memVar)
+		if memVar > count {
+			// loop ends
+			cpu.pc += dg.PhysAddrT(lndo4Word.offsetU16) + 1
+		} else {
+			// loop continues
+			cpu.pc += 4
+		}
 
 	case instrLNISZ:
 		noAccModeInd3Word := iPtr.variant.(noAccModeInd3WordT)
@@ -229,9 +251,13 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wpopb(cpu)
 
 	case instrWPOPJ:
-		dwd := WsPop(cpu, 0)
+		dwd := WsPop(cpu)
 		cpu.pc = cpu.pc&ringMask32 | (dg.PhysAddrT(dwd) & 0x0fff_ffff)
 		cpu.SetOVR(false)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 0, true)
+		if !ok {
+			log.Panicf("DEBUG: Stack fault trapped in WPOPJ, codes %d and %d", faultCode, secondaryFault)
+		}
 
 	case instrWRTN: // FIXME incomplete: handle PSR and rings
 		// set WSP equal to WFP
@@ -487,15 +513,15 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		//memory.WriteDWord(loopVarAddr, dg.DwordT(loopVar))
 		memory.WriteWord(loopVarAddr, dg.WordT(loopVar))
 		acVar := int32(cpu.ac[threeWordDo.acd])
-		log.Printf("\t loopVar: %#x, acVar: %#x\n", loopVar, acVar)
+		//log.Printf("\t loopVar: %#x, acVar: %#x\n", loopVar, acVar)
 		cpu.ac[threeWordDo.acd] = dg.DwordT(loopVar)
 		if loopVar > acVar {
 			// loop ends
 			cpu.pc = cpu.pc + 1 + dg.PhysAddrT(threeWordDo.offsetU16)
-			log.Println("\tExiting loop")
+			//log.Println("\tExiting loop")
 		} else {
 			cpu.pc += dg.PhysAddrT(iPtr.instrLength)
-			log.Println("\tLooping...")
+			//log.Println("\tLooping...")
 		}
 
 	case instrXNDSZ: // unsigned narrow increment and skip if zero

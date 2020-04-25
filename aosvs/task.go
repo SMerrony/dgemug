@@ -123,7 +123,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 				scOk = syscall(callID, task.pid, task.tid, task.ringMask, task.agentChan, &cpu)
 				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 			}
-			mvcpu.WsPop(&cpu, 7)
+			mvcpu.WsPop(&cpu)
 			if scOk {
 				cpu.SetPC(returnAddr + 1)
 			} else {
