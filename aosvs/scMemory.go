@@ -44,7 +44,7 @@ func scMem(p syscallParmsT) bool {
 	p.cpu.SetAc(0, available)
 	p.cpu.SetAc(1, inUse)
 	//p.cpu.SetAc(2, dg.DwordT(highUnshared<<10)-1)
-	p.cpu.SetAc(3, inUse+dg.DwordT(p.ringMask)-1)
+	p.cpu.SetAc(2, inUse+dg.DwordT(p.ringMask)-1)
 	logging.DebugPrint(logging.ScLog, "\tMax Unshared Available: %d., Unshared in Use: %d., Highestin Use: %#o (%#x)\n",
 		available, inUse, highUnshared<<10, highUnshared<<10)
 	logging.DebugPrint(logging.ScLog, "\tN.B. Lowest shared page is %#o (%#x)\n", lowShared<<10, lowShared<<10)

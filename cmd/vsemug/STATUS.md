@@ -22,7 +22,7 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
-  | 21        | 32 | Unmapped write in LCALL                       | LCALL/Stack/Mem |
+  | 21        | 32 | Unmapped write in XWSTA                       | |
   | ADVENTURE | 32 | Unmapped read in LCALL                        | Is this a true 32-bit binary? |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
