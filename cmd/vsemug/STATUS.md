@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 23 Apr 2020
+* Last Updated: 26 Apr 2020
 * Last Significant Progress: 5 Apr 2020 (fixed another bug in decoder)
   
 ## What Works? :+1:
@@ -20,8 +20,8 @@ The NADGUG library provides a good range of freely-available test targets...
   
 * 32-bit NADGUG Games compiled for AOS/VS
 
-  |    Game   |  Bits  |  Problem  |   Notes/Action   |
-  |-----------|--------|-----------|------------------|
+  |    Game   | Bits |  Problem  |   Notes/Action   |
+  |-----------|------|-----------|------------------|
   | 21        | 32 | Unmapped write in XWSTA                       | |
   | ADVENTURE | 32 | Unmapped read in LCALL                        | Is this a true 32-bit binary? |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
@@ -32,7 +32,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Unmapped write in XWSTA                       |  |
-  | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | LCALL/Stack/Mem <== Good debugging candidate <== |
+  | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | Something odd here - really 32-bit? |
   | MMM       | 32 | Unmapped write in XWSTA                       | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
@@ -41,6 +41,11 @@ The NADGUG library provides a good range of freely-available test targets...
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
   | YAHTZEE   | 32 | Displays prompt, extended ?READ nyi           | Extended ?READ |
   | ZORK      | 32 | Reports "Heap version not compatible"         |  |
+
+  |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
+  |----------|-----------|------|-------------------------|----------------|
+  | IMSLUTIL | HANGMAN   |  32  | Unmapped read in XNLDA  |  |
+  
 
 * 16-bit NADGUG Games compiled for AOS/VS...  
   N.B. These might be handled quite differently by the OS - do not focus on them.  In particular, it seems

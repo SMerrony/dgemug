@@ -163,6 +163,11 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc++
 		}
 
+	case instrFSNE:
+		if !memory.TestQwbit(cpu.fpsr, fpsrZ) {
+			cpu.pc++
+		}
+
 	case instrFSS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.fpac[twoAcc1Word.acd] -= cpu.fpac[twoAcc1Word.acs]
