@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 26 Apr 2020
+* Last Updated: 27 Apr 2020
 * Last Significant Progress: 5 Apr 2020 (fixed another bug in decoder)
   
 ## What Works? :+1:
@@ -31,20 +31,20 @@ The NADGUG library provides a good range of freely-available test targets...
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
-  | FOOBAR    | 32 | Unmapped write in XWSTA                       |  |
+  | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs  |
   | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | Something odd here - really 32-bit? |
-  | MMM       | 32 | Unmapped write in XWSTA                       | |
+  | MMM       | 32 | Unmapped read in WCMV                         | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
-  | SCRABBLE  | 32 | Instruction XCT nyi                           | XCT |
+  | SCRABBLE  | 32 | Seems to loop after input                     | |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
-  | YAHTZEE   | 32 | Displays prompt, extended ?READ nyi           | Extended ?READ |
+  | YAHTZEE   | 32 | Cannot seem to parse # of players             |  |
   | ZORK      | 32 | Reports "Heap version not compatible"         |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
-  | IMSLUTIL | HANGMAN   |  32  | Unmapped read in XNLDA  |  |
+  | IMSLUTIL | HANGMAN   |  32  | WLDI nyi  | WLDI |
   
 
 * 16-bit NADGUG Games compiled for AOS/VS...  

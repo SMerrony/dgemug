@@ -327,6 +327,7 @@ const (
 	instrWIORI
 	instrWLDAI
 	instrWLDB
+	instrWLDI
 	instrWLMP
 	instrWLSH
 	instrWLSHI
@@ -664,6 +665,7 @@ func InstructionsInit() {
 	instructionSet[instrWIORI] = instrChars{"WIORI", 0x86a9, 0xe7ff, 3, ONEACC_IMMDWD_3_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWLDAI] = instrChars{"WLDAI", 0xc689, 0xe7ff, 3, ONEACC_IMMDWD_3_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWLDB] = instrChars{"WLDB", 0x8529, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_MEMREF, 0}
+	instructionSet[instrWLDI] = instrChars{"WLDI", 0xe679, 0xe7ff, 1, ONEACC_1_WORD_FMT, EAGLE_FPU, 0}
 	instructionSet[instrWLMP] = instrChars{"WLMP", 0xa7f9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_IO, 0}
 	instructionSet[instrWLSH] = instrChars{"WLSH", 0x8559, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrWLSHI] = instrChars{"WLSHI", 0xe6d9, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}

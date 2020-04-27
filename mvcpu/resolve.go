@@ -36,7 +36,7 @@ const (
 )
 
 func resolve31bitDisplacement(cpu *CPUT, ind byte, mode int, disp int32, dispOffset int) (eff dg.PhysAddrT) {
-
+	ring := cpu.pc & 0x7000_0000
 	switch mode {
 	case absoluteMode:
 		// zero-extend to 28 bits, force to current ring...
@@ -50,18 +50,18 @@ func resolve31bitDisplacement(cpu *CPUT, ind byte, mode int, disp int32, dispOff
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
-		//eff |= (cpu.pc & 0x7000_0000)
+		eff |= ring
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
-			log.Fatalln("Terminating")
+			log.Panicln("Terminating")
 		}
 		for memory.TestDwbit(indAddr, 0) {
 			indAddr, ok = memory.ReadDwordTrap(dg.PhysAddrT(indAddr & physMask32))
 			if !ok {
-				log.Fatalln("Terminating")
+				log.Panicln("Terminating")
 			}
 		}
-		eff = dg.PhysAddrT(indAddr)
+		eff = dg.PhysAddrT(indAddr) | ring
 	}
 	// check ATU
 	if cpu.atu == false {
@@ -77,6 +77,7 @@ func resolve31bitDisplacement(cpu *CPUT, ind byte, mode int, disp int32, dispOff
 
 func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, dispOffset int) (eff dg.PhysAddrT) {
 	var dispS32 int32
+	ring := cpu.pc & 0x7000_0000
 	if mode != absoluteMode {
 		// relative mode
 		// sign-extend to 32-bits
@@ -85,7 +86,7 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	switch mode {
 	case absoluteMode:
 		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
+		eff = dg.PhysAddrT(disp) | ring
 	case pcMode:
 		eff = dg.PhysAddrT(int32(cpu.pc) + dispS32 + int32(dispOffset))
 	case ac2Mode:
@@ -95,27 +96,33 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
-		eff |= (cpu.pc & 0x7000_0000)
+		eff |= ring
 		indAddr, ok := memory.ReadDwordTrap(eff)
+		if cpu.debugLogging {
+			logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement got: @%#o %s, reading %#o, got %#o\n", disp, modeToString(mode), eff, indAddr)
+		}
 		if !ok {
-			log.Fatalln("Terminating")
+			log.Panicln("Terminating")
 		}
 		for memory.TestDwbit(indAddr, 0) {
 			indAddr, ok = memory.ReadDwordTrap(dg.PhysAddrT(indAddr & physMask32))
+			if cpu.debugLogging {
+				logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement ... reading %#o\n", indAddr)
+			}
 			if !ok {
-				log.Fatalln("Terminating")
+				log.Panicln("Terminating")
 			}
 		}
-		eff = dg.PhysAddrT(indAddr)
+		eff = dg.PhysAddrT(indAddr) | ring
 	}
 	// check ATU
 	if cpu.atu == false {
 		// constrain result to 1st 32MB
 		eff &= 0x1ff_ffff
 	}
-	if cpu.debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
-	}
+	// if cpu.debugLogging {
+	// 	logging.DebugPrint(logging.DebugLog, "... resolve15bitDisplacement got: %#o %s, returning %#o\n", disp, modeToString(mode), eff)
+	// }
 	return eff
 }
 
@@ -145,12 +152,12 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 		eff |= (cpu.pc & 0x7000_0000)
 		indAddr, ok := memory.ReadWordTrap(eff)
 		if !ok {
-			log.Fatalln("Terminating")
+			log.Panicln("Terminating")
 		}
 		for memory.TestWbit(indAddr, 0) {
 			indAddr, ok = memory.ReadWordTrap(dg.PhysAddrT(indAddr & physMask16))
 			if !ok {
-				log.Fatalln("Terminating")
+				log.Panicln("Terminating")
 			}
 		}
 		eff = dg.PhysAddrT(indAddr)
@@ -202,12 +209,12 @@ func resolve32bitEffAddr(cpu *CPUT, ind byte, mode int, disp int32, dispOffset i
 	if ind == '@' { //|| memory.TestDwbit(dg.DwordT(eff), 0) { // down the rabbit hole...
 		indAddr, ok := memory.ReadDwordTrap(eff)
 		if !ok {
-			log.Fatalln("Terminating")
+			log.Panicln("Terminating")
 		}
 		for memory.TestDwbit(indAddr, 0) {
 			indAddr, ok = memory.ReadDwordTrap(dg.PhysAddrT(indAddr & physMask32))
 			if !ok {
-				log.Fatalln("Terminating")
+				log.Panicln("Terminating")
 			}
 		}
 		eff = dg.PhysAddrT(indAddr)
@@ -246,7 +253,7 @@ func resolveEclipseBitAddr(cpu *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.Ph
 		wordAddr = 0
 	} else {
 		if memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 0) {
-			log.Fatal("ERROR: Indirect 16-bit BIT pointers not yet supported")
+			log.Panicln("ERROR: Indirect 16-bit BIT pointers not yet supported")
 		}
 		wordAddr = dg.PhysAddrT(cpu.ac[twoAcc1Word.acs]) & physMask16 // mask off lower 15 bits
 	}
@@ -264,7 +271,7 @@ func resolveEagleBitAddr(cpu *CPUT, twoAcc1Word *twoAcc1WordT) (wordAddr dg.Phys
 		wordAddr = 0
 	} else {
 		if memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 0) {
-			log.Fatal("ERROR: Indirect 32-bit BIT pointers not yet supported")
+			log.Panicln("ERROR: Indirect 32-bit BIT pointers not yet supported")
 		}
 		wordAddr = dg.PhysAddrT(cpu.ac[twoAcc1Word.acs])
 	}

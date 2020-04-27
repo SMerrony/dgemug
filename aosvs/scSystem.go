@@ -42,7 +42,7 @@ func scExec(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	execFunc := memory.ReadWord(pktAddr)
 	switch execFunc {
-	case xfxts:
+	case xfsts:
 		memory.WriteWord(pktAddr+xfp1, 9) // PID 9
 		bp := memory.ReadDWord(pktAddr + xfp2)
 		if bp != 0 {
