@@ -21,7 +21,11 @@
 
 package memory
 
-import "github.com/SMerrony/dgemug/dg"
+import (
+	"bytes"
+
+	"github.com/SMerrony/dgemug/dg"
+)
 
 // GetSegment - return the segment number for the supplied address
 func GetSegment(addr dg.PhysAddrT) int {
@@ -35,6 +39,22 @@ func ReadByte(wordAddr dg.PhysAddrT, loByte bool) dg.ByteT {
 		wd >>= 8
 	}
 	return dg.ByteT(wd)
+}
+
+// ReadNBytes loads n bytes into a slice which is returned - no ring-forcing is performed
+func ReadNBytes(ba dg.PhysAddrT, n int) []byte {
+	buff := bytes.NewBufferString("")
+	lobyte := (ba & 0x0001) == 1
+	wdAddr := dg.PhysAddrT(ba >> 1)
+	for b := 0; b < n; b++ {
+		c := ReadByte(wdAddr, lobyte)
+		buff.WriteByte(byte(c))
+		if lobyte {
+			wdAddr++
+		}
+		lobyte = !lobyte
+	}
+	return buff.Bytes()
 }
 
 // ReadByteEclipseBA - read a byte - special version for Eclipse Byte-Addressing

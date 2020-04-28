@@ -149,6 +149,7 @@ const (
 	instrFEXP
 	instrFFAS
 	instrFHLV
+	instrFINT
 	instrFLAS
 	instrFLDS
 	instrFLST
@@ -487,6 +488,7 @@ func InstructionsInit() {
 	instructionSet[instrFEXP] = instrChars{"FEXP", 0xa668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFFAS] = instrChars{"FFAS", 0x85a8, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFHLV] = instrChars{"FHLV", 0xe668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
+	instructionSet[instrFINT] = instrChars{"FINT", 0xc668, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFLAS] = instrChars{"FLAS", 0x8528, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_FPU, 0}
 	instructionSet[instrFLDS] = instrChars{"FLDS", 0x8428, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, ECLIPSE_FPU, 1}
 	instructionSet[instrFLST] = instrChars{"FLST", 0xa6e8, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, ECLIPSE_FPU, 0}

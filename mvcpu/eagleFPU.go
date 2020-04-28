@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strconv"
+	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/memory"
@@ -101,18 +103,38 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[twoAcc1Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[twoAcc1Word.acd] < 0.0)
 
+	case instrWLDI:
+		_, dataType, size := memory.DecodeDecDataType(cpu.ac[1]) // "WLDI does not use the scale factor..."
+		size++
+		cpu.ac[2] = cpu.ac[3]
+		bs := memory.ReadNBytes(dg.PhysAddrT(cpu.ac[3]), size)
+		switch dataType {
+		// case memory.UnpackedDecTSC:
+		// case memory.UnpackedDecLSC:
+		// case memory.UnpackedDecTS:
+		// case memory.UnpackedDecLS:
+		case memory.UnpackedDecU:
+			intNum, err := strconv.Atoi(strings.TrimSpace(string(bs)))
+			if err != nil {
+				log.Panicf("ERROR: Could not parse Decimal <%v> as integer\n", bs)
+			}
+			cpu.fpac[iPtr.ac] = float64(intNum)
+		default:
+			log.Panicf("ERROR: Packed data types not yet implemented, type is: %d.\n", dataType)
+		}
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
+
 	case instrWSTI:
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...
 		unconverted := cpu.fpac[iPtr.ac]
-		scaleFactor := int(int8(memory.GetDwbits(cpu.ac[1], 0, 8)))
+		scaleFactor, dataType, size := memory.DecodeDecDataType(cpu.ac[1])
 		if scaleFactor != 0 {
 			log.Panicf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
 		}
-		dataType := uint8(memory.GetDwbits(cpu.ac[1], 24, 3))
-		size := int(uint8(memory.GetDwbits(cpu.ac[1], 27, 5)))
 		switch dataType {
-		case 3: // <sign><zeroes><int>
+		case memory.UnpackedDecLS:
 			if unconverted < 0 {
 				size++
 			}
@@ -121,7 +143,7 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
 				cpu.ac[3]++
 			}
-		case 4: // <zeroes><int>
+		case memory.UnpackedDecU:
 			if unconverted < 0 {
 				size++
 			}

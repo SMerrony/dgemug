@@ -91,6 +91,11 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
 		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
 
+	case instrFINT:
+		cpu.fpac[iPtr.ac] = math.Trunc(cpu.fpac[iPtr.ac])
+		cpu.SetZ(cpu.fpac[iPtr.ac] == 0.0)
+		cpu.SetN(cpu.fpac[iPtr.ac] < 0.0)
+
 	case instrFLAS:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		cpu.fpac[twoAcc1Word.acd] = float64(int16(twoAcc1Word.acs))
@@ -155,6 +160,11 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrFSGT:
 		if !memory.TestQwbit(cpu.fpsr, fpsrZ) && !memory.TestQwbit(cpu.fpsr, fpsrN) {
+			cpu.pc++
+		}
+
+	case instrFSLE:
+		if memory.TestQwbit(cpu.fpsr, fpsrZ) || memory.TestQwbit(cpu.fpsr, fpsrN) {
 			cpu.pc++
 		}
 
