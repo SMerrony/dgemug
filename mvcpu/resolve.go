@@ -127,10 +127,8 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 }
 
 func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.PhysAddrT) {
-	if mode == absoluteMode {
-		// zero-extend to 28 bits, force to current ring...
-		eff = dg.PhysAddrT(disp) | (cpu.pc & 0x7000_0000)
-	} else {
+	ring := cpu.pc & 0x7000_0000
+	if mode != absoluteMode {
 		// relative mode
 		// sign-extend to 31-bits
 		eff = dg.PhysAddrT(disp)
@@ -139,6 +137,8 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 		}
 	}
 	switch mode {
+	case absoluteMode:
+		eff = dg.PhysAddrT(disp) | ring
 	case pcMode:
 		eff += cpu.pc
 	case ac2Mode:
@@ -149,18 +149,18 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
-		eff |= (cpu.pc & 0x7000_0000)
+		eff |= ring
 		indAddr, ok := memory.ReadWordTrap(eff)
 		if !ok {
 			log.Panicln("Terminating")
 		}
 		for memory.TestWbit(indAddr, 0) {
-			indAddr, ok = memory.ReadWordTrap(dg.PhysAddrT(indAddr & physMask16))
+			indAddr, ok = memory.ReadWordTrap(dg.PhysAddrT(indAddr&physMask16) | ring)
 			if !ok {
 				log.Panicln("Terminating")
 			}
 		}
-		eff = dg.PhysAddrT(indAddr)
+		eff = dg.PhysAddrT(indAddr) | ring
 	}
 	// check ATU
 	if cpu.atu == false {
