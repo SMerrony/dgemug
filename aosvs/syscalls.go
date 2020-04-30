@@ -105,6 +105,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0303: {"?WRITE", "?WRIT", scFileIO, scWrite, scWrite16},
 	0311: {"?ERMSG", "?ERMS", scSystem, scErmsg, nil},
 	0312: {"?GCHR", "?GCHR", scFileIO, scGchr, scGchr},
+	0313: {"?SCHR", "?SCHR", scFileIO, scDummy, nil},
 	0316: {"?SEND", "?SEND", scFileIO, scSend, nil},
 	0330: {"?EXEC", "?EXEC", scSystem, scExec, nil},
 	0307: {"?GTMES", "?GTME", scSystem, scGtmes, scGtmes16},
@@ -210,6 +211,7 @@ func writeBytes(bpAddr dg.DwordT, pc dg.PhysAddrT, arr []byte) {
 		}
 		lobyte = !lobyte
 	}
+	logging.DebugPrint(logging.ScLog, "----- writeBytes wrote %d. bytes to %#x\n", len(arr), bpAddr)
 }
 
 // scDummy is a stub func for sys calls we are ignoring for now

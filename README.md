@@ -2,17 +2,18 @@
 Go (Golang) packages of routines used in emulating historical Data General minicomputers
 
 ## aosvs
-This package is used to emulate an AOS/VS system at the user level.
+This package is used for partial emulation of an AOS/VS system at the user level. See cmd/vsemug below.
 
 ## cmd/dginstr
-Dginstr generates Go instruction definitions from a CSV source.
+Dginstr generates Go DG CPU opcode definitions from a CSV source.
 
-This command can be installed by performing a `go install` from its directory.  This is required prior to building any of the related emulators.
+This command can be installed by performing a `go install` from its directory.  This is required prior to developing any of the related emulators.
 
 ## cmd/vsemug
 VSemuG is an attempt at a user-level AOS/VS emulator.  
-
 It is mainly intended to provide a testbed for the mvcpu package and is unlikely to be especially useful (or complete) in its own right.
+
+It has its own [Readme](cmd/vsemug/README.md) and [Status](cmd/vsemug/STATUS.md) pages.
 
 ## devices
 Emulation of various DG peripherals:

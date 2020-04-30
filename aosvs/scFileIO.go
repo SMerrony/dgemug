@@ -84,17 +84,22 @@ func scGechr(p syscallParmsT) bool {
 	return true
 }
 
+func scSchr(p syscallParmsT) bool {
+
+	return true
+}
+
 func scOpen(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
-	options := memory.ReadWord(pktAddr + isti)
+	fileSpec := memory.ReadWord(pktAddr + isti)
 	fileType := memory.ReadWord(pktAddr + isto)
 	// blockSize := memory.ReadWord(pktAddr+imrs)
 	recLen := int(int16(memory.ReadWord(pktAddr + ircl)))
 	bpPathname := memory.ReadDWord(pktAddr + ifnp)
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, Options: %#x, RecLen: %d.\n", path, fileType, options, recLen)
+	logging.DebugPrint(logging.ScLog, "?OPEN Pathname: %s, Type: %#x, FileSpec: %#x, RecLen: %d.\n", path, fileType, fileSpec, recLen)
 	var areq AgentReqT
-	var openReq = agOpenReqT{p.PID, path, options, recLen}
+	var openReq = agOpenReqT{p.PID, path, fileSpec, recLen}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	p.agentChan <- areq
@@ -110,15 +115,15 @@ func scOpen(p syscallParmsT) bool {
 
 func scOpen16(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
-	options := memory.ReadWord(pktAddr + isti16)
+	fileSpec := memory.ReadWord(pktAddr + isti16)
 	fileType := memory.ReadWord(pktAddr + isto16)
 	// blockSize := memory.ReadWord(pktAddr+imrs16)
 	recLen := int(int16(memory.ReadWord(pktAddr + ircl16)))
 	bpPathname := dg.DwordT(memory.ReadWord(pktAddr + ifnp16))
 	path := strings.ToUpper(readString(bpPathname, p.ringMask))
-	logging.DebugPrint(logging.ScLog, "?OPEN (16-bit) Pathname: %s, Type: %#x, Options: %#x, RecLen: %d.\n", path, fileType, options, recLen)
+	logging.DebugPrint(logging.ScLog, "?OPEN (16-bit) Pathname: %s, Type: %#x, FileSpec: %#x, RecLen: %d.\n", path, fileType, fileSpec, recLen)
 	var areq AgentReqT
-	var openReq = agOpenReqT{p.PID, path, options, recLen}
+	var openReq = agOpenReqT{p.PID, path, fileSpec, recLen}
 	areq.action = agentFileOpen
 	areq.reqParms = openReq
 	p.agentChan <- areq
@@ -132,7 +137,7 @@ func scOpen16(p syscallParmsT) bool {
 }
 
 func scRead(p syscallParmsT) bool {
-	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
 	channel := int(memory.ReadWord(pktAddr + ich))
 	specs := memory.ReadWord(pktAddr + isti)
 	length := int(int16(memory.ReadWord(pktAddr + ircl)))

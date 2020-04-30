@@ -125,16 +125,16 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 		dg.PhysAddrT(progWds[sfhInPr]),
 		debugLogging)
 
-	// map in stack space
-	log.Println("DEBUG: Mapping any missing unshared pages for stack...")
-	if sbp := int(proc.tasks[0].wsb >> 10); sbp != 0 {
-		slp := int(proc.tasks[0].wsl >> 10)
-		for p := sbp; p <= slp; p++ {
-			if !memory.IsPageMapped(p) {
-				memory.MapPage(p, false)
-			}
-		}
-	}
+	// // map in stack space
+	// log.Println("DEBUG: Mapping any missing unshared pages for stack...")
+	// if sbp := int(proc.tasks[0].wsb >> 10); sbp != 0 {
+	// 	slp := int(proc.tasks[0].wsl >> 10)
+	// 	for p := sbp; p <= slp; p++ {
+	// 		if !memory.IsPageMapped(p) {
+	// 			memory.MapPage(p, false)
+	// 		}
+	// 	}
+	// }
 
 	return &proc, nil
 }
@@ -179,7 +179,7 @@ func (proc *ProcessT) loadUST(progWds []dg.WordT) {
 	proc.ust.sharedBlockCount = progWds[ust+ustsz]                                                    // 0x113 275. 0423
 	proc.ust.sharedStartPageInPR = memory.DwordFromTwoWords(progWds[ust+ustsh], progWds[ust+ustsh+1]) // 0x11a 282. 0432
 
-	// proc.ust.prType = progWds[ust+ustpr]
+	proc.ust.prType = progWds[ust+ustpr]
 	// proc.ust.sharedStartBlock = dg.DwordT(progWds[0x10f])    // 271. 0417
 	// proc.ust.sharedBlockCount = progWds[0x113]               // 275. 0423
 	// //proc.ust.sharedStartPageInPR = dg.DwordT(progWds[0x11a]) // 282. 0432

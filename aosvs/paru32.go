@@ -474,23 +474,23 @@ const (
 
 //  GENERAL USER I/O PACKET USED FOR ?open/?read/?write/?close
 const (
-	ich  dg.PhysAddrT = 0             // CHANNEL NUMBER
-	isti              = ich + 1       // STATUS WORD (IN)
-	isto              = isti + 1      // RIGHT=FILE TYPE, LEFT=RESERVED
-	imrs              = isto + 1      // PHYSICAL RECORD SIZE - 1 (BYTES)
-	ibad              = imrs + 1      // BYTE POINTER TO BUFFER
-	ibal              = ibad + 1      // LOW ORDER BITS OF ibad
-	ires              = ibal + 1      // RESERVED
-	ircl              = ires + 1      // RECORD LENGTH
-	irlr              = ircl + 1      // RECORD LENGTH (RETURNED)
-	irnw              = irlr + 1      // RESERVED
-	irnh              = irnw + 1      // RECORD NUMBER (HIGH)
-	irnl              = irnh + 1      // RECORD NUMBER (LOW)
-	ifnp              = irnl + 1      // BYTE POINTER TO FILE NAME
-	ifnl              = ifnp + 1      // LOW ORDER BITS OF ifnp
-	idel              = ifnl + 1      // DELIMITER TABLE ADDRESS
-	idll              = idel + 1      // LOWER BITS OF idel
-	iosz int          = int(idll) + 1 // LENGTH OF STANDARD I/O PACKET
+	ich  dg.PhysAddrT = 0        // CHANNEL NUMBER
+	isti              = ich + 1  // STATUS WORD (IN)
+	isto              = isti + 1 // RIGHT=FILE TYPE, LEFT=RESERVED
+	imrs              = isto + 1 // PHYSICAL RECORD SIZE - 1 (BYTES)
+	ibad              = imrs + 1 // BYTE POINTER TO BUFFER
+	ibal              = ibad + 1 // LOW ORDER BITS OF ibad
+	ires              = ibal + 1 // RESERVED
+	ircl              = ires + 1 // RECORD LENGTH
+	irlr              = ircl + 1 // RECORD LENGTH (RETURNED)
+	irnw              = irlr + 1 // RESERVED
+	irnh              = irnw + 1 // RECORD NUMBER (HIGH)
+	irnl              = irnh + 1 // RECORD NUMBER (LOW)
+	ifnp              = irnl + 1 // BYTE POINTER TO FILE NAME
+	ifnl              = ifnp + 1 // LOW ORDER BITS OF ifnp
+	idel              = ifnl + 1 // DELIMITER TABLE ADDRESS
+	idll              = idel + 1 // LOWER BITS OF idel
+	iosz              = idll + 1 // LENGTH OF STANDARD I/O PACKET
 
 	etsp = idll + 1 // SCREEN MANAGEMENT PACKET
 	etsl = etsp + 1 // LOWER PORTION OF etsp
@@ -500,6 +500,7 @@ const (
 	etll = etlt + 1 // LOWER PORTION OF etlt
 	enet = etll + 1 // RESERVED
 	enel = enet + 1 // RESERVED
+	iblt = enel + 1 // LENGTH OF EXTENDED PACKET
 
 	//  isti FLAGS: BIT DEFINITIONS
 	iplb = 0  // PACKET LENGTH BIT (0 => SHORT PACKET)

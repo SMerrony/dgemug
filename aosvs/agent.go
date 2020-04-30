@@ -66,7 +66,7 @@ type perProcessDataT struct {
 	virtualRoot    string
 	sixteenBit     bool
 	name           string
-	rwc            io.ReadWriteCloser // stream I/O port for proc's CONSOLE
+	conn           io.ReadWriteCloser // stream I/O port for proc's CONSOLE
 	tidsInUse      [maxTasksPerProc]bool
 }
 
@@ -76,10 +76,10 @@ type agChannelT struct {
 	path         string
 	isConsole    bool
 	read, write  bool
-	forShared    bool               // indicated this has been ?SOPENed
-	recordLength int                // default I/O record length set at ?OPEN time
-	rwc          io.ReadWriteCloser // stream I/O
-	file         *os.File           // file I/O
+	forShared    bool     // indicated this has been ?SOPENed
+	recordLength int      // default I/O record length set at ?OPEN time
+	conn         net.Conn // stream I/O
+	file         *os.File // file I/O
 }
 
 type agIPCT struct {
@@ -101,9 +101,9 @@ var (
 	perProcessData = map[int]perProcessDataT{}
 	// uniqueTIDs     []uint16
 	agChannels = map[int]*agChannelT{
-		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
-		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
-		outputChan:  {path: "@OUTPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, rwc: nil, file: nil},
+		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
+		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
+		outputChan:  {path: "@OUTPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
 	}
 	agIPCs = map[string]*agIPCT{} // key is unique pathname
 )
@@ -113,9 +113,9 @@ func StartAgent(conn net.Conn) chan AgentReqT {
 	// fake some in-use PIDs so they are not used
 	pidInUse[0], pidInUse[1], pidInUse[2], pidInUse[3], pidInUse[4] = true, true, true, true, true
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
-	agChannels[consoleChan].rwc = conn
-	agChannels[inputChan].rwc = conn
-	agChannels[outputChan].rwc = conn
+	agChannels[consoleChan].conn = conn
+	agChannels[inputChan].conn = conn
+	agChannels[outputChan].conn = conn
 
 	go agentHandler(agentChan)
 

@@ -1,6 +1,6 @@
 # VSemuG Status
-* Last Updated: 27 Apr 2020
-* Last Significant Progress: 5 Apr 2020 (fixed another bug in decoder)
+* Last Updated: 30 Apr 2020
+* Last Significant Progress: 30 Apr 2020 (fixed another bug in resolver)
   
 ## What Works? :+1:
 The following 32-bit sample programs copied from a physical machine are working...
@@ -23,7 +23,6 @@ The NADGUG library provides a good range of freely-available test targets...
   |    Game   | Bits |  Problem  |   Notes/Action   |
   |-----------|------|-----------|------------------|
   | 21        | 32 | Unmapped write in XWSTA                       | |
-  | ADVENTURE | 32 | Unmapped read in LCALL                        | Is this a true 32-bit binary? |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Instruction XCT nyi                           | XCT |
@@ -31,8 +30,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
-  | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs  |
-  | HANGMAN   | 32 | Unhandled stack overlow in LCALL              | Something odd here - really 32-bit? |
+  | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs (See FORTRAN src) |
   | MMM       | 32 | Unmapped read in WCMV                         | |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
@@ -40,11 +38,11 @@ The NADGUG library provides a good range of freely-available test targets...
   | SCRABBLE  | 32 | Seems to loop after input                     | |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
   | YAHTZEE   | 32 | Cannot seem to parse # of players             |  |
-  | ZORK      | 32 | Reports "Heap version not compatible"         |  |
+  | ZORK      | 32 | Crash after reading data file                 |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
-  | IMSLUTIL | HANGMAN   |  32  | WLDI nyi  | WLDI |
+  | IMSLUTIL | HANGMAN   |  32  | Unmapped read in XNLDA  |  |
   
 
 * 16-bit NADGUG Games compiled for AOS/VS...  
@@ -53,12 +51,14 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
+  | ADVENTURE | 16 | ERROR DETECTED DURING FORTRAN 5 INIT          | ?MEM 16-bit ?? |
   | ASTEROIDS | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | BRUTUS    | 16 | Tries to map already-mapped page in ?MEMI     | ?Not enough room between areas? check ?MEM | 
   | CONQUEST  | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |
   | DICE      | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
-  | OTHELLO   | 16 | Unmapped write in XWSTA                       | |
-  | PACMAN    | 16 | Unmapped read in JMP @010,AC3                 |  |
+  | HANGMAN   | 16 | Tries to map already-mapped page in ?MEMI     |  |
+  | OTHELLO   | 16 | Tries to map already-mapped page in ?MEMI     | |
+  | PACMAN    | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | SERPENT   | 16 | JMPs to 0 after EJMP @0532                    |  |
   | SI        | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | STARTREK  | 16 | Instruction FSNER nyi                         | FSNER |

@@ -349,7 +349,7 @@ func WsPop(cpu *CPUT) (dword dg.DwordT) {
 	dword = memory.ReadDWord(cpu.wsp)
 	cpu.wsp -= 2
 	if cpu.debugLogging {
-		logging.DebugPrint(logging.DebugLog, "... wsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
+		logging.DebugPrint(logging.DebugLog, "... WsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
 	}
 	return dword
 }

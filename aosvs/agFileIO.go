@@ -25,6 +25,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
@@ -174,48 +175,80 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 			buff := make([]byte, 0)
 			for {
 				oneByte := make([]byte, 1, 1)
-				l, err := agChan.rwc.Read(oneByte)
+				l, err := agChan.conn.Read(oneByte)
 				if err != nil {
 					log.Panic("ERROR: Could not read from @CONSOLE")
 				}
 				if l == 0 {
 					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
 				}
-				if oneByte[0] == 0 {
-					continue
-				}
+				// if oneByte[0] == 0 || oneByte[0] < ' ' || oneByte[0] > 127 {
+				// 	continue
+				// }
+				// TODO DELete
+				log.Printf("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
 				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break
 				}
-				// TODO DELete
 				buff = append(buff, oneByte[0])
+
 			}
 			resp.data = buff
 		} else {
-			switch {
-			case req.specs&ipst != 0:
+			if req.specs&ipst != 0 {
 				log.Panic("Absolute positining NYI")
 			}
-			buf := make([]byte, recLen)
-			n, err := agChannels[req.chanNo].file.Read(buf)
-			if n == 0 && err == io.EOF {
-				resp.ac0 = ereof
-			} else {
-				if req.specs&rtds != 0 {
-					tooLong := false
-					buf, tooLong = getDataSensitivePortion(buf, recLen)
-					if tooLong {
-						resp.ac0 = erltl
-						return resp
-					}
+
+			switch {
+			case req.specs&rtdy != 0:
+				logging.DebugPrint(logging.ScLog, "\tDynamic Length: %d.\n", recLen)
+				buf := make([]byte, recLen)
+				n, err := agChannels[req.chanNo].file.Read(buf)
+				if n == 0 && err == io.EOF {
+					resp.ac0 = ereof
+					return resp
 				}
 				resp.data = buf
+			case req.specs&rtds != 0:
+				logging.DebugPrint(logging.ScLog, "\tData Sensitive\n")
+				buf := make([]byte, recLen)
+				n, err := agChannels[req.chanNo].file.Read(buf)
+				if n == 0 && err == io.EOF {
+					resp.ac0 = ereof
+					return resp
+				}
+				tooLong := false
+				buf, tooLong = getDataSensitivePortion(buf, recLen)
+				if tooLong {
+					resp.ac0 = erltl
+					return resp
+				}
+				resp.data = buf
+			case req.specs&rtvr != 0:
+				lenBytes := make([]byte, 4)
+				n, _ := agChannels[req.chanNo].file.Read(lenBytes)
+				recLen, err := strconv.Atoi(string(lenBytes[0:4]))
+				if err != nil {
+					log.Panicf("ERROR: ?READ could not parse variable record length <%v>\n", lenBytes[0:4])
+				}
+				recLen -= 4
+				logging.DebugPrint(logging.ScLog, "\tVariable Length: %d.\n", recLen)
+				buf := make([]byte, recLen)
+				n, err = agChannels[req.chanNo].file.Read(buf)
+				if n == 0 && err == io.EOF {
+					resp.ac0 = ereof
+					return resp
+				}
+				resp.data = buf
+			default:
+				log.Panicf("ERROR: ?READ record type %#x not yet implemented\n", req.specs)
 			}
 		}
+
 	} else {
 		log.Panic("ERROR: attempt to ?READ from unopened file")
 	}
-	logging.DebugPrint(logging.ScLog, "?READ returning <%v>\n", resp.data)
+	logging.DebugPrint(logging.ScLog, "?READ - Agent returning <%v>\n", resp.data)
 	return resp
 }
 
@@ -352,11 +385,12 @@ func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
 }
 
 func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
-	n, err := agChan.rwc.Write(b)
+	n, err := agChan.conn.Write(b)
 	if err != nil {
 		log.Panic("ERROR: Could not write to @CONSOLE")
 	}
 	logging.DebugPrint(logging.ScLog, "\twrote %d., bytes <%v> to @CONSOLE\n", n, b)
+	logging.DebugPrint(logging.ScLog, "\t\tString: <%s>\n", string(b))
 	return n
 }
 

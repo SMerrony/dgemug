@@ -31,6 +31,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"github.com/SMerrony/dgemug/aosvs"
 	"github.com/SMerrony/dgemug/logging"
@@ -77,6 +78,9 @@ func main() {
 		exitNicely(conn, "Please supply an initial PR file to run"+"\n")
 	}
 
+	// DEBUGGING ONLY... (panics in x minutes)
+	go stopper(40, conn)
+
 	memory.MemInit()
 	mvcpu.InstructionsInit()
 	args := make([]string, 1)
@@ -121,4 +125,10 @@ func exitNicely(con net.Conn, msg string) {
 	log.Println(msg)
 	logging.DebugLogsDump("logs/")
 	os.Exit(1)
+}
+
+// stopper will panic 5 minutes after it is started - for desparated debugging only!
+func stopper(mins int, con net.Conn) {
+	time.Sleep(time.Minute * time.Duration(mins))
+	exitNicely(con, "STOPPING: Stopper func has timed-out")
 }
