@@ -240,6 +240,7 @@ const (
 	instrLSH
 	instrLSTB
 	instrLWADD
+	instrLWADI
 	instrLWDO
 	instrLWDSZ
 	instrLWISZ
@@ -579,6 +580,7 @@ func InstructionsInit() {
 	instructionSet[instrLSH] = instrChars{"LSH", 0x8288, 0x87ff, 1, TWOACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrLSTB] = instrChars{"LSTB", 0x84d9, 0x87ff, 3, ONEACC_MODE_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWADD] = instrChars{"LWADD", 0x8318, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrLWADI] = instrChars{"LWADI", 0x8718, 0x87ff, 3, NOACC_MODE_IMM_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLWDO] = instrChars{"LWDO", 0x8798, 0x87ff, 4, LNDO_4_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWDSZ] = instrChars{"LWDSZ", 0x86f9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLWISZ] = instrChars{"LWISZ", 0x86e9, 0xe7ff, 3, NOACC_MODE_IND_3_WORD_FMT, EAGLE_PC, 1}
