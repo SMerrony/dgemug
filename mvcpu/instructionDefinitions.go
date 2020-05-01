@@ -410,6 +410,7 @@ const (
 	instrXSTB
 	instrXWADD
 	instrXWADI
+	instrXWDIV
 	instrXWDO
 	instrXWDSZ
 	instrXWISZ
@@ -750,6 +751,7 @@ func InstructionsInit() {
 	instructionSet[instrXSTB] = instrChars{"XSTB", 0x8429, 0x87ff, 2, ONEACC_MODE_2_WORD_X_B_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWADD] = instrChars{"XWADD", 0x8118, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWADI] = instrChars{"XWADI", 0x8518, 0x87ff, 2, IMM_MODE_2_WORD_FMT, EAGLE_MEMREF, 1}
+	instructionSet[instrXWDIV] = instrChars{"XWDIV", 0x81d8, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrXWDO] = instrChars{"XWDO", 0x8598, 0x87ff, 3, THREE_WORD_DO_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWDSZ] = instrChars{"XWDSZ", 0xA639, 0xe7FF, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXWISZ] = instrChars{"XWISZ", 0xa619, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
