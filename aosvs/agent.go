@@ -87,6 +87,7 @@ type agIPCT struct {
 	name         string
 	localPortNo  int
 	globalPortNo int
+	spool        chan []byte
 }
 
 // fixed channel #s for @CONSOLE, @INPUT and @OUTPUT

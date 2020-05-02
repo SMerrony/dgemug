@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
+	"github.com/SMerrony/dgemug/memory"
 )
 
 func scIlkup(p syscallParmsT) bool {
@@ -47,5 +49,25 @@ func scIlkup(p syscallParmsT) bool {
 	// 	return false
 	// }
 	// log.Panicf("?ILKUP of %s not yet implemented", path)
+	return true
+}
+
+func scIrec(p syscallParmsT) bool {
+	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2))
+	sysFlags := memory.ReadWord(pktAddr + isfl)
+	usrFlags := memory.ReadWord(pktAddr + iufl)
+	originGlobalPortNo := memory.ReadDWord(pktAddr + ioph)
+	destLocalPortNo := memory.ReadWord(pktAddr + idpn)
+	bufLen := memory.ReadWord(pktAddr + ilth)
+	bufAddr := memory.ReadDWord(pktAddr + iptr)
+	logging.DebugPrint(logging.ScLog, "\tSys Flags: %#x \tUser Flags: %#x\n", sysFlags, usrFlags)
+	logging.DebugPrint(logging.ScLog, "\tOrigin Port: %#x\n", originGlobalPortNo)
+	logging.DebugPrint(logging.ScLog, "\tDest Local Port: %#x \t Buff Len: %d.\n", destLocalPortNo, bufLen)
+	logging.DebugPrint(logging.ScLog, "\tBuff Addr: %#x (%#o)\n", bufAddr, bufAddr)
+	return true
+}
+
+func scIsend(p syscallParmsT) bool {
+
 	return true
 }

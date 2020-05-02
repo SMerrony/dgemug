@@ -472,7 +472,7 @@ const (
 	rtvb = 6 // IBM VARIABLE BLOCK - VARIABLE RECORD
 )
 
-//  GENERAL USER I/O PACKET USED FOR ?open/?read/?write/?close
+//  GENERAL USER I/O PACKET USED FOR open/read/write/close
 const (
 	ich  dg.PhysAddrT = 0        // CHANNEL NUMBER
 	isti              = ich + 1  // STATUS WORD (IN)
@@ -1117,7 +1117,7 @@ const (
 	frpt = fcwp + 1 // PHD REPORT FILE
 )
 
-//  PACKET FOR DIRECTORY ENTRY CREATION (?CREATE)
+//  PACKET FOR DIRECTORY ENTRY CREATION (create)
 const (
 	cftyp = 0        // ENTRY TYPE (RH) AND RECORD FORMAT (LH)
 	cpor  = 1        // PORT NUMBER (IPC TYPES ONLY)
@@ -1140,7 +1140,7 @@ const (
 const (
 	// :::EXEC PARAMETERS
 	//
-	// DEFINITIONS FOR ?EXEC (EXEC REQUEST)
+	// DEFINITIONS FOR exec (EXEC REQUEST)
 	//
 
 	// FUNCTION CODES
@@ -1188,11 +1188,79 @@ const (
 	xfmax = xfusr // HIGHEST ASSIGNED FUNCTION CODE
 )
 
-//PACKET OFFSETS FOR ?xfxts
+//PACKET OFFSETS FOR xfxts
 const (
 	xfp1  = 2         // FIRST PARAMETER
 	xfp2  = 3         // SECOND PARAMETER
 	xfp2l = xfp2 + 1  // LOWER PORTION OF xfp2
 	xfp3  = xfp2l + 1 // 3RD PARAMETER - RESERVED
 	xfp4  = xfp3 + 1  // 15-BIT PID
+)
+
+//  INTERPROCESS COMMUNICATION SYSTEM (IPC) PARAMETERS
+const (
+	//  HIGHEST LEGAL LOCAL PORT NUMBER
+	imprt = 2047 // MAX LEGAL USER LOCAL PORT #
+	mxlpn = 4095 // MAX LEGAL LOCAL PORT #
+
+	//  IPC MESSAGE HEADER
+	isfl = 0 // SYSTEM FLAGS
+	iufl = 1 // USER FLAGS
+
+	//  PORT NUMBERS FOR isend
+	idph = 2 // DESTINATION PORT NUMBER (HIGH)
+	idpl = 3 // DESTINATION PORT NUMBER (LOW)
+	iopn = 4 // ORIGIN PORT NUMBER
+
+	//  PORT NUMBERS FOR irec
+	ioph   = 2        // ORIGIN PORT NUMBER (HIGH)
+	iopl   = 3        // ORIGIN PORT NUMBER (LOW)
+	idpn   = 4        // DESTINATION PORT NUMBER
+	ilth   = 5        // LENGTH OF MESSAGE OR BUFFER (IN WORDS)
+	iptr   = 6        // POINTER TO MESSAGE/BUFFER
+	iptl   = iptr + 1 // LOWER PORTION OF iptr
+	iplth  = iptl + 1 // LENGTH OF HEADER
+	irsv   = iptl + 1 // RESERVED
+	irlt   = irsv + 1 // is.R RECEIVE BUFFER LENGTH
+	irpt   = irlt + 1 // is.R RECEIVE BUFFER POINTER
+	irpl   = irpt + 1 // LOWER PORTION OF irpt
+	iprlth = irpl + 1 //  LENGTH OF is.R HEADER
+
+	//  SYSTEM FLAG BIT MASKS
+	// ifstm= 1B0     // SEND TO SELF
+	// ifrfm= 1B0     // RECEIVE FROM SELF
+	// ifsov= 1B1     // =1 => SPOOL MESSAGE IF BUFFER TOO SMALL
+	// ifnbk= 1B2     // =1 => RETURN ERROR IF NO WAITING MESSAGE
+	// ifnsp= 1B3     // =1 => DO NOT SPOOL MESSAGE
+	// ifring= 7B15   // IPC SOURCE RING IDENTIFIER
+	// ifdth=  1B11.  // OBIT FROM assoc'D PROCESS
+	// ifpr= 1B12     // 16. BIT CALLER
+	//                         // 1B4 RESERVED FOR SYSTEM USE
+	// 7B9 RESERVED FOR SYSTEM USE
+
+	// SYSTEM FLAG BIT POINTERS
+	ibstm = isfl*16 + 0
+	ibrfm = isfl*16 + 0
+	ibsov = isfl*16 + 1
+	ibnbk = isfl*16 + 2
+	ibnsp = isfl*16 + 3
+	ibdth = isfl*16 + 11
+	ibpr  = isfl*16 + 12
+
+	//
+	//  SYSTEM PORT NUMBERS
+	//
+	sptm = 010       // PORT FOR TRAP MESSAGES TO FATHER
+	sprm = 011       // PORT FOR RUNTIME MESSAGES TO FATHER
+	sigp = imprt + 1 // DEST. PORT FOR INITIAL AGENT MESSAGE
+	sppt = 012       // PORT FOR TERMINATION OF SPECIAL ASSOCIATED PROC
+	srim = 013       //  PORT FOR SYSTEM/REMA INTERFACE MESSAGES
+
+	//  PARAMETERS FOR CONNECTION BIT MAP PASSED IN iptl WORD
+	//  ON CUSTOMER DISCONNECTS, TERMINATIONS AND/OR CHAINS
+	cxbbm0 = 8          // STARTING POSITION OF BIT MAP IN iptl
+	cxbed  = cxbbm0 + 0 //  EXPLICIT DISCONNECT
+
+// cxmbm= 377B(cxbbm0+7) //  MASK FOR THE BIT MAP
+// cxmed= 1B(cxbed)      //  MASK FOR EXPLICIT DISCONNECT
 )
