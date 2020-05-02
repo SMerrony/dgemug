@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 30 Apr 2020
+* Last Updated: 2 May 2020
 * Last Significant Progress: 30 Apr 2020 (fixed another bug in resolver)
   
 ## What Works? :+1:
@@ -51,7 +51,7 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
-  | ADVENTURE | 16 | ERROR DETECTED DURING FORTRAN 5 INIT          | ?MEM 16-bit ?? |
+  | ADVENTURE | 16 | "ERROR DETECTED DURING FORTRAN 5 INITIALIZATION" | ?MEM 16-bit ?? |
   | ASTEROIDS | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | BRUTUS    | 16 | Tries to map already-mapped page in ?MEMI     | ?Not enough room between areas? check ?MEM | 
   | CONQUEST  | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |

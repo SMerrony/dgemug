@@ -49,7 +49,7 @@ func TestWsPushAndPop(t *testing.T) {
 	if dw != 1 {
 		t.Errorf("Expected WspLoc+1 to contain 1, contains %x", dw)
 	}
-	dw = WsPop(cpu, 0)
+	dw = WsPop(cpu)
 	if dw != 1 {
 		t.Errorf("Expected POP to produce 1, got %x", dw)
 	}
@@ -60,7 +60,7 @@ func TestPopQWord(t *testing.T) {
 	memory.MemInit(1000, false)
 	wsPush(cpu, 0x11112222)
 	wsPush(cpu, 0x33334444)
-	r := wsPopQWord(cpu, 0)
+	r := wsPopQWord(cpu)
 	if r != 0x1111222233334444 {
 		t.Errorf("Expected 0x1111222233334444, got %x", r)
 	}

@@ -2,7 +2,7 @@
 
 // mvemg project eagleMemRef_test.go
 
-// Copyright (C) 2017,2019,2020 Steve Merrony
+// Copyright ©2017-2020 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -328,7 +328,7 @@ func TestXSTB(t *testing.T) {
 
 	// test high (left) byte write
 	memory.WriteWord(7, 0) // write 0 into Word at normal addr 7
-	oneAccMode2Word.disp16 = 7
+	oneAccMode2Word.disp16 = 7 << 1
 	oneAccMode2Word.mode = absoluteMode
 	oneAccMode2Word.bitLow = false
 	oneAccMode2Word.acd = 1
@@ -339,12 +339,12 @@ func TestXSTB(t *testing.T) {
 	}
 	w := memory.ReadWord(7)
 	if w != 0x4400 {
-		t.Errorf("Expected %d, got %d", 0x4400, w)
+		t.Errorf("Expected %#x, got %#x", 0x4400, w)
 	}
 
 	// test low (right) byte write
 	memory.WriteWord(7, 0) // write 0 into Word at normal addr 7
-	oneAccMode2Word.disp16 = 7
+	oneAccMode2Word.disp16 = 7 << 1
 	oneAccMode2Word.mode = absoluteMode
 	oneAccMode2Word.bitLow = true
 	oneAccMode2Word.acd = 1
@@ -355,6 +355,6 @@ func TestXSTB(t *testing.T) {
 	}
 	w = memory.ReadWord(7)
 	if w != 0x0044 {
-		t.Errorf("Expected %d, got %d", 0x0044, w)
+		t.Errorf("Expected %#x, got %#x", 0x0044, w)
 	}
 }

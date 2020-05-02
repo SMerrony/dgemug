@@ -32,6 +32,8 @@ import (
 
 func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
+	ring := cpu.pc & 0x7000_0000
+
 	switch iPtr.ix {
 
 	case instrBLM:
@@ -43,8 +45,8 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 			}
 			break
 		}
-		src := (cpu.pc & ringMask32) | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[2]))
-		dest := (cpu.pc & ringMask32) | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[3]))
+		src := ring | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[2]))
+		dest := ring | dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[3]))
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, fmt.Sprintf("BLM moving %d words from %d to %d\n", numWds, src, dest))
 		}
@@ -62,7 +64,7 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// TODO Handle segment and indirection...
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		wd := memory.ReadWord(addr)
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTO Addr: %d, Bit: %d, Before: %s\n",
@@ -78,7 +80,7 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// TODO Handle segment and indirection...
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bitNum := resolveEclipseBitAddr(cpu, &twoAcc1Word)
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		wd := memory.ReadWord(addr)
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "... BTZ Addr: %d, Bit: %d, Before: %s\n", addr, bitNum, memory.WordToBinStr(wd))
@@ -99,14 +101,14 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(memory.ReadWord(addr))
 
 	case instrELEF:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		cpu.ac[oneAccModeInt2Word.acd] = dg.DwordT(addr)
 
 	case instrESTA:
@@ -114,7 +116,7 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		// addr := resolve16bitEffAddr(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, oneAccModeInt2Word.disp15, iPtr.dispOffset)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		memory.WriteWord(addr, memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd]))
 
 	case instrLDB:
@@ -125,7 +127,7 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
 		addr := resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		cpu.ac[novaOneAccEffAddr.acd] = dg.DwordT(addr)
 
 	case instrSTB:
@@ -133,12 +135,12 @@ func eclipseMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		hiLo := memory.TestDwbit(cpu.ac[twoAcc1Word.acs], 31)
 		addr := dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acs])) >> 1
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		byt := dg.ByteT(cpu.ac[twoAcc1Word.acd])
 		memory.WriteByte(addr, hiLo, byt)
 
 	default:
-		log.Printf("ERROR: ECLIPSE_MEMREF instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: ECLIPSE_MEMREF instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 
@@ -224,8 +226,9 @@ func cmv(cpu *CPUT) {
 		cpu.carry = true
 	}
 	// 1st move srcCount bytes
+	ring := dg.DwordT(cpu.pc & 0x7000_0000)
 	for {
-		copyByte(cpu.ac[3], cpu.ac[2])
+		copyByte(cpu.ac[3]|ring, cpu.ac[2]|ring)
 		if srcAscend {
 			cpu.ac[3]++
 			srcCount--
@@ -247,7 +250,7 @@ func cmv(cpu *CPUT) {
 	// now fill any excess bytes with ASCII spaces
 	if destCount != 0 {
 		for {
-			memWriteByteBA(dg.ASCIISPC, cpu.ac[2])
+			memWriteByteBA(dg.ASCIISPC, cpu.ac[2]|ring)
 			if destAscend {
 				cpu.ac[2]++
 				destCount--

@@ -33,6 +33,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	var (
 		shifter dg.WordT
 		effAddr dg.PhysAddrT
+		ring    = cpu.pc & 0x7000_0000
 	)
 
 	switch iPtr.ix {
@@ -40,7 +41,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrDSZ:
 		// effAddr = resolve16bitEffAddr(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
-		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
+		effAddr |= ring // constrain to current segment
 		// if effAddr != effAddrNew {
 		// 	runtime.Breakpoint()
 		// }
@@ -54,7 +55,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrISZ:
 		// effAddr = resolve16bitEffAddr(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, iPtr.ind, iPtr.mode, int16(iPtr.disp15)) & 0x7fff
-		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
+		effAddr |= ring // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
 		shifter++
 		memory.WriteWord(effAddr, shifter)
@@ -66,7 +67,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		novaOneAccEffAddr := iPtr.variant.(novaOneAccEffAddrT)
 		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
-		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
+		effAddr |= ring // constrain to current segment
 		shifter = memory.ReadWord(effAddr)
 		//log.Printf("DEBUG: LDA loading AC from resolved address %#o\n", effAddr)
 		cpu.ac[novaOneAccEffAddr.acd] = 0x0000ffff & dg.DwordT(shifter)
@@ -76,7 +77,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		shifter = memory.DwordGetLowerWord(cpu.ac[novaOneAccEffAddr.acd])
 		// effAddr = resolve16bitEffAddr(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15, iPtr.dispOffset)
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
-		effAddr |= (cpu.pc & 0x7000_0000) // constrain to current segment
+		effAddr |= ring // constrain to current segment
 		memory.WriteWord(effAddr, shifter)
 		//log.Printf("DEBUG: STA storing AC to resolved address %#o\n", effAddr)
 

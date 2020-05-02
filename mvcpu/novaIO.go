@@ -1,6 +1,6 @@
 // novaIO.go
 
-// Copyright (C) 2017,2019  Steve Merrony
+// Copyright ©2017-2020  Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 	// The Eclipse LEF instruction is handled funkily...
 	if cpu.atu && cpu.sbr[memory.GetSegment(cpu.pc)].lef {
 		iPtr.ix = instrLEF
-		log.Fatalf("ERROR: LEF not yet implemented, location %d\n", cpu.pc)
+		log.Panicf("ERROR: LEF not yet implemented, location %d\n", cpu.pc)
 	}
 
 	switch iPtr.ix {
@@ -91,10 +91,8 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 			switch iPtr.ix {
 			case instrDIA, instrDIB, instrDIC:
 				cpu.ac[novaDataIo.acd] = dg.DwordT(cpu.bus.DataIn(novaDataIo.ioDev, abc, novaDataIo.f))
-				//busDataIn(cpu, &novaDataIo, abc)
 			case instrDOA, instrDOB, instrDOC:
 				cpu.bus.DataOut(novaDataIo.ioDev, memory.DwordGetLowerWord(cpu.ac[novaDataIo.acd]), abc, novaDataIo.f)
-				//busDataOut(cpu, &novaDataIo, abc)
 			}
 		} else {
 			logging.DebugPrint(logging.DebugLog, "WARN: I/O attempted to unattached or non-I/O capable device 0%o\n", novaDataIo.ioDev)
@@ -107,6 +105,7 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 			// 		cpu.ac[0] = 0xffff
 			// 	}
 			case 2, 012, 013: // TODO - ignore for now
+				logging.DebugPrint(logging.DebugLog, "WARN: Ignoring I/O to device %#o\n", novaDataIo.ioDev)
 			default:
 				return false
 			}
@@ -185,7 +184,7 @@ func novaIO(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	default:
-		log.Fatalf("ERROR: NOVA_IO instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: NOVA_IO instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

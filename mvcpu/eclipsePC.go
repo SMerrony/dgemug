@@ -31,6 +31,8 @@ import (
 
 func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 
+	ring := cpu.pc & 0x7000_0000
+
 	switch iPtr.ix {
 
 	case instrCLM: // signed compare to limits
@@ -49,8 +51,8 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 				inc = 4
 			}
 		} else {
-			l = int16(memory.ReadWord(dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]))))
-			h = int16(memory.ReadWord(dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd]) + 1)))
+			l = int16(memory.ReadWord(dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd])) | ring))
+			h = int16(memory.ReadWord(dg.PhysAddrT(memory.DwordGetLowerWord(cpu.ac[twoAcc1Word.acd])+1) | ring))
 			if acs < l || acs > h {
 				inc = 1
 			} else {
@@ -61,11 +63,13 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			logging.DebugPrint(logging.DebugLog, "CLM compared %d with limits %d and %d, moving PC by %d\n", acs, l, h, inc)
 		}
 		cpu.pc += inc
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 
 	case instrDSPA:
 		oneAccModeInt2Word := iPtr.variant.(oneAccModeInd2WordT)
-		tableStart := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset) & 0x7fff
+		tableStart := resolve15bitDisplacement(cpu, oneAccModeInt2Word.ind, oneAccModeInt2Word.mode, dg.WordT(oneAccModeInt2Word.disp15), iPtr.dispOffset)
+		tableStart &= 0x7fff
+		tableStart |= ring
 		offset := memory.DwordGetLowerWord(cpu.ac[oneAccModeInt2Word.acd])
 		lowLimit := memory.ReadWord(tableStart - 2)
 		hiLimit := memory.ReadWord(tableStart - 1)
@@ -81,13 +85,13 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		if addr == 0xffffffff {
 			cpu.pc += 2
 		} else {
-			cpu.pc = addr & (0x7fff | (cpu.pc & ringMask32))
+			cpu.pc = (addr & 0x7fff) | ring
 		}
 
 	case instrEISZ:
 		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		wd := memory.ReadWord(addr)
 		wd++
 		memory.WriteWord(addr, wd)
@@ -100,19 +104,19 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrEJMP:
 		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		cpu.pc = addr
 
 	case instrEJSR:
 		cpu.ac[3] = dg.DwordT(cpu.pc) + 2
 		addr := resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)
 		addr &= 0x7fff
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		cpu.pc = addr
 
 	case instrFNS:
 		cpu.pc++
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 
 	case instrSGE: //16-bit signed numbers
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -123,7 +127,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 
 	case instrSGT: //16-bit signed numbers
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -134,19 +138,19 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 
 	case instrSNB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		addr, bit := resolveEclipseBitAddr(cpu, &twoAcc1Word)
-		addr |= (cpu.pc & ringMask32)
+		addr |= ring
 		wd := memory.ReadWord(addr)
 		if memory.TestWbit(wd, int(bit)) {
 			cpu.pc += 2
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SNB: Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
@@ -165,7 +169,7 @@ func eclipsePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			cpu.pc++
 		}
-		cpu.pc &= (0x7fff | (cpu.pc & ringMask32))
+		cpu.pc = (cpu.pc & 0x7fff) | ring
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "SZB(O): Wd Addr: %d., word: %0X, bit #: %d\n", addr, wd, bit)
 		}
