@@ -38,7 +38,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | SCRABBLE  | 32 | Seems to loop after input                     | |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
   | YAHTZEE   | 32 | Cannot seem to parse # of players             |  |
-  | ZORK      | 32 | Crash after reading data file                 |  |
+  | ZORK      | 32 | Crash in WCMV                                 |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|

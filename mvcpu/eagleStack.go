@@ -194,7 +194,36 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		cpu.SetOVR(false)
 
-	// N.B. WPOPB & WPOPJ are in eaglePC.go
+	case instrWPOPB:
+		//wspSav := cpu.wsp
+		// pop off 6 double words
+		dwd := WsPop(cpu) // 1
+		cpu.carry = memory.TestDwbit(dwd, 0)
+		cpu.pc = dg.PhysAddrT(dwd & 0x7fff_ffff)
+		cpu.ac[3] = WsPop(cpu) // 2
+		// replace WFP with popped value of AC3
+		cpu.wfp = dg.PhysAddrT(cpu.ac[3])
+		cpu.ac[2] = WsPop(cpu) // 3
+		cpu.ac[1] = WsPop(cpu) // 4
+		cpu.ac[0] = WsPop(cpu) // 5
+		dwd = WsPop(cpu)       // 6
+		cpu.psr = memory.DwordGetUpperWord(dwd)
+		// TODO Set WFP if crossing rings
+		// wsFramSz2 := ((dwd & 0x0000_7fff) << 1) + 12
+		// cpu.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
+		wsFramSz2 := ((dwd & 0x0000_7fff) << 1)
+		cpu.wsp -= dg.PhysAddrT(wsFramSz2)
+		return true // we've set PC
+
+	case instrWPOPJ:
+		dwd := WsPop(cpu)
+		cpu.pc = cpu.pc&ringMask32 | dg.PhysAddrT(dwd) // & 0x0fff_ffff)
+		cpu.SetOVR(false)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 0, true)
+		if !ok {
+			log.Panicf("DEBUG: Stack fault trapped in WPOPJ, codes %d and %d", faultCode, secondaryFault)
+		}
+		return true // we've set PC
 
 	case instrWPSH:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -213,7 +242,28 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		cpu.SetOVR(false)
 
-	// N.B. WRTN is in eaglePC.go
+	case instrWRTN: // FIXME incomplete: handle PSR and rings
+		// set WSP equal to WFP
+		cpu.wsp = cpu.wfp
+		//wspSav := cpu.wsp
+		// pop off 6 double words
+		dwd := WsPop(cpu) // 1
+		cpu.carry = memory.TestDwbit(dwd, 0)
+		cpu.pc = dg.PhysAddrT(dwd & 0x7fff_ffff)
+		cpu.ac[3] = WsPop(cpu) // 2
+		// replace WFP with popped value of AC3
+		cpu.wfp = dg.PhysAddrT(cpu.ac[3])
+		cpu.ac[2] = WsPop(cpu) // 3
+		cpu.ac[1] = WsPop(cpu) // 4
+		cpu.ac[0] = WsPop(cpu) // 5
+		dwd = WsPop(cpu)       // 6
+		cpu.psr = memory.DwordGetUpperWord(dwd)
+		// TODO Set WFP if crossing rings
+		// wsFramSz2 := ((dwd & 0x0000_7fff) << 1) + 12
+		// cpu.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
+		wsFramSz2 := ((dwd & 0x0000_7fff) << 1)
+		cpu.wsp -= dg.PhysAddrT(wsFramSz2)
+		return true // we've set PC
 
 	case instrWSAVR, instrWSAVS:
 		unique2Word := iPtr.variant.(unique2WordT)
@@ -352,26 +402,6 @@ func WsPop(cpu *CPUT) (dword dg.DwordT) {
 		logging.DebugPrint(logging.DebugLog, "... WsPop  popped %#o off  the Wide Stack at location: %#o\n", dword, cpu.wsp+2)
 	}
 	return dword
-}
-
-// used by WPOPB, WRTN
-func wpopb(cpu *CPUT) {
-	wspSav := cpu.wsp
-	// pop off 6 double words
-	dwd := WsPop(cpu) // 1
-	cpu.carry = memory.TestDwbit(dwd, 0)
-	cpu.pc = dg.PhysAddrT(dwd & 0x7fff_ffff)
-	cpu.ac[3] = WsPop(cpu) // 2
-	// replace WFP with popped value of AC3
-	cpu.wfp = dg.PhysAddrT(cpu.ac[3])
-	cpu.ac[2] = WsPop(cpu) // 3
-	cpu.ac[1] = WsPop(cpu) // 4
-	cpu.ac[0] = WsPop(cpu) // 5
-	dwd = WsPop(cpu)       // 6
-	cpu.psr = memory.DwordGetUpperWord(dwd)
-	// TODO Set WFP if crossing rings
-	wsFramSz2 := ((dwd & 0x0000_7fff) << 1) + 12
-	cpu.wsp = wspSav - dg.PhysAddrT(wsFramSz2)
 }
 
 // wsPopQWord - POP a Quad-word off the Wide Stack

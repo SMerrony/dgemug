@@ -247,23 +247,6 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.pc++
 		}
 
-	case instrWPOPB:
-		wpopb(cpu)
-
-	case instrWPOPJ:
-		dwd := WsPop(cpu)
-		cpu.pc = cpu.pc&ringMask32 | (dg.PhysAddrT(dwd) & 0x0fff_ffff)
-		cpu.SetOVR(false)
-		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 0, true)
-		if !ok {
-			log.Panicf("DEBUG: Stack fault trapped in WPOPJ, codes %d and %d", faultCode, secondaryFault)
-		}
-
-	case instrWRTN: // FIXME incomplete: handle PSR and rings
-		// set WSP equal to WFP
-		cpu.wsp = cpu.wfp
-		wpopb(cpu)
-
 	case instrWSANA:
 		oneAccImm3Word := iPtr.variant.(oneAccImm3WordT)
 		if uint32(cpu.ac[oneAccImm3Word.acd])&oneAccImm3Word.immU32 != 0 {
