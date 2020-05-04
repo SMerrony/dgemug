@@ -173,7 +173,8 @@ func (proc *ProcessT) loadUST(progWds []dg.WordT) {
 	proc.ust.debugAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustda], progWds[ust+ustda+1]))
 	proc.ust.revision = memory.DwordFromTwoWords(progWds[ust+ustrv], progWds[ust+ustrv+1])
 	proc.ust.taskCount = progWds[ust+usttc] // 266.
-	proc.ust.impureBlocks = progWds[ust+ustbl]
+	//proc.ust.impureBlocks = progWds[ust+ustbl]
+	proc.ust.impureBlocks = progWds[ust+ustbl+1]
 	proc.ust.sharedStartBlock = memory.DwordFromTwoWords(progWds[ust+ustst], progWds[ust+ustst+1]) // 0x10f 271. 0417
 	proc.ust.intAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[ust+ustit], progWds[ust+ustit+1]))
 	proc.ust.sharedBlockCount = progWds[ust+ustsz]                                                    // 0x113 275. 0423

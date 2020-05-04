@@ -90,9 +90,9 @@ func resolve15bitDisplacement(cpu *CPUT, ind byte, mode int, disp dg.WordT, disp
 	case pcMode:
 		eff = dg.PhysAddrT(int32(cpu.pc) + dispS32 + int32(dispOffset))
 	case ac2Mode:
-		eff = dg.PhysAddrT(int32(cpu.ac[2]) + dispS32)
+		eff = dg.PhysAddrT(int32(cpu.ac[2])+dispS32) | ring
 	case ac3Mode:
-		eff = dg.PhysAddrT(int32(cpu.ac[3]) + dispS32)
+		eff = dg.PhysAddrT(int32(cpu.ac[3])+dispS32) | ring
 	}
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
@@ -150,12 +150,16 @@ func resolve8bitDisplacement(cpu *CPUT, ind byte, mode int, disp int16) (eff dg.
 	// handle indirection
 	if ind == '@' { // down the rabbit hole...
 		eff |= ring
+
 		indAddr, ok := memory.ReadWordTrap(eff)
+		logging.DebugPrint(logging.DebugLog, "... examining location %#o (%#x) - contains: %#o (%#x)\n", eff, eff, indAddr, indAddr)
 		if !ok {
 			log.Panicln("Terminating")
 		}
 		for memory.TestWbit(indAddr, 0) {
+			logging.DebugPrint(logging.DebugLog, "... examining location %#o (%#x) ", indAddr, indAddr)
 			indAddr, ok = memory.ReadWordTrap(dg.PhysAddrT(indAddr&physMask16) | ring)
+			logging.DebugPrint(logging.DebugLog, "- contains: %#o (%#x)\n", indAddr, indAddr)
 			if !ok {
 				log.Panicln("Terminating")
 			}

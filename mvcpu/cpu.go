@@ -483,6 +483,9 @@ RunLoop: // performance-critical section starts here
 			break
 		}
 
+		// instruction counting
+		instrCounts[iPtr.ix]++
+
 		if cpu.debugLogging {
 			logging.DebugPrint(logging.DebugLog, "%s  %s\n", cpu.CompactPrintableStatus(), iPtr.disassembly)
 		}
@@ -545,9 +548,6 @@ RunLoop: // performance-critical section starts here
 			break
 		}
 
-		// instruction counting
-		instrCounts[iPtr.ix]++
-
 		prevPC = cpu.pc
 
 		// N.B. RLock still in effect as we loop around
@@ -564,7 +564,7 @@ const (
 
 // Vrun is a simplified runloop for a Virtual CPU
 // It should run until a system call is encountered
-func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxInstrs]int) {
+func (cpu *CPUT) Vrun(instrCounts *[maxInstrs]int) (syscallTrap bool, errDetail string) {
 	var (
 		thisOp dg.WordT
 		// prevPC dg.PhysAddrT
@@ -673,7 +673,7 @@ func (cpu *CPUT) Vrun() (syscallTrap bool, errDetail string, instrCounts [maxIns
 		// N.B. RLock still in effect as we loop around
 	}
 
-	return syscallTrap, errDetail, instrCounts
+	return syscallTrap, errDetail
 }
 
 func (cpu *CPUT) statSender(sChan chan CPUStatT) {

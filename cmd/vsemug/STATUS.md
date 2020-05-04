@@ -51,12 +51,12 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
-  | ADVENTURE | 16 | "ERROR DETECTED DURING FORTRAN 5 INITIALIZATION" | ?MEM 16-bit ?? |
+  | ADVENTURE | 16 | Sys Call 0272 nyi                             | Call not listed in docs... |
   | ASTEROIDS | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | BRUTUS    | 16 | Tries to map already-mapped page in ?MEMI     | ?Not enough room between areas? check ?MEM | 
   | CONQUEST  | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |
   | DICE      | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
-  | HANGMAN   | 16 | Tries to map already-mapped page in ?MEMI     |  |
+  | HANGMAN   | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |
   | OTHELLO   | 16 | Tries to map already-mapped page in ?MEMI     | |
   | PACMAN    | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | SERPENT   | 16 | JMPs to 0 after EJMP @0532                    |  |

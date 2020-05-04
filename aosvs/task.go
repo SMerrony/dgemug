@@ -23,6 +23,7 @@ package aosvs
 
 import (
 	"log"
+	"sort"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
@@ -74,6 +75,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	var (
 		cpu         mvcpu.CPUT
 		syscallTrap bool
+		instrCounts [750]int
 	)
 
 	cpu.CPUInit(077, nil, nil)
@@ -88,7 +90,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	// log.Println(cpu.DisassembleRange(0x7007_fc00, 0x7007_fc00+0400))
 
 	for {
-		syscallTrap, _, _ = cpu.Vrun()
+		syscallTrap, _ = cpu.Vrun(&instrCounts)
 		if syscallTrap {
 			returnAddr := dg.PhysAddrT(cpu.GetAc(3))
 			var callID dg.WordT
@@ -135,5 +137,28 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			break
 		}
 	}
+
+	// instruction counts, first by Mnemonic, then by count
+	m := make(map[int]string)
+	keys := make([]int, 0)
+
+	log.Println("Instruction Execution Count by Mnemonic")
+	for i, c := range instrCounts {
+		if instrCounts[i] > 0 {
+			log.Printf("%s\t%d\n", mvcpu.GetMnemonic(i), c)
+			if m[c] == "" {
+				m[c] = mvcpu.GetMnemonic(i)
+				keys = append(keys, c)
+			} else {
+				m[c] += ", " + mvcpu.GetMnemonic(i)
+			}
+		}
+	}
+	log.Println("instructions by Count")
+	sort.Ints(keys)
+	for _, c := range keys {
+		log.Printf("%d\t%s\n", c, m[c])
+	}
+
 	return errorCode, termMessage, flags
 }

@@ -25,6 +25,7 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -79,7 +80,7 @@ func novaMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		effAddr = resolve8bitDisplacement(cpu, novaOneAccEffAddr.ind, novaOneAccEffAddr.mode, novaOneAccEffAddr.disp15) & 0x7fff
 		effAddr |= ring // constrain to current segment
 		memory.WriteWord(effAddr, shifter)
-		//log.Printf("DEBUG: STA storing AC to resolved address %#o\n", effAddr)
+		logging.DebugPrint(logging.DebugLog, "STA storing AC %d to resolved address %#o\n", novaOneAccEffAddr.acd, effAddr)
 
 	default:
 		log.Printf("ERROR: NOVA_MEMREF instruction <%s> (%#x)not yet implemented at PC=%#o\n", iPtr.mnemonic, memory.ReadWord(cpu.pc), cpu.pc)

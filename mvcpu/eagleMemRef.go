@@ -168,7 +168,8 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrXLEF:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
-		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset))
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(addr)
 
 	case instrXLEFB: // FIXME Now!  Something weird going on here - why doesn't the resolver work?
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
