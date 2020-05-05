@@ -367,7 +367,7 @@ func wcmv(cpu *CPUT) {
 		cpu.carry = true
 	}
 	// 1st move srcCount bytes
-	for {
+	for srcCount != 0 && destCount != 0 {
 		copyByte(cpu.ac[3], cpu.ac[2])
 		if srcAscend {
 			cpu.ac[3]++
@@ -383,24 +383,19 @@ func wcmv(cpu *CPUT) {
 			cpu.ac[2]--
 			destCount++
 		}
-		if srcCount == 0 || destCount == 0 {
-			break
-		}
 	}
 	// now fill any excess bytes with ASCII spaces
-	if destCount != 0 {
-		for {
-			memWriteByteBA(dg.ASCIISPC, cpu.ac[2])
-			if destAscend {
-				cpu.ac[2]++
-				destCount--
-			} else {
-				cpu.ac[2]--
-				destCount++
-			}
-			if destCount == 0 {
-				break
-			}
+	for destCount != 0 {
+		memWriteByteBA(dg.ASCIISPC, cpu.ac[2])
+		if destAscend {
+			cpu.ac[2]++
+			destCount--
+		} else {
+			cpu.ac[2]--
+			destCount++
+		}
+		if destCount == 0 {
+			break
 		}
 	}
 	cpu.ac[0] = 0

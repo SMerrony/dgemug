@@ -217,7 +217,7 @@ func TestWCMV(t *testing.T) {
 		t.Errorf("Expected 'C', got '%c'", r)
 	}
 
-	// src backwards
+	// dest backwards
 	srcBytePtr = 100 << 1
 	destNoBytes = -7
 	cpu.ac[0] = dg.DwordT(destNoBytes)
@@ -238,6 +238,30 @@ func TestWCMV(t *testing.T) {
 	r = memory.ReadByte(199, false)
 	if r != 'C' {
 		t.Errorf("Expected 'C', got '%c'", r)
+	}
+
+	// src 0
+	srcBytePtr = 100 << 1
+	srcNoBytes = 0
+	destNoBytes = -7
+	cpu.ac[0] = dg.DwordT(destNoBytes)
+	cpu.ac[1] = dg.DwordT(srcNoBytes)
+	cpu.ac[2] = dg.DwordT(destBytePtr)
+	cpu.ac[3] = dg.DwordT(srcBytePtr)
+	if !eagleMemRef(cpu, &iPtr) {
+		t.Error("Failed to execute WCMV")
+	}
+	r = memory.ReadByte(200, false)
+	if r != ' ' {
+		t.Errorf("Expected ' ', got '%c'", r)
+	}
+	r = memory.ReadByte(199, true)
+	if r != ' ' {
+		t.Errorf("Expected ' ', got '%c'", r)
+	}
+	r = memory.ReadByte(199, false)
+	if r != ' ' {
+		t.Errorf("Expected ' ', got '%c'", r)
 	}
 }
 

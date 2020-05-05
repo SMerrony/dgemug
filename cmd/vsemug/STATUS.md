@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 2 May 2020
+* Last Updated: 5 May 2020
 * Last Significant Progress: 30 Apr 2020 (fixed another bug in resolver)
   
 ## What Works? :+1:
