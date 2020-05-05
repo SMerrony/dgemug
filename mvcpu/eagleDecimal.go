@@ -34,9 +34,9 @@ func eagleDecimal(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrWDecOp: // Funkiness ahead...
 		switch iPtr.word2 {
 		case 0x0000: // WDMOV
-			log.Fatalf("ERROR: EAGLE_DECIMAL instruction WDMOV not yet implemented")
+			log.Panicf("ERROR: EAGLE_DECIMAL instruction WDMOV not yet implemented")
 		case 0x0001: // WDCMP
-			// log.Fatalf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet implemented")
+			// log.Panicf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet implemented")
 			arg1Type := cpu.ac[0]
 			arg2Type := cpu.ac[1]
 			arg1BA := cpu.ac[2]
@@ -44,17 +44,17 @@ func eagleDecimal(cpu *CPUT, iPtr *decodedInstrT) bool {
 			if (arg1Type == arg2Type) && (arg1BA == arg2BA) { // short-circuit certain equality...
 				cpu.ac[0] = 0
 			} else {
-				log.Fatalf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet fully implemented")
+				log.Panicf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet fully implemented")
 			}
 
 		case 0x0002: // WDINC
-			log.Fatalf("ERROR: EAGLE_DECIMAL instruction WDINC not yet implemented")
+			log.Panicf("ERROR: EAGLE_DECIMAL instruction WDINC not yet implemented")
 
 		case 0x0003: // WDDEC
-			log.Fatalf("ERROR: EAGLE_DECIMAL instruction WDDEC not yet implemented")
+			log.Panicf("ERROR: EAGLE_DECIMAL instruction WDDEC not yet implemented")
 		}
 	default:
-		log.Fatalf("ERROR: EAGLE_DECIMAL instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: EAGLE_DECIMAL instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

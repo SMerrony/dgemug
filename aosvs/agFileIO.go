@@ -182,16 +182,12 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 				if l == 0 {
 					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
 				}
-				// if oneByte[0] == 0 || oneByte[0] < ' ' || oneByte[0] > 127 {
-				// 	continue
-				// }
 				// TODO DELete
 				log.Printf("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
 				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break
 				}
 				buff = append(buff, oneByte[0])
-
 			}
 			resp.data = buff
 		} else {

@@ -31,18 +31,18 @@ The NADGUG library provides a good range of freely-available test targets...
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs (See FORTRAN src) |
-  | MMM       | 32 | Unmapped read in WCMV                         | |
+  | MMM       | 32 | Unmapped read in WCMV                         | ** Bkwd-bkwd move |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
   | SCRABBLE  | 32 | Seems to loop after input                     | |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
-  | YAHTZEE   | 32 | Cannot seem to parse # of players             |  |
-  | ZORK      | 32 | Crash in WCMV                                 |  |
+  | YAHTZEE   | 32 | Exits with Error Code: 71200                  | Almost immediately after ?MEMI |
+  | ZORK      | 32 | Unmapped read in WCMV                         | ** Bkwd-bkwd move |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
-  | IMSLUTIL | HANGMAN   |  32  | Unmapped read in XNLDA  |  |
+  | IMSLUTIL | HANGMAN   |  32  | WDCMP nyfi              | WDCMP |
   
 
 * 16-bit NADGUG Games compiled for AOS/VS...  
@@ -52,7 +52,7 @@ The NADGUG library provides a good range of freely-available test targets...
   |    Game   |  Bits  |  Problem  |   Notes/Action   |
   |-----------|--------|-----------|------------------|
   | ADVENTURE | 16 | Sys Call 0272 nyi                             | Call not listed in docs... |
-  | ASTEROIDS | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
+  | ASTEROIDS | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | |
   | BRUTUS    | 16 | Tries to map already-mapped page in ?MEMI     | ?Not enough room between areas? check ?MEM | 
   | CONQUEST  | 16 | Reports error INSUFFICIENT MEMORY FOR PROGRAM | No room between unshared and shared areas, check ?MEM |
   | DICE      | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
@@ -61,8 +61,8 @@ The NADGUG library provides a good range of freely-available test targets...
   | PACMAN    | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | SERPENT   | 16 | JMPs to 0 after EJMP @0532                    |  |
   | SI        | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
-  | STARTREK  | 16 | Instruction FSNER nyi                         | FSNER |
-  | SW        | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
+  | STARTREK  | 16 | Not parsing Difficulty Level input            |  |
+  | SPACEWAR  | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | THISSALA  | 16 | Sys Call 0272 nyi                             | Call not listed in docs... |
  
 
