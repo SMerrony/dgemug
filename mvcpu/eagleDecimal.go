@@ -25,6 +25,8 @@ import (
 	"log"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
+	"github.com/SMerrony/dgemug/memory"
 )
 
 func eagleDecimal(cpu *CPUT, iPtr *decodedInstrT) bool {
@@ -42,9 +44,29 @@ func eagleDecimal(cpu *CPUT, iPtr *decodedInstrT) bool {
 			arg1BA := cpu.ac[2]
 			arg2BA := cpu.ac[3]
 			if (arg1Type == arg2Type) && (arg1BA == arg2BA) { // short-circuit certain equality...
-				cpu.ac[0] = 0
+				logging.DebugPrint(logging.DebugLog, "... assuming equality\n")
+				cpu.ac[1] = 0
 			} else {
-				log.Panicf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet fully implemented")
+				sf1, dt1, sz1 := memory.DecodeDecDataType(arg1Type)
+				str1 := memory.ReadDec(dg.PhysAddrT(arg1BA), sz1)
+				sf2, dt2, sz2 := memory.DecodeDecDataType(arg2Type)
+				str2 := memory.ReadDec(dg.PhysAddrT(arg2BA), sz2)
+				logging.DebugPrint(logging.DebugLog, "Arg 1 - SF: %d., Type: %d., Size: %d., String: %s\n", sf1, dt1, sz1, str1)
+				logging.DebugPrint(logging.DebugLog, "Arg 2 - SF: %d., Type: %d., Size: %d.\n", sf2, dt2, sz2)
+				i1 := memory.DecIntToInt(dt1, str1)
+				i2 := memory.DecIntToInt(dt2, str2)
+				if sf1 == 0 && sf2 == 0 {
+					switch {
+					case i1 < i2:
+						cpu.ac[1] = 0xffff_ffff
+					case i1 == i2:
+						cpu.ac[1] = 0
+					case i1 > i2:
+						cpu.ac[1] = 1
+					}
+				} else {
+					log.Panicf("ERROR: EAGLE_DECIMAL instruction WDCMP not yet fully implemented")
+				}
 			}
 
 		case 0x0002: // WDINC

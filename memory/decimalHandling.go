@@ -21,7 +21,13 @@
 
 package memory
 
-import "github.com/SMerrony/dgemug/dg"
+import (
+	"log"
+	"strconv"
+	"strings"
+
+	"github.com/SMerrony/dgemug/dg"
+)
 
 // Decimal Data Types - values are significant
 const (
@@ -40,5 +46,30 @@ func DecodeDecDataType(dti dg.DwordT) (scaleFactor int8, decType int, size int) 
 	scaleFactor = int8(GetDwbits(dti, 0, 8))
 	decType = int(uint8(GetDwbits(dti, 24, 3)))
 	size = int(uint8(GetDwbits(dti, 27, 5)))
+	if decType != 5 {
+		size++
+	}
 	return scaleFactor, decType, size
+}
+
+// DecIntToInt returns an int value of the DG Decimal integer supplied
+func DecIntToInt(decType int, dec string) (i int) {
+	var err error
+	switch decType {
+	case UnpackedDecLS, UnpackedDecU:
+		i, err = strconv.Atoi(strings.TrimSpace(dec))
+		if err != nil {
+			log.Panicf("ERROR: Could not parse Decimal <%s> as integer\n", dec)
+		}
+	default:
+		log.Panicf("DecIntToInt does not yet handle data type %d.\n", decType)
+	}
+	return i
+}
+
+// ReadDec returns a string of the Decimal value pointed to by the given byte address
+func ReadDec(ba dg.PhysAddrT, size int) (dec string) {
+	bytes := ReadNBytes(ba, size)
+	dec = strings.TrimSpace(string(bytes))
+	return dec
 }

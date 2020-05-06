@@ -24,9 +24,9 @@ import (
 	"log"
 	"math"
 	"strconv"
-	"strings"
 
 	"github.com/SMerrony/dgemug/dg"
+	"github.com/SMerrony/dgemug/logging"
 	"github.com/SMerrony/dgemug/memory"
 )
 
@@ -105,19 +105,21 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrWLDI:
 		_, dataType, size := memory.DecodeDecDataType(cpu.ac[1]) // "WLDI does not use the scale factor..."
-		size++
 		cpu.ac[2] = cpu.ac[3]
-		bs := memory.ReadNBytes(dg.PhysAddrT(cpu.ac[3]), size)
+		//bs := memory.ReadNBytes(dg.PhysAddrT(cpu.ac[3]), size)
+		bs := memory.ReadDec(dg.PhysAddrT(cpu.ac[3]), size)
 		switch dataType {
 		// case memory.UnpackedDecTSC:
 		// case memory.UnpackedDecLSC:
 		// case memory.UnpackedDecTS:
 		// case memory.UnpackedDecLS:
 		case memory.UnpackedDecU:
-			intNum, err := strconv.Atoi(strings.TrimSpace(string(bs)))
+			//intNum, err := strconv.Atoi(strings.TrimSpace(string(bs)))
+			intNum, err := strconv.Atoi(bs)
 			if err != nil {
 				log.Panicf("ERROR: Could not parse Decimal <%v> as integer\n", bs)
 			}
+			logging.DebugPrint(logging.DebugLog, "... decoded %d from %s\n", intNum, bs)
 			cpu.fpac[iPtr.ac] = float64(intNum)
 		default:
 			log.Panicf("ERROR: Packed data types not yet implemented, type is: %d.\n", dataType)
@@ -129,27 +131,30 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.ac[2] = cpu.ac[3]
 		// TODO a lot of this should be moved into a func...
 		unconverted := cpu.fpac[iPtr.ac]
+		logging.DebugPrint(logging.DebugLog, "... FPAC %d = %f\n", iPtr.ac, unconverted)
 		scaleFactor, dataType, size := memory.DecodeDecDataType(cpu.ac[1])
 		if scaleFactor != 0 {
 			log.Panicf("ERROR: Non-zero (%d) scale factors not yet supported\n", scaleFactor)
 		}
 		switch dataType {
 		case memory.UnpackedDecLS:
-			if unconverted < 0 {
-				size++
-			}
-			converted := fmt.Sprintf("%+*.f", size, unconverted)
+			// if unconverted < 0 {
+			// 	size++
+			// }
+			converted := fmt.Sprintf("%+0*.f", size, unconverted)
 			for c := 0; c < size; c++ {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
+				logging.DebugPrint(logging.DebugLog, "... %c -> %#x\n", converted[c], cpu.ac[3])
 				cpu.ac[3]++
 			}
 		case memory.UnpackedDecU:
-			if unconverted < 0 {
-				size++
-			}
-			converted := fmt.Sprintf("%*.f", size, unconverted)
+			// if unconverted < 0 {
+			// 	size++
+			// }
+			converted := fmt.Sprintf("%0*.f", size, unconverted)
 			for c := 0; c < size; c++ {
 				memory.WriteByteBA(cpu.ac[3], dg.ByteT(converted[c]))
+				logging.DebugPrint(logging.DebugLog, "... %c -> %#x\n", converted[c], cpu.ac[3])
 				cpu.ac[3]++
 			}
 		default:
