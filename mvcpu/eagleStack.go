@@ -303,7 +303,7 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wsPush(cpu, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
 
 	case instrXPEFB:
-		noAccMode2Word := iPtr.variant.(noAccMode2WordT)
+		noAccMode2Word := iPtr.variant.(noAccMode2WordT) kljhlkjh
 		// FIXME check for overflow
 		eff := resolve16bitByteAddr(cpu, noAccMode2Word.mode, noAccMode2Word.disp16, noAccMode2Word.lowByte)
 		wsPush(cpu, dg.DwordT(eff))

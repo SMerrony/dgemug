@@ -1,6 +1,6 @@
 # VSemuG Status
-* Last Updated: 5 May 2020
-* Last Significant Progress: 30 Apr 2020 (fixed another bug in resolver)
+* Last Updated: 6 May 2020
+* Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
 The following 32-bit sample programs copied from a physical machine are working...
@@ -25,24 +25,24 @@ The NADGUG library provides a good range of freely-available test targets...
   | 21        | 32 | Unmapped write in XWSTA                       | |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
-  | DND       | 32 | Instruction XCT nyi                           | XCT |
+  | DND       | 32 | Looping on output                             |  |
   | EMPIRE    | 32 | EMPIRE1.PR - Unmapped write in XWSTA          | |
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs (See FORTRAN src) |
-  | MMM       | 32 | Unmapped read in WCMV                         | ** Bkwd-bkwd move |
+  | MMM       | 32 | LNADD nyi                                     | LNADD |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
-  | SCRABBLE  | 32 | Seems to loop after input                     | |
+  | SCRABBLE  | 32 | Keeps ?READing with no prompt                 | Is is an extended ?READ ? |
   | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
   | YAHTZEE   | 32 | Exits with Error Code: 71200                  | Almost immediately after ?MEMI |
-  | ZORK      | 32 | Unmapped read in WCMV                         | ** Bkwd-bkwd move |
+  | ZORK      | 32 | Unmapped read in WCST                         |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
-  | IMSLUTIL | HANGMAN   |  32  | WDCMP nyfi              | WDCMP |
+  | IMSLUTIL | HANGMAN   |  32  | WDCMP nyfi              | WDCMP - After welcome shown |
   
 
 * 16-bit NADGUG Games compiled for AOS/VS...  

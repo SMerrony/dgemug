@@ -701,7 +701,7 @@ func decode15bitDisp(d15 dg.WordT, mode int) (disp16 int16) {
 
 func decode16bitByteDisp(d16 dg.WordT) (disp16 int16, loHi bool) {
 	loHi = memory.TestWbit(d16, 15)
-	disp16 = int16(d16) / 2
+	disp16 = int16(d16 >> 1)
 	// if cpu.debugLogging {
 	// 	logging.DebugPrint(logging.DebugLog, "... decode16bitByteDisp got: %#o, returning %#o\n", d16, disp16)
 	// }
@@ -787,9 +787,9 @@ func deviceToString(deviceMap devices.DeviceMapT, devNum int) string {
 
 func loHiToByte(loHi bool) byte {
 	if loHi {
-		return 'H'
+		return 'L'
 	}
-	return 'L'
+	return 'H'
 }
 
 func modeToString(mode int) string {

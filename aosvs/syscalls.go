@@ -79,6 +79,8 @@ var syscalls = map[dg.WordT]syscallDescT{
 	036:  {"?GTOD", "?GTOD", scSystem, scGtod, scGtod},
 	041:  {"?GDAY", "?GDAY", scSystem, scGday, scGday},
 	044:  {"?SSHPT", "?SSHP", scMemory, scSshpt, nil},
+	056:  {"?GOPEN", "?GOPE", scFileIO, nil, nil},
+	057:  {"?GCLOSE", "?GCLO", scFileIO, nil, nil},
 	060:  {"?SPAGE", "?SPAG", scMemory, scSpage, nil},
 	063:  {"?SOPEN", "?SOPE", scMemory, scSopen, nil},
 	070:  {"?PRIPR", "?PRIP", scProcess, scDummy, scDummy},

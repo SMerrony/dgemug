@@ -52,7 +52,7 @@ func eagleDecimal(cpu *CPUT, iPtr *decodedInstrT) bool {
 				sf2, dt2, sz2 := memory.DecodeDecDataType(arg2Type)
 				str2 := memory.ReadDec(dg.PhysAddrT(arg2BA), sz2)
 				logging.DebugPrint(logging.DebugLog, "Arg 1 - SF: %d., Type: %d., Size: %d., String: %s\n", sf1, dt1, sz1, str1)
-				logging.DebugPrint(logging.DebugLog, "Arg 2 - SF: %d., Type: %d., Size: %d.\n", sf2, dt2, sz2)
+				logging.DebugPrint(logging.DebugLog, "Arg 2 - SF: %d., Type: %d., Size: %d., String: %s\n", sf2, dt2, sz2, str2)
 				i1 := memory.DecIntToInt(dt1, str1)
 				i2 := memory.DecIntToInt(dt2, str2)
 				if sf1 == 0 && sf2 == 0 {
