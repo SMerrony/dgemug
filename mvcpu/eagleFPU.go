@@ -33,19 +33,20 @@ import (
 func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 	switch iPtr.ix {
 
-	case instrLFAMD:
+	case instrLFAMD, instrLFDMD, instrLFMMD, instrLFSMD:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
-		cpu.fpac[oneAccModeInd3Word.acd] += memory.DGdoubleToFloat64(qwd)
-		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
-		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
-
-	case instrLFDMD:
-		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
-		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
-		cpu.fpac[oneAccModeInd3Word.acd] /= memory.DGdoubleToFloat64(qwd)
+		switch iPtr.ix {
+		case instrLFAMD:
+			cpu.fpac[oneAccModeInd3Word.acd] += memory.DGdoubleToFloat64(qwd)
+		case instrLFDMD:
+			cpu.fpac[oneAccModeInd3Word.acd] /= memory.DGdoubleToFloat64(qwd)
+		case instrLFMMD:
+			cpu.fpac[oneAccModeInd3Word.acd] *= memory.DGdoubleToFloat64(qwd)
+		case instrLFSMD:
+			cpu.fpac[oneAccModeInd3Word.acd] -= memory.DGdoubleToFloat64(qwd)
+		}
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
 
@@ -62,14 +63,6 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
 		dwd := memory.ReadDWord(addr)
 		cpu.fpac[oneAccModeInd3Word.acd] = memory.DGsingleToFloat64(dwd)
-		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
-		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
-
-	case instrLFMMD:
-		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
-		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
-		qwd := dg.QwordT(memory.ReadDWord(addr))<<32 | dg.QwordT(memory.ReadDWord(addr+2))
-		cpu.fpac[oneAccModeInd3Word.acd] *= memory.DGdoubleToFloat64(qwd)
 		cpu.SetZ(cpu.fpac[oneAccModeInd3Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd3Word.acd] < 0.0)
 
