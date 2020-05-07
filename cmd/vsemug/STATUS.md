@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 6 May 2020
+* Last Updated: 7 May 2020
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
@@ -26,23 +26,23 @@ The NADGUG library provides a good range of freely-available test targets...
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Looping on output                             |  |
-  | EMPIRE    | 32 | EMPIRE1.PR - Unmapped write in XWSTA          | |
+  | EMPIRE    | 32 | Instr 0xa079 nyi                              | |
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
-  | FOOBAR    | 32 | Prints garbled errmgs & exits                 | Console I/O bugs (See FORTRAN src) |
+  | FOOBAR    | 32 | LNADD nyi                                     | LNADD |
   | MMM       | 32 | LNADD nyi                                     | LNADD |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
   | SCRABBLE  | 32 | Keeps ?READing with no prompt                 | Is is an extended ?READ ? |
-  | WUMPUS    | 32 | Hang/loop after displaying some blank lines   |  |
+  | WUMPUS    | 32 | Hang/loop after displaying start screen       |  |
   | YAHTZEE   | 32 | Exits with Error Code: 71200                  | Almost immediately after ?MEMI |
   | ZORK      | 32 | Unmapped read in WCST                         |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
-  | IMSLUTIL | HANGMAN   |  32  | WDCMP nyfi              | WDCMP - After welcome shown |
+  | IMSLUTIL | HANGMAN   |  32  | Error in WDCMP          | WDCMP - After welcome shown |
   
 
 * 16-bit NADGUG Games compiled for AOS/VS...  

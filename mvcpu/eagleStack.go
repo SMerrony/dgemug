@@ -82,17 +82,18 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 
 	case instrLPEFB:
 		noAccMode3Word := iPtr.variant.(noAccMode3WordT)
-		eff := dg.DwordT(noAccMode3Word.immU32)
-		switch noAccMode3Word.mode {
-		case absoluteMode: // do nothing
-		case pcMode:
-			eff |= (dg.DwordT(cpu.pc) << 1)
-		case ac2Mode:
-			eff |= (cpu.ac[2] << 1)
-		case ac3Mode:
-			eff |= (cpu.ac[3] << 1)
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 2, false)
+		if !ok {
+			log.Printf("DEBUG: Stack fault trapped by LPEFB, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
+			return true // we have set PC
 		}
-		wsPush(cpu, eff)
+		addr := resolve31bitDisplacement(cpu, ' ', noAccMode3Word.mode, int32(noAccMode3Word.immU32>>1), iPtr.dispOffset)
+		addr <<= 1
+		if noAccMode3Word.immU32&0x01 == 0x01 {
+			addr++
+		}
+		wsPush(cpu, dg.DwordT(addr))
 		cpu.SetOVR(false)
 
 	case instrSTAFP:
@@ -303,10 +304,21 @@ func eagleStack(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wsPush(cpu, dg.DwordT(resolve15bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp15, iPtr.dispOffset)))
 
 	case instrXPEFB:
-		noAccMode2Word := iPtr.variant.(noAccMode2WordT) kljhlkjh
+		noAccMode2Word := iPtr.variant.(noAccMode2WordT)
 		// FIXME check for overflow
-		eff := resolve16bitByteAddr(cpu, noAccMode2Word.mode, noAccMode2Word.disp16, noAccMode2Word.lowByte)
-		wsPush(cpu, dg.DwordT(eff))
+		//eff := resolve16bitByteAddr(cpu, noAccMode2Word.mode, noAccMode2Word.disp16, noAccMode2Word.lowByte)
+		addr := resolve15bitDisplacement(cpu, ' ', noAccMode2Word.mode, dg.WordT(noAccMode2Word.disp16), iPtr.dispOffset)
+		addr <<= 1
+		if noAccMode2Word.lowByte {
+			addr++
+		}
+		wsPush(cpu, dg.DwordT(addr))
+		ok, faultCode, secondaryFault := wspCheckBounds(cpu, 2, false)
+		if !ok {
+			log.Printf("DEBUG: Stack fault trapped by XPEFB, codes %d and %d", faultCode, secondaryFault)
+			wspHandleFault(cpu, iPtr.instrLength, faultCode, secondaryFault)
+			return true // we have set PC
+		}
 
 	case instrXPSHJ:
 		// FIXME check for overflow
