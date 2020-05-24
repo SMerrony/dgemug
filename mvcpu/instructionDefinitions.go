@@ -258,6 +258,7 @@ const (
 	instrNADDI
 	instrNADI
 	instrNCLID
+	instrNDIV
 	instrNEG
 	instrNIO
 	instrNLDAI
@@ -384,6 +385,7 @@ const (
 	instrXCT
 	instrXFAMD
 	instrXFAMS
+	instrXFDMS
 	instrXFLDD
 	instrXFLDS
 	instrXFMMD
@@ -602,6 +604,7 @@ func InstructionsInit() {
 	instructionSet[instrNADDI] = instrChars{"NADDI", 0xc639, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrNADI] = instrChars{"NADI", 0x8599, 0x87ff, 1, IMM_ONEACC_FMT, EAGLE_OP, 0}
 	instructionSet[instrNCLID] = instrChars{"NCLID", 0x683f, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_IO, 0}
+	instructionSet[instrNDIV] = instrChars{"NDIV", 0x8079, 0x87ff, 1, TWOACC_1_WORD_FMT, EAGLE_OP, 0}
 	instructionSet[instrNEG] = instrChars{"NEG", 0x8100, 0x8700, 1, NOVA_TWOACC_MULT_OP_FMT, NOVA_OP, 0}
 	instructionSet[instrNIO] = instrChars{"NIO", 0x6000, 0xff00, 1, IO_FLAGS_DEV_FMT, NOVA_IO, 0}
 	instructionSet[instrNLDAI] = instrChars{"NLDAI", 0xc629, 0xe7ff, 2, ONEACC_IMM_2_WORD_FMT, EAGLE_OP, 0}
@@ -728,6 +731,7 @@ func InstructionsInit() {
 	instructionSet[instrXCT] = instrChars{"XCT", 0xa6f8, 0xe7ff, 1, ONEACC_1_WORD_FMT, ECLIPSE_OP, 0}
 	instructionSet[instrXFAMD] = instrChars{"XFAMD", 0x8019, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFAMS] = instrChars{"XFAMS", 0x8009, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
+	instructionSet[instrXFDMS] = instrChars{"XFDMS", 0x8129, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFLDD] = instrChars{"XFLDD", 0x8219, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFLDS] = instrChars{"XFLDS", 0x8209, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFMMD] = instrChars{"XFMMD", 0x8039, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}

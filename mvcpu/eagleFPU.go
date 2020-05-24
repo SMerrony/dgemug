@@ -170,6 +170,18 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
 		cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
 
+	case instrXFDMS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpSingle := memory.ReadDWord(addr)
+		if fpSingle == 0 {
+			log.Panicln("ERROR: Divide-by-Zero not yet handled in XFDMS")
+		} else {
+			cpu.fpac[oneAccModeInd2Word.acd] /= memory.DGsingleToFloat64(fpSingle)
+			cpu.SetZ(cpu.fpac[oneAccModeInd2Word.acd] == 0.0)
+			cpu.SetN(cpu.fpac[oneAccModeInd2Word.acd] < 0.0)
+		}
+
 	case instrXFLDD:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
 		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)

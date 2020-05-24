@@ -55,12 +55,21 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrLPSR:
 		cpu.ac[0] = dg.DwordT(cpu.psr)
 
-	case instrNADD: // signed add
+	case instrNADD, instrNMUL, instrNSUB:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
 		acDs16 := int16(cpu.ac[twoAcc1Word.acd])
 		acSs16 := int16(cpu.ac[twoAcc1Word.acs])
-		s32 := int32(acDs16) + int32(acSs16)
-		cpu.carry = (s32 > maxPosS16) || (s32 < minNegS16) // TODO handle overflow flag
+		var s32 int32
+		switch iPtr.ix {
+		case instrNADD:
+			s32 = int32(acDs16) + int32(acSs16)
+		case instrNMUL:
+			s32 = int32(acDs16) * int32(acSs16)
+		case instrNSUB:
+			s32 = int32(acDs16) - int32(acSs16)
+		}
+		cpu.carry = (s32 > maxPosS16) || (s32 < minNegS16)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(s32)
 
 	case instrNADDI:
@@ -68,7 +77,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs16 := int16(cpu.ac[oneAccImm2Word.acd])
 		s16 := oneAccImm2Word.immS16
 		s32 := int32(acDs16) + int32(s16)
-		cpu.carry = (s32 > maxPosS16) || (s32 < minNegS16) // TODO handle overflow flag
+		cpu.carry = (s32 > maxPosS16) || (s32 < minNegS16)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(s32)
 
 	case instrNADI, instrNSBI:
@@ -85,6 +95,23 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.SetOVR(true)
 		}
 
+	case instrNDIV:
+		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
+		acDs16 := int16(cpu.ac[twoAcc1Word.acd])
+		acSs16 := int16(cpu.ac[twoAcc1Word.acs])
+		if acSs16 == 0 {
+			cpu.carry = true
+			cpu.SetOVR(true)
+		} else {
+			s32 := int32(acDs16) / int32(acSs16)
+			if (s32 > maxPosS16) || (s32 < minNegS16) {
+				cpu.carry = true
+				cpu.SetOVR(true)
+			} else {
+				cpu.ac[twoAcc1Word.acd] = dg.DwordT(s32)
+			}
+		}
+
 	case instrNLDAI:
 		oneAccImm2Word := iPtr.variant.(oneAccImm2WordT)
 		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(int32(oneAccImm2Word.immS16))
@@ -96,14 +123,6 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.SetOVR(true)
 		}
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(-s32)
-
-	case instrNSUB: // signed subtract
-		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		acDs16 := int16(cpu.ac[twoAcc1Word.acd])
-		acSs16 := int16(cpu.ac[twoAcc1Word.acs])
-		s32 := int32(acDs16) - int32(acSs16)
-		cpu.carry = (s32 > maxPosS16) || (s32 < minNegS16) // TODO handle overflow flag
-		cpu.ac[twoAcc1Word.acd] = dg.DwordT(s32)
 
 	case instrSEX: // Sign EXtend
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
@@ -120,7 +139,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[twoAcc1Word.acd])
 		acSs32 := int32(^cpu.ac[twoAcc1Word.acs])
 		s64 := int64(acSs32) + int64(acDs32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(s64)
 
 	case instrWADD:
@@ -128,7 +148,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[twoAcc1Word.acd])
 		acSs32 := int32(cpu.ac[twoAcc1Word.acs])
 		s64 := int64(acSs32) + int64(acDs32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(s64)
 
 	case instrWADDI:
@@ -136,7 +157,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[oneAccImm3Word.acd])
 		s32i := int32(oneAccImm3Word.immU32)
 		s64 := int64(s32i) + int64(acDs32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[oneAccImm3Word.acd] = dg.DwordT(s64)
 
 	case instrWADI:
@@ -144,7 +166,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[immOneAcc.acd])
 		s32 := int32(immOneAcc.immU16)
 		s64 := int64(s32) + int64(acDs32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[immOneAcc.acd] = dg.DwordT(s64)
 
 	case instrWANC:
@@ -274,12 +297,14 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[oneAccImm2Word.acd])
 		s16 := oneAccImm2Word.immS16
 		s64 := int64(acDs32) + int64(s16)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[oneAccImm2Word.acd] = dg.DwordT(s64)
 
 	case instrWNEG:
 		twoAcc1Word := iPtr.variant.(twoAcc1WordT)
-		cpu.carry = int32(cpu.ac[twoAcc1Word.acs]) == minNegS32 // TODO handle overflow flag
+		cpu.carry = int32(cpu.ac[twoAcc1Word.acs]) == minNegS32
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[twoAcc1Word.acd] = (^cpu.ac[twoAcc1Word.acs]) + 1
 
 	case instrWSBI:
@@ -287,7 +312,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[immOneAcc.acd])
 		s32 := int32(immOneAcc.immU16)
 		s64 := int64(acDs32) - int64(s32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[immOneAcc.acd] = dg.DwordT(s64)
 
 	case instrWSUB:
@@ -295,7 +321,8 @@ func eagleOp(cpu *CPUT, iPtr *decodedInstrT) bool {
 		acDs32 := int32(cpu.ac[twoAcc1Word.acd])
 		acSs32 := int32(cpu.ac[twoAcc1Word.acs])
 		s64 := int64(acDs32) - int64(acSs32)
-		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32) // TODO handle overflow flag
+		cpu.carry = (s64 > maxPosS32) || (s64 < minNegS32)
+		cpu.SetOVR(cpu.carry)
 		cpu.ac[twoAcc1Word.acd] = dg.DwordT(s64)
 
 	case instrWXCH:

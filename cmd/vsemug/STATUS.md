@@ -26,7 +26,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Looping on output                             |  |
-  | EMPIRE    | 32 | Instr 0xa079 nyi                              | |
+  | EMPIRE    | 32 | Runs for a bit!                               | Some screen corruption |
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
