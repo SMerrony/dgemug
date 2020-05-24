@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 7 May 2020
+* Last Updated: 24 May 2020
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
@@ -30,8 +30,8 @@ The NADGUG library provides a good range of freely-available test targets...
   | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
-  | FOOBAR    | 32 | LNADD nyi                                     | LNADD |
-  | MMM       | 32 | LNADD nyi                                     | LNADD |
+  | FOOBAR    | 32 | Error in Line 205                             |  |
+  | MMM       | 32 | Loops "A word is too long"                    | Look for comparison error |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
   | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |

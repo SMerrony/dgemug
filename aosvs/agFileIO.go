@@ -183,11 +183,12 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 					log.Panic("ERROR: ?READ got 0 bytes from @CONSOLE")
 				}
 				// TODO DELete
+				buff = append(buff, oneByte[0])
 				log.Printf("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
 				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break
 				}
-				buff = append(buff, oneByte[0])
+				//buff = append(buff, oneByte[0])
 			}
 			resp.data = buff
 		} else {
@@ -385,6 +386,15 @@ func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
 	if err != nil {
 		log.Panic("ERROR: Could not write to @CONSOLE")
 	}
+	// var err error
+	// for _, c := range b {
+	// 	time.Sleep(time.Millisecond * 2)
+	// 	bs := []byte{c}
+	// 	n, err = agChan.conn.Write(bs)
+	// 	if err != nil {
+	// 		log.Panic("ERROR: Could not write to @CONSOLE")
+	// 	}
+	// }
 	logging.DebugPrint(logging.ScLog, "\twrote %d., bytes <%v> to @CONSOLE\n", n, b)
 	logging.DebugPrint(logging.ScLog, "\t\tString: <%s>\n", string(b))
 	return n
@@ -393,8 +403,9 @@ func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
 func getDataSensitivePortion(ba []byte, maxLen int) (res []byte, tooLong bool) {
 	tooLong = false
 	for ix, b := range ba {
-		if b == 0 || b == dg.ASCIINL || b == dg.ASCIICR || b == dg.ASCIIFF {
-			return ba[:ix], false
+		if b == 0 || b == dg.ASCIINL || b == dg.ASCIICR || b == dg.ASCIIFF { //|| b == dg.ASCIITAB {
+			logging.DebugPrint(logging.ScLog, "\tData Sens portion of <%v>\nis <%v>\n", ba, ba[:ix+1])
+			return ba[:ix+1], false
 		}
 	}
 	return nil, true

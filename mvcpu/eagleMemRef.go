@@ -53,6 +53,20 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 		cpu.ac[oneAccMode3Word.acd] = dg.DwordT(addr)
 
+	case instrLNADD, instrLNMUL, instrLNSUB:
+		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)
+		addr := resolve31bitDisplacement(cpu, oneAccModeInd3Word.ind, oneAccModeInd3Word.mode, oneAccModeInd3Word.disp31, iPtr.dispOffset)
+		var s16 int16
+		switch iPtr.ix {
+		case instrLWADD:
+			s16 = int16(memory.ReadDWord(addr)) + int16(cpu.ac[oneAccModeInd3Word.acd])
+		case instrLWMUL:
+			s16 = int16(memory.ReadDWord(addr)) * int16(cpu.ac[oneAccModeInd3Word.acd])
+		case instrLWSUB:
+			s16 = int16(cpu.ac[oneAccModeInd3Word.acd]) - int16(memory.ReadDWord(addr))
+		}
+		cpu.ac[oneAccModeInd3Word.acd] = dg.DwordT(s16)
+
 	case instrLNADI:
 		noAccModeImmInd3Word := iPtr.variant.(noAccModeImmInd3WordT)
 		addr := resolve31bitDisplacement(cpu, noAccModeImmInd3Word.ind, noAccModeImmInd3Word.mode, noAccModeImmInd3Word.disp31, iPtr.dispOffset)

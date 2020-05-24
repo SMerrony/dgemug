@@ -78,8 +78,8 @@ func main() {
 		exitNicely(conn, "Please supply an initial PR file to run"+"\n")
 	}
 
-	// DEBUGGING ONLY... (panics in x minutes)
-	go stopper(40, conn)
+	// DEBUGGING ONLY... (exits in x minutes)
+	go stopper(20, conn)
 
 	memory.MemInit()
 	mvcpu.InstructionsInit()

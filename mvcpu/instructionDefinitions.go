@@ -389,6 +389,7 @@ const (
 	instrXFMMD
 	instrXFMMS
 	instrXFSTD
+	instrXFSTS
 	instrXJMP
 	instrXJSR
 	instrXLDB
@@ -564,7 +565,7 @@ func InstructionsInit() {
 	instructionSet[instrLLEF] = instrChars{"LLEF", 0x83e9, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLLEFB] = instrChars{"LLEFB", 0x84e9, 0x87ff, 3, ONEACC_MODE_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLMRF] = instrChars{"LMRF", 0x87c9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_OP, 0}
-	instructionSet[instrLNADD] = instrChars{"LNADD", 0x8218, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_OP, 1}
+	instructionSet[instrLNADD] = instrChars{"LNADD", 0x8218, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLNADI] = instrChars{"LNADI", 0x8618, 0x87ff, 3, NOACC_MODE_IMM_IND_3_WORD_FMT, EAGLE_MEMREF, 1}
 	instructionSet[instrLNDIV] = instrChars{"LNDIV", 0x82d8, 0x87ff, 3, ONEACC_MODE_IND_3_WORD_FMT, EAGLE_OP, 1}
 	instructionSet[instrLNDO] = instrChars{"LNDO", 0x8698, 0x87ff, 4, LNDO_4_WORD_FMT, EAGLE_PC, 1}
@@ -732,6 +733,7 @@ func InstructionsInit() {
 	instructionSet[instrXFMMD] = instrChars{"XFMMD", 0x8039, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFMMS] = instrChars{"XFMMS", 0x8029, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXFSTD] = instrChars{"XFSTD", 0x8239, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
+	instructionSet[instrXFSTS] = instrChars{"XFSTS", 0x8229, 0x87ff, 2, ONEACC_MODE_IND_2_WORD_X_FMT, EAGLE_FPU, 0}
 	instructionSet[instrXJMP] = instrChars{"XJMP", 0xc609, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXJSR] = instrChars{"XJSR", 0xc619, 0xe7ff, 2, NOACC_MODE_IND_2_WORD_X_FMT, EAGLE_PC, 1}
 	instructionSet[instrXLDB] = instrChars{"XLDB", 0x8419, 0x87ff, 2, ONEACC_MODE_2_WORD_X_B_FMT, EAGLE_MEMREF, 1}

@@ -209,6 +209,12 @@ func eagleFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		memory.WriteDWord(addr, dg.DwordT(fpQuad>>32))
 		memory.WriteDWord(addr+2, dg.DwordT(fpQuad))
 
+	case instrXFSTS:
+		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
+		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		fpSingle := memory.Float64toDGsingle(cpu.fpac[oneAccModeInd2Word.acd])
+		memory.WriteDWord(addr, fpSingle)
+
 	default:
 		log.Panicf("ERROR: EAGLE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
