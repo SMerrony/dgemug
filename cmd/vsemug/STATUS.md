@@ -27,7 +27,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Looping on output                             |  |
   | EMPIRE    | 32 | Runs for a bit!                               | Some screen corruption |
-  | EMPIRE2   | 32 | ?CON nyi                                      | ?CON |
+  | EMPIRE2   | 32 | ?FSTATyi                                      | ?FSTAT |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Error in Line 205                             |  |

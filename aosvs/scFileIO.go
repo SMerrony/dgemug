@@ -89,6 +89,13 @@ func scSchr(p syscallParmsT) bool {
 	return true
 }
 
+func scGopen(p syscallParmsT) bool {
+	filename := readString(p.cpu.GetAc(0), p.cpu.GetPC())
+	logging.DebugPrint(logging.ScLog, "----- Filename: %s\n", filename)
+	panic("NYI")
+	return true
+}
+
 func scOpen(p syscallParmsT) bool {
 	pktAddr := dg.PhysAddrT(p.cpu.GetAc(2)) | (p.ringMask)
 	fileSpec := memory.ReadWord(pktAddr + isti)

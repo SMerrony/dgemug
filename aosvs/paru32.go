@@ -1264,3 +1264,18 @@ const (
 // cxmbm= 377B(cxbbm0+7) //  MASK FOR THE BIT MAP
 // cxmed= 1B(cxbed)      //  MASK FOR EXPLICIT DISCONNECT
 )
+
+const (
+	// CONNECTION MANAGER DEFINITIONS
+	// ?CONNECT AC1 BIT FLAGS
+	cpid  = 0   // PID/PROCESS NAME FLAG
+	cobit = 1   // OBITUARY NOTIFICATION FLAG
+	csig  = 3   // OBITUARY signl FLAG
+	crng  = 015 // RING NUMBER IN AC2
+
+	// ?CONNECT BIT MASKS
+	mcpid  = 0x8000 >> cpid
+	mcobit = 0x8000 >> cobit
+	mcsig  = 0x8000 >> csig
+	mcrng  = 0x8000 >> crng
+)

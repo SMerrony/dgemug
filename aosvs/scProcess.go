@@ -48,11 +48,11 @@ func scDadid(p syscallParmsT) bool {
 	case 8:
 		p.cpu.SetAc(1, 7)
 	case 9:
-		p.cpu.SetAc(1, 8)
+		p.cpu.SetAc(1, 8) // 010
 	case 10:
-		p.cpu.SetAc(1, 9)
+		p.cpu.SetAc(1, 9) // 011
 	default:
-		p.cpu.SetAc(1, 10)
+		p.cpu.SetAc(1, 10) // 012 <== Default response for now
 	}
 	return true
 }
