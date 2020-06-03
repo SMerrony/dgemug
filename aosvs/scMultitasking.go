@@ -40,6 +40,23 @@ func scIfpu(p syscallParmsT) bool {
 // 	return true
 // }
 
+func scTask(p syscallParmsT) bool {
+	tpa := dg.PhysAddrT(p.cpu.GetAc(2))
+	if memory.ReadDWord(tpa+dlnk) == 0 {
+		log.Panicln("?TASK extended packets not yet implemented")
+	}
+	var tskData perTaskDataT
+	tskData.priority = memory.ReadWord(tpa + dpri)
+	tskData.tid = memory.ReadWord(tpa + did)
+	tskData.startPC = dg.PhysAddrT(memory.ReadDWord(tpa + dpc))
+	tskData.initAC2 = memory.ReadDWord(tpa + dac2)
+	tskData.wsb = dg.PhysAddrT(memory.ReadDWord(tpa + dstb))
+	tskData.wsfh = (p.cpu.GetPC() & 0x7000_0000) | dg.PhysAddrT(memory.ReadWord(tpa+dsflt))
+	tskData.wssz = memory.ReadDWord(tpa + dssz)
+
+	return true
+}
+
 func scUidstat(p syscallParmsT) bool {
 	reqTID := p.cpu.GetAc(1)
 	if reqTID != 0xffff_ffff {

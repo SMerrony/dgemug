@@ -37,19 +37,19 @@ func scGshpt(p syscallParmsT) bool {
 }
 
 func scMem(p syscallParmsT) bool {
-	highUnshared := memory.GetLastUnsharedPage() //& 0x0003_ffff // assumed in current ring
-	lowShared := memory.GetFirstSharedPage()     //& 0x0003_ffff
-	available := int32(lowShared) - int32(highUnshared) - 4
-	if available < 0 {
-		available = 0
+	highestUnsharedInUse := memory.GetLastUnsharedPage() //& 0x0003_ffff // assumed in current ring
+	lowShared := memory.GetFirstSharedPage()             //& 0x0003_ffff
+	unusedUnshared := int32(lowShared) - int32(highestUnsharedInUse) - 4
+	if unusedUnshared < 0 {
+		unusedUnshared = 0
 	}
-	inUse := highUnshared & (0x0fff_ffff >> 10)
-	p.cpu.SetAc(0, dg.DwordT(available))
-	p.cpu.SetAc(1, inUse)
-	p.cpu.SetAc(2, highUnshared<<10|dg.DwordT(p.ringMask))
-	//p.cpu.SetAc(2, inUse+dg.DwordT(p.ringMask)-1)
-	logging.DebugPrint(logging.ScLog, "\tMax Unshared Available: %d., Unshared in Use: %d., Highestin Use: %#o (%#x)\n",
-		available, inUse, highUnshared<<10, highUnshared<<10)
+	inUsePages := highestUnsharedInUse & (0x0fff_ffff >> 10)
+	p.cpu.SetAc(0, dg.DwordT(unusedUnshared))
+	p.cpu.SetAc(1, inUsePages)
+	p.cpu.SetAc(2, highestUnsharedInUse<<10|dg.DwordT(p.ringMask))
+	//p.cpu.SetAc(2, inUsePages+dg.DwordT(p.ringMask)-1)
+	logging.DebugPrint(logging.ScLog, "\tMax Unshared Available: %d., Unshared in Use: %d., Highest in Use: %#o (%#x)\n",
+		unusedUnshared, inUsePages, highestUnsharedInUse<<10, highestUnsharedInUse<<10)
 	logging.DebugPrint(logging.ScLog, "\tN.B. Lowest shared page is %#o (%#x)\n", lowShared<<10, lowShared<<10)
 	return true
 }
@@ -67,8 +67,8 @@ func scMemi(p syscallParmsT) bool {
 			numPages--
 		}
 		//p.cpu.SetAc(1, (dg.DwordT(lastPage<<10)|dg.DwordT(p.ringMask))-1)
-		highUnshared := memory.GetLastUnsharedPage()
-		p.cpu.SetAc(1, highUnshared<<10|dg.DwordT(p.ringMask))
+		highestUnsharedInUse := memory.GetLastUnsharedPage()
+		p.cpu.SetAc(1, highestUnsharedInUse<<10|dg.DwordT(p.ringMask))
 		logging.DebugPrint(logging.ScLog, "\tHighest in use is now  %#o (%#x)\n", memory.GetLastUnsharedPage()<<10, memory.GetLastUnsharedPage()<<10)
 	case numPages < 0: // remove pages
 		log.Panicln("ERROR: Unmapping via ?MEMI not yet supported")

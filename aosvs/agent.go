@@ -70,6 +70,16 @@ type perProcessDataT struct {
 	tidsInUse      [maxTasksPerProc]bool
 }
 
+type perTaskDataT struct {
+	priority dg.WordT
+	tid      dg.WordT
+	startPC  dg.PhysAddrT
+	initAC2  dg.DwordT
+	wsb      dg.PhysAddrT
+	wsfh     dg.PhysAddrT
+	wssz     dg.DwordT
+}
+
 // agChannelT holds status of a file opened by the Agent for a user proc
 type agChannelT struct {
 	openerPID    int
