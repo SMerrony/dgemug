@@ -50,7 +50,11 @@ func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, w
 	task.agentChan = agentChan
 	task.startAddr = startAddr
 	task.ringMask = startAddr & 0x7000_0000
-	task.wfp = wfp
+	if wfp != 0 {
+		task.wfp = wfp
+	} else {
+		task.wfp = wsp
+	}
 	task.wsp = wsp
 	task.wsb = wsb
 	task.wsl = wsl

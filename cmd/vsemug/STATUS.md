@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 25 May 2020
+* Last Updated: 5 June 2020
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
@@ -25,20 +25,20 @@ The NADGUG library provides a good range of freely-available test targets...
   | 21        | 32 | Unmapped write in XWSTA                       | |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
-  | DND       | 32 | Looping on output                             |  |
+  | DND       | 32 | Calling ?ERMSG after ?OPENs                   |  |
   | EMPIRE    | 32 | Runs for a bit!                               | Some screen corruption |
-  | EMPIRE2   | 32 | ?FSTAT nyi                                    | ?FSTAT |
+  | EMPIRE2   | 32 | Calling ?ERMSG after ?OPENs                   |  |
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Error in Line 205                             |  |
-  | MMM       | 32 | Loops "A word is too long"                    | Look for comparison error |
+  | MMM       | 32 | Unmapped read in WCMV                         |  |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - seems to be looping         | :-( |
-  | QUEST     | 32 | QUEST.PR - QUEST Server is not up!            | :-)  |
-  | SCRABBLE  | 32 | Keeps ?READing with no prompt                 | Is is an extended ?READ ? |
+  | QUEST     | 32 | QUEST.PR - Unmapped read in WCST              |  |
+  | SCRABBLE  | 32 | Calling ?ERMSG after ?OPENing SEED file       |   |
   | WUMPUS    | 32 | Hang/loop after displaying start screen       |  |
   | YAHTZEE   | 32 | Exits with Error Code: 71200                  | Almost immediately after ?MEMI |
-  | ZORK      | 32 | Unmapped read in WCST                         |  |
+  | ZORK      | 32 | Unmapped read in WCMV                         |  |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
@@ -61,7 +61,7 @@ The NADGUG library provides a good range of freely-available test targets...
   | PACMAN    | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | SERPENT   | 16 | JMPs to 0 after EJMP @0532                    |  |
   | SI        | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
-  | STARTREK  | 16 | Not parsing Difficulty Level input            |  |
+  | STARTREK  | 16 | FSNER nyi                                     | FSNER |
   | SPACEWAR  | 16 | ?TASK (16-bit) nyi                            | **** ?TASK |
   | THISSALA  | 16 | Sys Call 0272 nyi                             | Call not listed in docs... |
  

@@ -210,7 +210,7 @@ func eclipseFPU(cpu *CPUT, iPtr *decodedInstrT) bool {
 		memory.SetQwbit(&cpu.fpsr, fpsrTe)
 
 	default:
-		log.Fatalf("ERROR: ECLIPSE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
+		log.Panicf("ERROR: ECLIPSE_FPU instruction <%s> not yet implemented\n", iPtr.mnemonic)
 		return false
 	}
 

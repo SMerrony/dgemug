@@ -95,6 +95,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 	0127: {"?DADID", "?DADI", scProcess, scDadid, scDadid},
 	0142: {"?IS.R", "?IS.R", scIPC, nil, nil},
 	0157: {"?SINFO", "?SINF", scSystem, scInfo, nil},
+	0163: {"?CGNAM", "?CGNA", scFileManage, nil, nil},
 	0166: {"?DACL", "?DACL", scFileManage, scDacl, nil},
 	0167: {"?CON", "?CON", scConnection, scCon, nil},
 	0170: {"?DCON", "?DCON", scConnection, scDummy, nil},
