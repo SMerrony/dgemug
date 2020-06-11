@@ -71,8 +71,11 @@ type ProcessT struct {
 	ust             ustT
 }
 
+var debugLogging bool
+
 // CreateProcess creates, but does not start, an emulated AOS/VS Process
-func CreateProcess(args []string, vRoot string, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLogging bool) (p *ProcessT, err error) {
+func CreateProcess(args []string, vRoot string, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLog bool) (p *ProcessT, err error) {
+	debugLogging = debugLog
 	progWds, err := readProgram(prName)
 	if err != nil {
 		return nil, err
@@ -99,7 +102,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 
 	// create slots for each task the process might run
 	proc.tasks = make([]*taskT, proc.ust.taskCount, maxTasksPerProc)
-	log.Printf("INFO: Preparing ring %d process with %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
+	log.Printf("INFO: Preparing ring %d process with up to %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
 	log.Printf("----  PR: %s  Args: %v\n", prName, args)
 	if proc.ust.sharedBlockCount != 0 {
 		log.Println("WARNING: Shared pages not yet fully supported")
