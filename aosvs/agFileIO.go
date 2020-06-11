@@ -171,7 +171,9 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 			}
 		}
 		if agChan.isConsole {
-			logging.DebugPrint(logging.ScLog, "?READ from CONSOLE device...\n")
+			if debugLogging {
+				logging.DebugPrint(logging.ScLog, "?READ from CONSOLE device...\n")
+			}
 			buff := make([]byte, 0)
 			for {
 				oneByte := make([]byte, 1, 1)
@@ -184,7 +186,9 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 				}
 				// TODO DELete
 				buff = append(buff, oneByte[0])
-				log.Printf("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
+				if debugLogging {
+					logging.DebugPrint("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
+				}
 				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break
 				}
@@ -198,7 +202,9 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 
 			switch {
 			case req.specs&rtdy != 0:
-				logging.DebugPrint(logging.ScLog, "\tDynamic Length: %d.\n", recLen)
+				if debugLogging {
+					logging.DebugPrint(logging.ScLog, "\tDynamic Length: %d.\n", recLen)
+				}
 				buf := make([]byte, recLen)
 				n, err := agChannels[req.chanNo].file.Read(buf)
 				if n == 0 && err == io.EOF {
@@ -207,7 +213,9 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 				}
 				resp.data = buf
 			case req.specs&rtds != 0:
-				logging.DebugPrint(logging.ScLog, "\tData Sensitive\n")
+				if debugLogging {
+					logging.DebugPrint(logging.ScLog, "\tData Sensitive\n")
+				}
 				buf := make([]byte, recLen)
 				n, err := agChannels[req.chanNo].file.Read(buf)
 				if n == 0 && err == io.EOF {
@@ -229,7 +237,9 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 					log.Panicf("ERROR: ?READ could not parse variable record length <%v>\n", lenBytes[0:4])
 				}
 				recLen -= 4
-				logging.DebugPrint(logging.ScLog, "\tVariable Length: %d.\n", recLen)
+				if debugLogging {
+					logging.DebugPrint(logging.ScLog, "\tVariable Length: %d.\n", recLen)
+				}
 				buf := make([]byte, recLen)
 				n, err = agChannels[req.chanNo].file.Read(buf)
 				if n == 0 && err == io.EOF {
@@ -332,7 +342,9 @@ func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
 	_, isOpen := agChannels[req.chanNo]
 	if isOpen {
 		buf := make([]byte, req.length)
-		logging.DebugPrint(logging.ScLog, "\tAttempting to Seek to byte: %d. on channel: %d.\n", req.startPos, req.chanNo)
+		if debugLogging {
+			logging.DebugPrint(logging.ScLog, "\tAttempting to Seek to byte: %d. on channel: %d.\n", req.startPos, req.chanNo)
+		}
 		_, err := agChannels[req.chanNo].file.Seek(req.startPos, 0)
 		if err != nil {
 			log.Panicf("ERROR: ?SPAGE positioning failed: %v", err)
@@ -341,10 +353,14 @@ func agSharedRead(req agSharedReadReqT) (resp agSharedReadRespT) {
 		if n == 0 && err == io.EOF {
 			// It looks as if we should create pages here - can't find it in the docs though...
 			resp.data = make([]byte, req.length)
-			logging.DebugPrint(logging.ScLog, "\tRead no bytes from channnel #%d., returning %d. empty bytes\n", req.chanNo, req.length)
+			if debugLogging {
+				logging.DebugPrint(logging.ScLog, "\tRead no bytes from channnel #%d., returning %d. empty bytes\n", req.chanNo, req.length)
+			}
 		} else {
 			resp.data = buf
-			logging.DebugPrint(logging.ScLog, "\tRead %d. bytes from channnel #%d.\n", n, req.chanNo)
+			if debugLogging {
+				logging.DebugPrint(logging.ScLog, "\tRead %d. bytes from channnel #%d.\n", n, req.chanNo)
+			}
 		}
 	} else {
 		log.Panic("ERROR: attempt to ?SPAGE from unopened file")
@@ -367,8 +383,9 @@ type agWriteRespT struct {
 }
 
 func agFileWrite(req agWriteReqT) (resp agWriteRespT) {
-	logging.DebugPrint(logging.ScLog, "\tChan: %d., Extended: %v, Posn: %#x, Data Sensitive: %v, Len: %d.\n", req.channel, req.isExtended, req.position, req.isDataSens, req.recLen)
-
+	if debugLogging {
+		logging.DebugPrint(logging.ScLog, "\tChan: %d., Extended: %v, Posn: %#x, Data Sensitive: %v, Len: %d.\n", req.channel, req.isExtended, req.position, req.isDataSens, req.recLen)
+	}
 	agChan, isOpen := agChannels[req.channel]
 	bytes := req.bytes
 	if isOpen {
@@ -395,8 +412,10 @@ func agWriteToUserConsole(agChan *agChannelT, b []byte) (n int) {
 	// 		log.Panic("ERROR: Could not write to @CONSOLE")
 	// 	}
 	// }
-	logging.DebugPrint(logging.ScLog, "\twrote %d., bytes <%v> to @CONSOLE\n", n, b)
-	logging.DebugPrint(logging.ScLog, "\t\tString: <%s>\n", string(b))
+	if debugLogging {
+		logging.DebugPrint(logging.ScLog, "\twrote %d., bytes <%v> to @CONSOLE\n", n, b)
+		logging.DebugPrint(logging.ScLog, "\t\tString: <%s>\n", string(b))
+	}
 	return n
 }
 
@@ -404,7 +423,9 @@ func getDataSensitivePortion(ba []byte, maxLen int) (res []byte, tooLong bool) {
 	tooLong = false
 	for ix, b := range ba {
 		if b == 0 || b == dg.ASCIINL || b == dg.ASCIICR || b == dg.ASCIIFF { //|| b == dg.ASCIITAB {
-			logging.DebugPrint(logging.ScLog, "\tData Sens portion of <%v>\nis <%v>\n", ba, ba[:ix+1])
+			if debugLogging {
+				logging.DebugPrint(logging.ScLog, "\tData Sens portion of <%v>\nis <%v>\n", ba, ba[:ix+1])
+			}
 			return ba[:ix+1], false
 		}
 	}
