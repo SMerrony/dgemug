@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scIPC.go - Inter-Process Communication System Call Emulation
 
 // Copyright ©2020 Steve Merrony

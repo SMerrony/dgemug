@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // paru16.go - Go version of parts of AOS/VS PARU.16.SR definitions file
 
 // Copyright ©2020 Steve Merrony

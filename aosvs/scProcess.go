@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scProcess.go - 'Process Management'-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony

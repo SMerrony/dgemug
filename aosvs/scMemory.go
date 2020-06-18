@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scMemory.go - Memory-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony

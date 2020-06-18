@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scConnection.go - 'Connection Management'-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony

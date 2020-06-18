@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // task.go - abstraction of an AOS/VS task
 
 // Copyright ©2020 Steve Merrony
@@ -42,7 +44,7 @@ type taskT struct {
 	debugLogging             bool
 }
 
-func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, sfh dg.PhysAddrT, debugLogging bool) *taskT {
+func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT, debugLogging bool) *taskT {
 	var task taskT
 	task.pid = pid
 	task.sixteenBit = bit16
@@ -58,7 +60,7 @@ func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, w
 	task.wsp = wsp
 	task.wsb = wsb
 	task.wsl = wsl
-	task.wsfh = sfh
+	task.wsfh = wsfh
 	task.debugLogging = debugLogging
 
 	// get pseudo-Agent to allocate TID
@@ -71,7 +73,7 @@ func createTask(pid int, bit16 bool, agentChan chan AgentReqT, startAddr, wfp, w
 	}
 	task.tid = int(areq.result.(agAllocateTIDRespT).standardTID)
 	log.Printf("DEBUG: Task %d Created, Initial PC=%#o\n", task.tid, startAddr)
-	log.Printf("-----  Start Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", startAddr, wfp, wsp, wsb, wsl, sfh)
+	log.Printf("-----  Start Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", startAddr, wfp, wsp, wsb, wsl, wsfh)
 	return &task
 }
 

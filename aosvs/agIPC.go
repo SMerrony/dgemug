@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // agIPC.go - 'Agent' Portion of IPC System Call Emulation
 
 // Copyright ©2020 Steve Merrony

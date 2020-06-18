@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // agent.go - provides some agent-like serveices
 
 // Copyright ©2020 Steve Merrony

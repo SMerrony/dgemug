@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // syscalls.go - map of AOS/VS system calls
 
 // Copyright ©2020 Steve Merrony

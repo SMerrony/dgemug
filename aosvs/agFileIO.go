@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // agFileIO.go - 'Agent' Portion of File I/O System Call Emulation
 
 // Copyright ©2020 Steve Merrony
@@ -187,7 +189,7 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 				// TODO DELete
 				buff = append(buff, oneByte[0])
 				if debugLogging {
-					logging.DebugPrint("DEBUG: Read <%c> from CONSOLE\n", oneByte[0])
+					logging.DebugPrint(logging.ScLog, "\tRead <%c> from CONSOLE\n", oneByte[0])
 				}
 				if oneByte[0] == dg.ASCIINL || oneByte[0] == '\r' {
 					break

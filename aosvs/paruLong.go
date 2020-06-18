@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // paruLog.go - Go version of parts of AOS/VS PARULONG.SR 32-bit definitions file
 
 // Copyright ©2020 Steve Merrony

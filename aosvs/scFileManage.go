@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scFileManage.go - File Management System Call Emulation
 
 // Copyright ©2020 Steve Merrony

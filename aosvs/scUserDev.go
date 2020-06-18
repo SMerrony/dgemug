@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scUserDev.go - Device-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony

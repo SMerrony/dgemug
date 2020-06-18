@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scSystem.go - 'System'-related System Call Emulation
 
 // Copyright ©2020 Steve Merrony

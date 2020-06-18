@@ -1,3 +1,5 @@
+// +build virtual !physical
+
 // scM.go - File I/O System Call Emulation
 
 // Copyright ©2020 Steve Merrony

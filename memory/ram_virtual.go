@@ -1,4 +1,4 @@
-// +build virtual
+// +build virtual !physical
 
 // REPRESENTATION OF VIRTUAL MEMORY USED IN THE OS-LEVEL EMULATOR(S)
 
