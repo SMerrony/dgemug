@@ -33,16 +33,36 @@ import (
 	"github.com/SMerrony/dgemug/mvcpu"
 )
 
-type agTaskReqT struct {
-	PID                      int
+type taskT struct {
+	PID, TID                 dg.WordT
+	priority                 dg.WordT
+	sixteenBit               bool
 	agentChan                chan AgentReqT
-	startAddr                dg.PhysAddrT
+	dir                      string
+	startAddr, ringMask      dg.PhysAddrT
+	initAC2                  dg.DwordT
 	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
+	killAddr                 dg.PhysAddrT
+	debugLogging             bool
 }
 
-func agTask(req agTaskReqT) (errCode dg.WordT) {
+type agTaskReqT struct {
+	PID, TID                 dg.WordT
+	priority                 dg.WordT
+	agentChan                chan AgentReqT
+	startAddr                dg.PhysAddrT
+	initAC2                  dg.DwordT
+	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
+}
+type agTaskRespT struct {
+	TID     dg.WordT
+	errCode dg.WordT
+}
+
+func agTask(req agTaskReqT) (resp agTaskRespT) {
 	var task taskT
-	task.pid = req.PID
+	task.PID = req.PID
+	logging.DebugPrint(logging.ScLog, "\tSetting up task for PID: %d\n", req.PID)
 	task.sixteenBit = false
 	// task.tid = tid
 	task.agentChan = req.agentChan
@@ -61,16 +81,38 @@ func agTask(req agTaskReqT) (errCode dg.WordT) {
 
 	// get pseudo-Agent to allocate TID
 	atreq := agAllocateTIDReqT{req.PID}
-	areq := AgentReqT{agentAllocateTID, atreq, nil}
-	req.agentChan <- areq
-	areq = <-req.agentChan
-	if areq.result.(agAllocateTIDRespT).standardTID == 0 {
+	// areq := AgentReqT{agentAllocateTID, atreq, nil}
+	// req.agentChan <- areq
+	// areq = <-req.agentChan
+	logging.DebugPrint(logging.ScLog, "\tRequesting TID...\n")
+	areqResult := agAllocateTID(atreq)
+	if areqResult.standardTID == 0 {
 		log.Panicln("ERROR: Could not allocate TID for new task")
 	}
-	task.tid = int(areq.result.(agAllocateTIDRespT).standardTID)
-	logging.DebugPrint(logging.ScLog, "\tTask %d Created, Initial PC=%#o\n", task.tid, task.startAddr)
+	task.TID = dg.WordT(areqResult.standardTID)
+	logging.DebugPrint(logging.ScLog, "\t...Got TID %d\n", task.TID)
+	ppd := perProcessData[int(req.PID)]
+	ppd.tasks[firstTask] = &task // FIXME
+	perProcessData[int(req.PID)] = ppd
+	//logging.DebugPrint(logging.ScLog, "\tAdding to WaitGroup...\n")
+	//ppd.activeTasksWg.Add(1)
+	logging.DebugPrint(logging.ScLog, "\tTask %d Created, Initial PC=%#o\n", task.TID, task.startAddr)
 	logging.DebugPrint(logging.ScLog, "\tStart Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", task.startAddr, task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)
 
+	resp.TID = task.TID
+
+	// temp code...
+	//logging.DebugPrint(logging.ScLog, "TEMP calling run()...\n")
+	//task.run()
+
+	// ...temp code
+
+	return resp
+}
+
+func TaskRunner(PID, TID dg.WordT) {
+	ppd := perProcessData[int(PID)]
+	ppd.tasks[firstTask].run()
 }
 
 func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
@@ -79,7 +121,7 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 		syscallTrap bool
 		instrCounts [750]int
 	)
-
+	logging.DebugPrint(logging.ScLog, "run() invoked\n")
 	cpu.CPUInit(077, nil, nil)
 	cpu.SetPC(task.startAddr) // must be done before stack set up
 	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)
@@ -105,7 +147,6 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 				if task.debugLogging {
 					logging.DebugPrint(logging.DebugLog, "?RETURN")
 				}
-				log.Println("INFO: ?RETURN")
 				errorCode = cpu.GetAc(0)
 				flags = dg.ByteT(memory.GetDwbits(cpu.GetAc(2), 16, 8))
 				msgLen := int(uint8(memory.GetDwbits(cpu.GetAc(2), 24, 8)))
@@ -116,11 +157,11 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 			}
 			var scOk bool
 			if task.sixteenBit {
-				scOk = syscall16(callID, task.pid, task.tid, task.ringMask, task.agentChan, &cpu)
+				scOk = syscall16(callID, task.PID, task.TID, task.ringMask, task.agentChan, &cpu)
 				nfp := memory.ReadWord(task.ringMask | memory.NfpLoc)
 				cpu.SetAc(3, dg.DwordT(nfp)|dg.DwordT(task.ringMask))
 			} else {
-				scOk = syscall(callID, task.pid, task.tid, task.ringMask, task.agentChan, &cpu)
+				scOk = syscall(callID, task.PID, task.TID, task.ringMask, task.agentChan, &cpu)
 				cpu.SetAc(3, dg.DwordT(cpu.GetWFP()))
 			}
 			mvcpu.WsPop(&cpu)

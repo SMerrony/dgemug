@@ -36,7 +36,7 @@ import (
 
 type syscallParmsT struct {
 	cpu       *mvcpu.CPUT
-	PID, TID  int
+	PID, TID  dg.WordT
 	ringMask  dg.PhysAddrT
 	agentChan chan AgentReqT
 }
@@ -129,7 +129,7 @@ var syscalls = map[dg.WordT]syscallDescT{
 }
 
 // syscall redirects System Call according to the syscalls map
-func syscall(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall(callID dg.WordT, PID, TID dg.WordT, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())
@@ -146,7 +146,7 @@ func syscall(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan Ag
 }
 
 // syscall16 redirects a 16-bit System Call according to the syscalls map
-func syscall16(callID dg.WordT, PID, TID int, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
+func syscall16(callID dg.WordT, PID, TID dg.WordT, ringMask dg.PhysAddrT, agent chan AgentReqT, cpu *mvcpu.CPUT) (ok bool) {
 	call, defined := syscalls[callID]
 	if !defined {
 		log.Panicf("ERROR: System call No. %#o not yet defined at PC=%#x", callID, cpu.GetPC())

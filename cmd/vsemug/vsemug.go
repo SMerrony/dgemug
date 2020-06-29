@@ -30,7 +30,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
-	"strconv"
 	"time"
 
 	"github.com/SMerrony/dgemug/aosvs"
@@ -99,24 +98,27 @@ func main() {
 	}
 	agentChan := aosvs.StartAgent(conn) // start the pseudo-Agent which will serialise syscalls in the process's tasks
 
-	proc, err := aosvs.CreateProcess(args, vRoot, *prFlag, 7, conn, agentChan, debugLogging)
+	err = aosvs.CreateProcess(args, vRoot, *prFlag, 7, conn, agentChan, debugLogging)
 	if err != nil {
 		exitNicely(conn, err.Error())
 	}
 
-	errorCode, termMessage, flags := proc.Run()
-	switch flags {
-	case aosvs.Rfwa:
-		termMessage = "WARNING: " + termMessage
-	case aosvs.Rfer:
-		termMessage = "ERROR: " + termMessage
-	case aosvs.Rfab:
-		termMessage = "ABORT: " + termMessage
-	}
-	if flags&aosvs.Rfec != 0 {
-		termMessage += "\nError Code: " + strconv.Itoa(int(errorCode))
-	}
-	exitNicely(conn, termMessage)
+	aosvs.TaskRunner(5, 1)
+
+	// errorCode, termMessage, flags := proc.Run()
+	// switch flags {
+	// case aosvs.Rfwa:
+	// 	termMessage = "WARNING: " + termMessage
+	// case aosvs.Rfer:
+	// 	termMessage = "ERROR: " + termMessage
+	// case aosvs.Rfab:
+	// 	termMessage = "ABORT: " + termMessage
+	// }
+	// if flags&aosvs.Rfec != 0 {
+	// 	termMessage += "\nError Code: " + strconv.Itoa(int(errorCode))
+	// }
+	// exitNicely(conn, termMessage)
+
 }
 
 func exitNicely(con net.Conn, msg string) {

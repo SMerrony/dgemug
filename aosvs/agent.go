@@ -30,6 +30,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
@@ -50,6 +51,7 @@ const (
 	agentIlkup
 	agentSharedOpen
 	agentSharedRead
+	agentTask
 )
 
 // AgentReqT is the type of messages passed to and from the pseudo-agent
@@ -70,16 +72,8 @@ type perProcessDataT struct {
 	name           string
 	conn           io.ReadWriteCloser // stream I/O port for proc's CONSOLE
 	tidsInUse      [maxTasksPerProc]bool
-}
-
-type perTaskDataT struct {
-	priority dg.WordT
-	tid      dg.WordT
-	startPC  dg.PhysAddrT
-	initAC2  dg.DwordT
-	wsb      dg.PhysAddrT
-	wsfh     dg.PhysAddrT
-	wssz     dg.DwordT
+	tasks          [maxTasksPerProc]*taskT
+	activeTasksWg  *sync.WaitGroup
 }
 
 // agChannelT holds status of a file opened by the Agent for a user proc
@@ -95,7 +89,7 @@ type agChannelT struct {
 }
 
 type agIPCT struct {
-	ownerPID     int
+	ownerPID     dg.WordT
 	name         string
 	localPortNo  int
 	globalPortNo int
@@ -112,8 +106,7 @@ const (
 var (
 	pidInUse       [maxPID]bool
 	perProcessData = map[int]perProcessDataT{}
-	// uniqueTIDs     []uint16
-	agChannels = map[int]*agChannelT{
+	agChannels     = map[int]*agChannelT{
 		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
 		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
 		outputChan:  {path: "@OUTPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
@@ -136,12 +129,13 @@ func StartAgent(conn net.Conn) chan AgentReqT {
 }
 
 func agentHandler(agentChan chan AgentReqT) {
-	defer func() {
-		if r := recover(); r != nil {
-			logging.DebugLogsDump("logs/")
-			os.Exit(1)
-		}
-	}()
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		logging.DebugLogsDump("logs/")
+	// 		os.Exit(1)
+	// 	}
+	// }()
+	logging.DebugPrint(logging.ScLog, "Pseudo-Agent Handler runnning...\n")
 	for {
 		request := <-agentChan
 		switch request.action {
@@ -171,6 +165,8 @@ func agentHandler(agentChan chan AgentReqT) {
 			request.result = agSharedOpen(request.reqParms.(agSharedOpenReqT))
 		case agentSharedRead:
 			request.result = agSharedRead(request.reqParms.(agSharedReadReqT))
+		case agentTask:
+			request.result = agTask(request.reqParms.(agTaskReqT))
 		default:
 			log.Panicf("ERROR: Agent received unknown request type %d\n", request.action)
 		}
@@ -178,18 +174,18 @@ func agentHandler(agentChan chan AgentReqT) {
 	}
 }
 
-func getNextFreePID() (pid int, ok bool) {
+func getNextFreePID() (pid dg.WordT, ok bool) {
 	for p := 1; p < maxPID; p++ {
 		if !pidInUse[p] {
 			pidInUse[p] = true
-			return p, true
+			return dg.WordT(p), true
 		}
 	}
 	return 0, false // all PIDs in use
 }
 
-func getNextFreeTID(PID int) (TID uint8, ok bool) {
-	ppd := perProcessData[PID]
+func getNextFreeTID(PID dg.WordT) (TID uint8, ok bool) {
+	ppd := perProcessData[int(PID)]
 	for t := 1; t < maxTasksPerProc; t++ { // Zero TID is invalid
 		if !ppd.tidsInUse[t] {
 			ppd.tidsInUse[t] = true
@@ -206,7 +202,7 @@ type agAllocatePIDReqT struct {
 	name           string
 }
 type agAllocatePIDRespT struct {
-	PID int
+	PID dg.WordT
 	ok  bool
 }
 
@@ -215,7 +211,7 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 	if !resp.ok {
 		return resp
 	}
-	perProcessData[resp.PID] = perProcessDataT{
+	perProcessData[int(resp.PID)] = perProcessDataT{
 		invocationArgs: req.invocationArgs,
 		virtualRoot:    req.virtualRoot,
 		sixteenBit:     req.sixteenBit,
@@ -231,10 +227,10 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 }
 
 type agAllocateTIDReqT struct {
-	PID int
+	PID dg.WordT
 }
 type agAllocateTIDRespT struct {
-	uniqueTID   uint16
+	uniqueTID   dg.WordT
 	tsw         dg.WordT
 	standardTID uint8
 	priority    dg.WordT
@@ -246,14 +242,14 @@ func agAllocateTID(req agAllocateTIDReqT) (resp agAllocateTIDRespT) {
 	if !ok {
 		return resp
 	}
-	resp.uniqueTID = uint16(req.PID)<<8 | uint16(resp.standardTID)
+	resp.uniqueTID = dg.WordT(req.PID)<<8 | dg.WordT(resp.standardTID)
 	resp.tsw = 0      // TODO
 	resp.priority = 0 // TODO
 	return resp
 }
 
 type agGchrReqT struct {
-	PID         int
+	PID         dg.WordT
 	getDefaults bool // otherwise get current
 	useChan     bool // otherwise use name
 	devChan     dg.WordT
@@ -269,7 +265,7 @@ func agGetChars(req agGchrReqT) (resp agGchrRespT) {
 }
 
 type agGtMesReqT struct {
-	PID  int
+	PID  dg.WordT
 	greq dg.WordT
 	gnum dg.WordT
 	gsw  dg.DwordT
@@ -283,7 +279,7 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
 	case gmes: // get entire message
 		first := true
-		for _, arg := range perProcessData[req.PID].invocationArgs {
+		for _, arg := range perProcessData[int(req.PID)].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -295,7 +291,7 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		resp.ac1 = dg.DwordT(len(resp.result)) >> 1 // words not bytes
 	case gcmd: // get a parsed version of the command line
 		first := true
-		for _, arg := range perProcessData[req.PID].invocationArgs {
+		for _, arg := range perProcessData[int(req.PID)].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -305,12 +301,12 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		}
 		resp.ac1 = dg.DwordT(len(resp.result))
 	case gcnt:
-		resp.ac0 = dg.DwordT(len(perProcessData[req.PID].invocationArgs) - 1)
+		resp.ac0 = dg.DwordT(len(perProcessData[int(req.PID)].invocationArgs) - 1)
 	case garg: // get the nth arg - special handing for integers
-		if int(req.gnum) > len(perProcessData[req.PID].invocationArgs)-1 {
+		if int(req.gnum) > len(perProcessData[int(req.PID)].invocationArgs)-1 {
 			log.Panicf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
 		}
-		argS := perProcessData[req.PID].invocationArgs[int(req.gnum)]
+		argS := perProcessData[int(req.PID)].invocationArgs[int(req.gnum)]
 		i, err := strconv.ParseInt(argS, 10, 16)
 		if err == nil { // integer-only case
 			resp.ac1 = dg.DwordT(i)

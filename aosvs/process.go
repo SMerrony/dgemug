@@ -36,6 +36,7 @@ import (
 
 const (
 	maxTasksPerProc = 32
+	firstTask       = 1
 	pcInPr          = 0574
 	page8offset     = 8192
 	sfhInPr         = page8offset + 12
@@ -63,10 +64,9 @@ type ustT struct {
 
 // ProcessT represents an AOS/VS Process which will contain one or more Tasks
 type ProcessT struct {
-	PID             int
+	PID             dg.WordT
 	name            string
 	programFileName string
-	tasks           []*taskT
 	console         net.Conn
 	ust             ustT
 }
@@ -74,11 +74,11 @@ type ProcessT struct {
 var debugLogging bool
 
 // CreateProcess creates, but does not start, an emulated AOS/VS Process
-func CreateProcess(args []string, vRoot string, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLog bool) (p *ProcessT, err error) {
+func CreateProcess(args []string, vRoot string, prName string, ring int, con net.Conn, agentChan chan AgentReqT, debugLog bool) (err error) {
 	debugLogging = debugLog
 	progWds, err := readProgram(prName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var proc ProcessT
 	proc.programFileName = prName
@@ -99,9 +99,6 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	}
 	proc.PID = areq.result.(agAllocatePIDRespT).PID
 	log.Printf("INFO: Obtained PID %d for process\n", proc.PID)
-
-	// create slots for each task the process might run
-	proc.tasks = make([]*taskT, proc.ust.taskCount, maxTasksPerProc)
 	log.Printf("INFO: Preparing ring %d process with up to %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
 	log.Printf("----  PR: %s  Args: %v\n", prName, args)
 	if proc.ust.sharedBlockCount != 0 {
@@ -119,27 +116,33 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
-	proc.tasks[0] = createTask(proc.PID, proc.ust.prType&0x8000 != 0, agentChan,
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
-		dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
-		dg.PhysAddrT(progWds[sfhInPr]),
-		debugLogging)
+	var taskReq agTaskReqT
+	taskReq.PID = proc.PID
+	taskReq.TID = firstTask
+	taskReq.agentChan = agentChan
+	taskReq.initAC2 = 0
+	taskReq.priority = 0
+	taskReq.startAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1]))
+	taskReq.wfp = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1]))
+	taskReq.wsb = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1]))
+	taskReq.wsfh = dg.PhysAddrT(progWds[sfhInPr])
+	taskReq.wsl = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1]))
+	taskReq.wsp = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1]))
+	log.Printf("DEBUG: Requesting initial task setup from Agent...\n")
+	areq = AgentReqT{agentTask, taskReq, nil}
+	agentChan <- areq
+	areq = <-agentChan
+	log.Printf("DEBUG: ... back from Agent task setup\n")
+	// proc.tasks[0] = createTask(proc.PID, proc.ust.prType&0x8000 != 0, agentChan,
+	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
+	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
+	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
+	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
+	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
+	// 	dg.PhysAddrT(progWds[sfhInPr]),
+	// 	debugLogging)
 
-	// // map in stack space
-	// log.Println("DEBUG: Mapping any missing unshared pages for stack...")
-	// if sbp := int(proc.tasks[0].wsb >> 10); sbp != 0 {
-	// 	slp := int(proc.tasks[0].wsl >> 10)
-	// 	for p := sbp; p <= slp; p++ {
-	// 		if !memory.IsPageMapped(p) {
-	// 			memory.MapPage(p, false)
-	// 		}
-	// 	}
-	// }
-
-	return &proc, nil
+	return nil
 }
 
 func readProgram(prName string) (wordImg []dg.WordT, err error) {
@@ -160,13 +163,13 @@ func readProgram(prName string) (wordImg []dg.WordT, err error) {
 	return progWds, nil
 }
 
-// Run launches a new AOS/VS process and its initial Task
-func (proc *ProcessT) Run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
+// // Run launches a new AOS/VS process and its initial Task
+// func (proc *ProcessT) Run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
 
-	errorCode, termMessage, flags = proc.tasks[0].run()
-	return errorCode, termMessage, flags
+// 	errorCode, termMessage, flags = proc.tasks[firstTask].run()
+// 	return errorCode, termMessage, flags
 
-}
+// }
 
 func (proc *ProcessT) loadUST(progWds []dg.WordT) {
 	proc.ust.extVarWdCnt = progWds[ust+ustez]

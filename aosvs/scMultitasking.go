@@ -47,14 +47,14 @@ func scTask(p syscallParmsT) bool {
 	if memory.ReadDWord(tpa+dlnk) == 0 {
 		log.Panicln("?TASK extended packets not yet implemented")
 	}
-	var tskData perTaskDataT
+	var tskData agTaskReqT
 	tskData.priority = memory.ReadWord(tpa + dpri)
-	tskData.tid = memory.ReadWord(tpa + did)
-	tskData.startPC = dg.PhysAddrT(memory.ReadDWord(tpa + dpc))
+	tskData.TID = memory.ReadWord(tpa + did)
+	tskData.startAddr = dg.PhysAddrT(memory.ReadDWord(tpa + dpc))
 	tskData.initAC2 = memory.ReadDWord(tpa + dac2)
 	tskData.wsb = dg.PhysAddrT(memory.ReadDWord(tpa + dstb))
 	tskData.wsfh = (p.cpu.GetPC() & 0x7000_0000) | dg.PhysAddrT(memory.ReadWord(tpa+dsflt))
-	tskData.wssz = memory.ReadDWord(tpa + dssz)
+	tskData.wsl = tskData.wsb + dg.PhysAddrT(memory.ReadDWord(tpa+dssz))
 
 	return true
 }

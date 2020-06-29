@@ -64,7 +64,7 @@ func agFileClose(req agCloseReqT) (resp agCloseRespT) {
 }
 
 type agOpenReqT struct {
-	PID    int
+	PID    dg.WordT
 	path   string
 	mode   dg.WordT
 	recLen int
@@ -132,9 +132,9 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 			log.Panicf("ERROR: Pseudo-Agent cannot handle generic file %s\n", req.path)
 		}
 		return resp
-	case req.path[0] != ':' && perProcessData[req.PID].virtualRoot != "":
-		logging.DebugPrint(logging.ScLog, "\tAttempting to Open file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.path)
-		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.path, flags, 0755)
+	case req.path[0] != ':' && perProcessData[int(req.PID)].virtualRoot != "":
+		logging.DebugPrint(logging.ScLog, "\tAttempting to Open file: %s\n", perProcessData[int(req.PID)].virtualRoot+"/"+req.path)
+		fp, err = os.OpenFile(perProcessData[int(req.PID)].virtualRoot+"/"+req.path, flags, 0755)
 	default:
 		fp, err = os.OpenFile(req.path, flags, 0755)
 	}
@@ -262,7 +262,7 @@ func agFileRead(req agReadReqT) (resp agReadRespT) {
 }
 
 type agRecreateReqT struct {
-	PID         int
+	PID         dg.WordT
 	aosFilename string
 }
 type agRecreateRespT struct {
@@ -276,7 +276,7 @@ func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 		log.Panicf("ERROR: ?RECREATE in :PER not yet implemented (file: %s)", filename)
 	}
 	if filename[0] != '/' {
-		filename = perProcessData[req.PID].virtualRoot + "/" + filename
+		filename = perProcessData[int(req.PID)].virtualRoot + "/" + filename
 		logging.DebugPrint(logging.ScLog, "\tResolved %s to %s\n", req.aosFilename, filename)
 	}
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -290,7 +290,7 @@ func agFileRecreate(req agRecreateReqT) (resp agRecreateRespT) {
 }
 
 type agSharedOpenReqT struct {
-	PID      int
+	PID      dg.WordT
 	filename string
 	readonly bool
 }
@@ -312,9 +312,9 @@ func agSharedOpen(req agSharedOpenReqT) (resp agSharedOpenRespT) {
 	} else {
 		flags = os.O_RDWR
 	}
-	if req.filename[0] != ':' && perProcessData[req.PID].virtualRoot != "" {
-		logging.DebugPrint(logging.ScLog, "\tAttempting to SOpen file: %s\n", perProcessData[req.PID].virtualRoot+"/"+req.filename)
-		fp, err = os.OpenFile(perProcessData[req.PID].virtualRoot+"/"+req.filename, flags, 0755)
+	if req.filename[0] != ':' && perProcessData[int(req.PID)].virtualRoot != "" {
+		logging.DebugPrint(logging.ScLog, "\tAttempting to SOpen file: %s\n", perProcessData[int(req.PID)].virtualRoot+"/"+req.filename)
+		fp, err = os.OpenFile(perProcessData[int(req.PID)].virtualRoot+"/"+req.filename, flags, 0755)
 	} else {
 		fp, err = os.OpenFile(req.filename, flags, 0755)
 	}

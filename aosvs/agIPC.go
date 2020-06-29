@@ -29,14 +29,14 @@ import (
 )
 
 type agCreateIPCReqT struct {
-	PID         int
+	PID         dg.WordT
 	filename    string
 	localPortNo int
 	ACL         string
 }
 
 func agCreateIPC(req agCreateIPCReqT) (errCode dg.WordT) {
-	path := perProcessData[req.PID].virtualRoot + "/" + req.filename
+	path := perProcessData[int(req.PID)].virtualRoot + "/" + req.filename
 	if _, found := agIPCs[path]; found {
 		logging.DebugPrint(logging.ScLog, "\t?CREATE called for extant IPC file %s\n", path)
 		errCode = ernae
@@ -45,7 +45,7 @@ func agCreateIPC(req agCreateIPCReqT) (errCode dg.WordT) {
 		agIPC.ownerPID = req.PID
 		agIPC.localPortNo = req.localPortNo
 		agIPC.name = req.filename
-		agIPC.globalPortNo = req.PID<<16 | req.localPortNo // TODO should really include ring #
+		agIPC.globalPortNo = int(req.PID)<<16 | req.localPortNo // TODO should really include ring #
 		agIPCs[path] = &agIPC
 		logging.DebugPrint(logging.ScLog, "\t?CREATEd virtual IPC file %s\n", path)
 	}
@@ -53,7 +53,7 @@ func agCreateIPC(req agCreateIPCReqT) (errCode dg.WordT) {
 }
 
 type agIlkupReqT struct {
-	PID      int
+	PID      dg.WordT
 	filename string
 }
 type agIlkupRespT struct {
@@ -63,7 +63,7 @@ type agIlkupRespT struct {
 }
 
 func agIlkup(req agIlkupReqT) (resp agIlkupRespT) {
-	path := perProcessData[req.PID].virtualRoot + "/" + req.filename
+	path := perProcessData[int(req.PID)].virtualRoot + "/" + req.filename
 	agIPC, found := agIPCs[path]
 	logging.DebugPrint(logging.ScLog, "\tChecking for virtual IPC %s\n", path)
 	if !found {
