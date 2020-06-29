@@ -103,22 +103,11 @@ func main() {
 		exitNicely(conn, err.Error())
 	}
 
-	aosvs.TaskRunner(5, 1)
+	go aosvs.TaskRunner(5, 1, conn)
+	ppd := aosvs.PerProcessData[5]
+	ppd.ActiveTasksWg.Wait()
 
-	// errorCode, termMessage, flags := proc.Run()
-	// switch flags {
-	// case aosvs.Rfwa:
-	// 	termMessage = "WARNING: " + termMessage
-	// case aosvs.Rfer:
-	// 	termMessage = "ERROR: " + termMessage
-	// case aosvs.Rfab:
-	// 	termMessage = "ABORT: " + termMessage
-	// }
-	// if flags&aosvs.Rfec != 0 {
-	// 	termMessage += "\nError Code: " + strconv.Itoa(int(errorCode))
-	// }
-	// exitNicely(conn, termMessage)
-
+	exitNicely(conn, "")
 }
 
 func exitNicely(con net.Conn, msg string) {

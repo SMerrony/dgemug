@@ -25,7 +25,9 @@ package aosvs
 
 import (
 	"log"
+	"net"
 	"sort"
+	"strconv"
 
 	"github.com/SMerrony/dgemug/dg"
 	"github.com/SMerrony/dgemug/logging"
@@ -81,9 +83,6 @@ func agTask(req agTaskReqT) (resp agTaskRespT) {
 
 	// get pseudo-Agent to allocate TID
 	atreq := agAllocateTIDReqT{req.PID}
-	// areq := AgentReqT{agentAllocateTID, atreq, nil}
-	// req.agentChan <- areq
-	// areq = <-req.agentChan
 	logging.DebugPrint(logging.ScLog, "\tRequesting TID...\n")
 	areqResult := agAllocateTID(atreq)
 	if areqResult.standardTID == 0 {
@@ -91,31 +90,26 @@ func agTask(req agTaskReqT) (resp agTaskRespT) {
 	}
 	task.TID = dg.WordT(areqResult.standardTID)
 	logging.DebugPrint(logging.ScLog, "\t...Got TID %d\n", task.TID)
-	ppd := perProcessData[int(req.PID)]
+	ppd := PerProcessData[int(req.PID)]
 	ppd.tasks[firstTask] = &task // FIXME
-	perProcessData[int(req.PID)] = ppd
-	//logging.DebugPrint(logging.ScLog, "\tAdding to WaitGroup...\n")
-	//ppd.activeTasksWg.Add(1)
+	PerProcessData[int(req.PID)] = ppd
+	logging.DebugPrint(logging.ScLog, "\tAdding to WaitGroup...\n")
+	ppd.ActiveTasksWg.Add(1)
 	logging.DebugPrint(logging.ScLog, "\tTask %d Created, Initial PC=%#o\n", task.TID, task.startAddr)
 	logging.DebugPrint(logging.ScLog, "\tStart Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", task.startAddr, task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)
 
 	resp.TID = task.TID
 
-	// temp code...
-	//logging.DebugPrint(logging.ScLog, "TEMP calling run()...\n")
-	//task.run()
-
-	// ...temp code
-
 	return resp
 }
 
-func TaskRunner(PID, TID dg.WordT) {
-	ppd := perProcessData[int(PID)]
-	ppd.tasks[firstTask].run()
+func TaskRunner(PID, TID dg.WordT, conn net.Conn) {
+	ppd := PerProcessData[int(PID)]
+	ppd.tasks[firstTask].run(conn)
+	ppd.ActiveTasksWg.Done()
 }
 
-func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
+func (task *taskT) run(conn net.Conn) (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
 	var (
 		cpu         mvcpu.CPUT
 		syscallTrap bool
@@ -198,6 +192,20 @@ func (task *taskT) run() (errorCode dg.DwordT, termMessage string, flags dg.Byte
 	for _, c := range keys {
 		log.Printf("%d\t%s\n", c, m[c])
 	}
+
+	switch flags {
+	case Rfwa:
+		termMessage = "WARNING: " + termMessage
+	case Rfer:
+		termMessage = "ERROR: " + termMessage
+	case Rfab:
+		termMessage = "ABORT: " + termMessage
+	}
+	if flags&Rfec != 0 {
+		termMessage += "\nError Code: " + strconv.Itoa(int(errorCode))
+	}
+
+	conn.Write([]byte(termMessage))
 
 	return errorCode, termMessage, flags
 }

@@ -36,7 +36,7 @@ type agCreateIPCReqT struct {
 }
 
 func agCreateIPC(req agCreateIPCReqT) (errCode dg.WordT) {
-	path := perProcessData[int(req.PID)].virtualRoot + "/" + req.filename
+	path := PerProcessData[int(req.PID)].virtualRoot + "/" + req.filename
 	if _, found := agIPCs[path]; found {
 		logging.DebugPrint(logging.ScLog, "\t?CREATE called for extant IPC file %s\n", path)
 		errCode = ernae
@@ -63,7 +63,7 @@ type agIlkupRespT struct {
 }
 
 func agIlkup(req agIlkupReqT) (resp agIlkupRespT) {
-	path := perProcessData[int(req.PID)].virtualRoot + "/" + req.filename
+	path := PerProcessData[int(req.PID)].virtualRoot + "/" + req.filename
 	agIPC, found := agIPCs[path]
 	logging.DebugPrint(logging.ScLog, "\tChecking for virtual IPC %s\n", path)
 	if !found {

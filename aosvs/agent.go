@@ -65,7 +65,7 @@ const (
 	maxPID = 255
 )
 
-type perProcessDataT struct {
+type PerProcessDataT struct {
 	invocationArgs []string
 	virtualRoot    string
 	sixteenBit     bool
@@ -73,7 +73,7 @@ type perProcessDataT struct {
 	conn           io.ReadWriteCloser // stream I/O port for proc's CONSOLE
 	tidsInUse      [maxTasksPerProc]bool
 	tasks          [maxTasksPerProc]*taskT
-	activeTasksWg  *sync.WaitGroup
+	ActiveTasksWg  *sync.WaitGroup
 }
 
 // agChannelT holds status of a file opened by the Agent for a user proc
@@ -105,7 +105,7 @@ const (
 
 var (
 	pidInUse       [maxPID]bool
-	perProcessData = map[int]perProcessDataT{}
+	PerProcessData = map[int]PerProcessDataT{}
 	agChannels     = map[int]*agChannelT{
 		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
 		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
@@ -185,7 +185,7 @@ func getNextFreePID() (pid dg.WordT, ok bool) {
 }
 
 func getNextFreeTID(PID dg.WordT) (TID uint8, ok bool) {
-	ppd := perProcessData[int(PID)]
+	ppd := PerProcessData[int(PID)]
 	for t := 1; t < maxTasksPerProc; t++ { // Zero TID is invalid
 		if !ppd.tidsInUse[t] {
 			ppd.tidsInUse[t] = true
@@ -211,11 +211,13 @@ func agAllocatePID(req agAllocatePIDReqT) (resp agAllocatePIDRespT) {
 	if !resp.ok {
 		return resp
 	}
-	perProcessData[int(resp.PID)] = perProcessDataT{
+	var wg sync.WaitGroup
+	PerProcessData[int(resp.PID)] = PerProcessDataT{
 		invocationArgs: req.invocationArgs,
 		virtualRoot:    req.virtualRoot,
 		sixteenBit:     req.sixteenBit,
 		name:           req.name,
+		ActiveTasksWg:  &wg,
 	}
 	logging.DebugPrint(logging.ScLog, "AGENT assigned PID %d  Name: %s Args: %v\n", resp.PID, req.name, req.invocationArgs)
 	if req.sixteenBit {
@@ -279,7 +281,7 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 	switch req.greq {
 	case gmes: // get entire message
 		first := true
-		for _, arg := range perProcessData[int(req.PID)].invocationArgs {
+		for _, arg := range PerProcessData[int(req.PID)].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -291,7 +293,7 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		resp.ac1 = dg.DwordT(len(resp.result)) >> 1 // words not bytes
 	case gcmd: // get a parsed version of the command line
 		first := true
-		for _, arg := range perProcessData[int(req.PID)].invocationArgs {
+		for _, arg := range PerProcessData[int(req.PID)].invocationArgs {
 			if first {
 				first = false
 			} else {
@@ -301,12 +303,12 @@ func agGetMessage(req agGtMesReqT) (resp agGtMesRespT) {
 		}
 		resp.ac1 = dg.DwordT(len(resp.result))
 	case gcnt:
-		resp.ac0 = dg.DwordT(len(perProcessData[int(req.PID)].invocationArgs) - 1)
+		resp.ac0 = dg.DwordT(len(PerProcessData[int(req.PID)].invocationArgs) - 1)
 	case garg: // get the nth arg - special handing for integers
-		if int(req.gnum) > len(perProcessData[int(req.PID)].invocationArgs)-1 {
+		if int(req.gnum) > len(PerProcessData[int(req.PID)].invocationArgs)-1 {
 			log.Panicf("ERROR: ?GTMES attempted to retrieve non-extant argument no. %d.", req.gnum)
 		}
-		argS := perProcessData[int(req.PID)].invocationArgs[int(req.gnum)]
+		argS := PerProcessData[int(req.PID)].invocationArgs[int(req.gnum)]
 		i, err := strconv.ParseInt(argS, 10, 16)
 		if err == nil { // integer-only case
 			resp.ac1 = dg.DwordT(i)
