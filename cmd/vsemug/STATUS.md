@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 5 June 2020
+* Last Updated: 30 June 2020
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
@@ -22,7 +22,7 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   | Bits |  Problem  |   Notes/Action   |
   |-----------|------|-----------|------------------|
-  | 21        | 32 | Unmapped write in XWSTA                       | |
+  | 21        | 32 | Unmapped write in XWSTA                       |  |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Calling ?ERMSG after ?OPENs                   |  |
@@ -68,4 +68,4 @@ The NADGUG library provides a good range of freely-available test targets...
 
 ## What's Next?
 
-Extended ?READ/?WRITE to @CONSOLE
+Possbile issue in EMPIRE2T & DND is with ?OPEN of @CONSOLE

@@ -28,6 +28,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -129,12 +130,13 @@ func StartAgent(conn net.Conn) chan AgentReqT {
 }
 
 func agentHandler(agentChan chan AgentReqT) {
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		logging.DebugLogsDump("logs/")
-	// 		os.Exit(1)
-	// 	}
-	// }()
+	defer func() {
+		if r := recover(); r != nil {
+			debug.PrintStack()
+			logging.DebugLogsDump("logs/")
+			os.Exit(1)
+		}
+	}()
 	logging.DebugPrint(logging.ScLog, "Pseudo-Agent Handler runnning...\n")
 	for {
 		request := <-agentChan

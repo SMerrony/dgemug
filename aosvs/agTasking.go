@@ -26,6 +26,8 @@ package aosvs
 import (
 	"log"
 	"net"
+	"os"
+	"runtime/debug"
 	"sort"
 	"strconv"
 
@@ -104,6 +106,13 @@ func agTask(req agTaskReqT) (resp agTaskRespT) {
 }
 
 func TaskRunner(PID, TID dg.WordT, conn net.Conn) {
+	defer func() {
+		if r := recover(); r != nil {
+			debug.PrintStack()
+			logging.DebugLogsDump("logs/")
+			os.Exit(1)
+		}
+	}()
 	ppd := PerProcessData[int(PID)]
 	ppd.tasks[firstTask].run(conn)
 	ppd.ActiveTasksWg.Done()
