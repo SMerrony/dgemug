@@ -92,10 +92,13 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		} else {
 			tableIndex := tableAddr + (2 * dg.PhysAddrT(value)) - (2 * dg.PhysAddrT(l))
 			tableVal := memory.ReadDWord(tableIndex)
-			if tableVal == 0xFFFFFFFF {
+			if memory.TestDwbit(tableVal, 4) { // sign-extend from 28-bits
+				tableVal |= 0xF000_0000
+			}
+			if tableVal == 0xFFFF_FFFF {
 				cpu.pc += 3
 			} else {
-				cpu.pc = dg.PhysAddrT(tableVal) + tableIndex
+				cpu.pc = dg.PhysAddrT(int32(tableIndex) + int32(tableVal))
 			}
 		}
 
