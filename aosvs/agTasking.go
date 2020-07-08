@@ -54,6 +54,7 @@ type agTaskReqT struct {
 	PID, TID                 dg.WordT
 	priority                 dg.WordT
 	agentChan                chan AgentReqT
+	conn                     net.Conn
 	startAddr                dg.PhysAddrT
 	initAC2                  dg.DwordT
 	wfp, wsp, wsb, wsl, wsfh dg.PhysAddrT
@@ -83,7 +84,6 @@ func agTask(req agTaskReqT) (resp agTaskRespT) {
 	task.wsfh = req.wsfh
 	task.debugLogging = debugLogging // set for the package at the process level
 
-	// get pseudo-Agent to allocate TID
 	atreq := agAllocateTIDReqT{req.PID}
 	logging.DebugPrint(logging.ScLog, "\tRequesting TID...\n")
 	areqResult := agAllocateTID(atreq)
@@ -100,12 +100,16 @@ func agTask(req agTaskReqT) (resp agTaskRespT) {
 	logging.DebugPrint(logging.ScLog, "\tTask %d Created, Initial PC=%#o\n", task.TID, task.startAddr)
 	logging.DebugPrint(logging.ScLog, "\tStart Addr: %#o, WFP: %#o, WSP: %#o, WSB: %#o, WSL: %#o, WSFH: %#o\n", task.startAddr, task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)
 
+	go TaskRunner(req.PID, task.TID, req.conn)
+
 	resp.TID = task.TID
 
 	return resp
 }
 
+// TaskRunner is a Goroutine for running a single AOS/VS task
 func TaskRunner(PID, TID dg.WordT, conn net.Conn) {
+	logging.DebugPrint(logging.ScLog, "\tTask %d starting...\n", TID)
 	defer func() {
 		if r := recover(); r != nil {
 			debug.PrintStack()
@@ -116,6 +120,7 @@ func TaskRunner(PID, TID dg.WordT, conn net.Conn) {
 	ppd := PerProcessData[int(PID)]
 	ppd.tasks[firstTask].run(conn)
 	ppd.ActiveTasksWg.Done()
+	logging.DebugPrint(logging.ScLog, "\tTask %d finished.\n", TID)
 }
 
 func (task *taskT) run(conn net.Conn) (errorCode dg.DwordT, termMessage string, flags dg.ByteT) {
@@ -124,7 +129,7 @@ func (task *taskT) run(conn net.Conn) (errorCode dg.DwordT, termMessage string, 
 		syscallTrap bool
 		instrCounts [750]int
 	)
-	logging.DebugPrint(logging.ScLog, "run() invoked\n")
+
 	cpu.CPUInit(077, nil, nil)
 	cpu.SetPC(task.startAddr) // must be done before stack set up
 	cpu.SetupStack(task.wfp, task.wsp, task.wsb, task.wsl, task.wsfh)

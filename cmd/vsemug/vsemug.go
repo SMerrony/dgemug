@@ -78,7 +78,7 @@ func main() {
 	}
 
 	// DEBUGGING ONLY... (exits in x minutes)
-	go stopper(20, conn)
+	go stopper(5, conn)
 
 	memory.MemInit()
 	mvcpu.InstructionsInit()
@@ -98,12 +98,11 @@ func main() {
 	}
 	agentChan := aosvs.StartAgent(conn) // start the pseudo-Agent which will serialise syscalls in the process's tasks
 
-	err = aosvs.CreateProcess(args, vRoot, *prFlag, 7, conn, agentChan, debugLogging)
+	err = aosvs.CreateProcess(args, vRoot, *prFlag, 7, conn, agentChan, debugLogging) // TODO - Eventually this should be a call to ?PROC
 	if err != nil {
 		exitNicely(conn, err.Error())
 	}
 
-	go aosvs.TaskRunner(5, 1, conn)
 	ppd := aosvs.PerProcessData[5]
 	ppd.ActiveTasksWg.Wait()
 

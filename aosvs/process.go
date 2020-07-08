@@ -120,6 +120,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	taskReq.PID = proc.PID
 	taskReq.TID = firstTask
 	taskReq.agentChan = agentChan
+	taskReq.conn = con
 	taskReq.initAC2 = 0
 	taskReq.priority = 0
 	taskReq.startAddr = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1]))
@@ -133,14 +134,6 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	agentChan <- areq
 	areq = <-agentChan
 	log.Printf("DEBUG: ... back from Agent task setup\n")
-	// proc.tasks[0] = createTask(proc.PID, proc.ust.prType&0x8000 != 0, agentChan,
-	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[pcInPr], progWds[pcInPr+1])),
-	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wfpInPr], progWds[wfpInPr+1])),
-	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1])),
-	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wsbInPr], progWds[wsbInPr+1])),
-	// 	dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1])),
-	// 	dg.PhysAddrT(progWds[sfhInPr]),
-	// 	debugLogging)
 
 	return nil
 }
