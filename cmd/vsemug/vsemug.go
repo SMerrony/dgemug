@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/SMerrony/dgemug/aosvs"
@@ -43,6 +44,7 @@ import (
 
 // program options - Change arg slicing in main if these are changed
 var (
+	argsFlag        = flag.String("args", "", "arguments to pass to program (surround multiple args with double-quotes)")
 	consoleAddrFlag = flag.String("consoleaddr", "localhost:10001", "network interface/port for @CONSOLE for 1st process, others will be assigned sequentially")
 	prFlag          = flag.String("pr", "", "program to run at startup")
 )
@@ -83,19 +85,14 @@ func main() {
 	memory.MemInit()
 	mvcpu.InstructionsInit()
 	args := make([]string, 1)
-	// N.B. Change this if program invocation flags are changed...
 	// Stripping path as slashes will confuse AOS/VS argument parsing
 	// We are taking the virtual root from the path of the PR file for now
-	var vRoot string
-	if *consoleAddrFlag == "" {
-		args[0] = filepath.Base(os.Args[4])
-		vRoot = filepath.Dir(os.Args[4])
-		args = append(args, os.Args[5:]...)
-	} else {
-		args[0] = filepath.Base(os.Args[2])
-		vRoot = filepath.Dir(os.Args[2])
-		args = append(args, os.Args[3:]...)
+	args[0] = filepath.Base(*prFlag)
+	vRoot := filepath.Dir(*prFlag)
+	if *argsFlag != "" {
+		args = append(args, strings.Fields(*argsFlag)...)
 	}
+
 	agentChan := aosvs.StartAgent(conn) // start the pseudo-Agent which will serialise syscalls in the process's tasks
 
 	err = aosvs.CreateProcess(args, vRoot, *prFlag, 7, conn, agentChan, debugLogging) // TODO - Eventually this should be a call to ?PROC
