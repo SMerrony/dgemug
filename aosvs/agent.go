@@ -97,22 +97,12 @@ type agIPCT struct {
 	spool        chan []byte
 }
 
-// fixed channel #s for @CONSOLE, @INPUT and @OUTPUT
-const (
-	consoleChan = 0
-	inputChan   = 1
-	outputChan  = 2
-)
-
 var (
 	pidInUse       [maxPID]bool
 	PerProcessData = map[int]PerProcessDataT{}
-	agChannels     = map[int]*agChannelT{
-		consoleChan: {path: "@CONSOLE", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
-		inputChan:   {path: "@INPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
-		outputChan:  {path: "@OUTPUT", isConsole: true, read: true, write: true, forShared: false, recordLength: -1, conn: nil, file: nil},
-	}
-	agIPCs = map[string]*agIPCT{} // key is unique pathname
+	console        net.Conn
+	agChannels     = map[int]*agChannelT{}
+	agIPCs         = map[string]*agIPCT{} // key is unique pathname
 )
 
 // StartAgent fires of the pseudo-agent Goroutine and returns its msg channel
@@ -120,9 +110,7 @@ func StartAgent(conn net.Conn) chan AgentReqT {
 	// fake some in-use PIDs so they are not used
 	pidInUse[0], pidInUse[1], pidInUse[2], pidInUse[3], pidInUse[4] = true, true, true, true, true
 	agentChan := make(chan AgentReqT) // unbuffered to serialise requests
-	agChannels[consoleChan].conn = conn
-	agChannels[inputChan].conn = conn
-	agChannels[outputChan].conn = conn
+	console = conn
 
 	go agentHandler(agentChan)
 

@@ -113,25 +113,12 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 	switch {
 	case req.path[0] == '@':
 		switch req.path {
-		case "@CONSOLE":
-			if req.recLen > 0 {
-				agChannels[consoleChan].recordLength = req.recLen
-			}
-			resp.channelNo = consoleChan
-		case "@INPUT":
-			if req.recLen > 0 {
-				agChannels[inputChan].recordLength = req.recLen
-			}
-			resp.channelNo = inputChan
-		case "@OUTPUT":
-			if req.recLen > 0 {
-				agChannels[outputChan].recordLength = req.recLen
-			}
-			resp.channelNo = outputChan
+		case "@CONSOLE", "@INPUT", "@OUTPUT":
+			agChan.conn = console
+			agChan.isConsole = true
 		default:
-			log.Panicf("ERROR: Pseudo-Agent cannot handle generic file %s\n", req.path)
+			log.Panicf("ERROR: Pseudo-Agent cannot handle unknown generic file %s\n", req.path)
 		}
-		return resp
 	case req.path[0] != ':' && PerProcessData[int(req.PID)].virtualRoot != "":
 		logging.DebugPrint(logging.ScLog, "\tAttempting to Open file: %s\n", PerProcessData[int(req.PID)].virtualRoot+"/"+req.path)
 		fp, err = os.OpenFile(PerProcessData[int(req.PID)].virtualRoot+"/"+req.path, flags, 0755)
@@ -142,7 +129,9 @@ func agFileOpen(req agOpenReqT) (resp agOpenRespT) {
 		resp.ac0 = erfad
 		return resp
 	}
-	agChan.recordLength = req.recLen
+	if req.recLen > 0 {
+		agChan.recordLength = req.recLen
+	}
 	agChan.file = fp
 	newChan := len(agChannels)
 	agChannels[newChan] = &agChan
