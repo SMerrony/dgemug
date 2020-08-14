@@ -72,9 +72,10 @@ func MapPage(page int, shared bool) {
 		firstSharedPage = page
 	}
 	virtualRamMu.Unlock()
-	log.Printf("DEBUG: Mapped page %#x for %#x", page, page<<10)
-	if !shared {
-		log.Printf("DEBUG: ...Last unshared page is now: %#x\n", lastUnsharedPage)
+	if shared {
+		log.Printf("DEBUG: Mapped shared page %#x for %#x", page, page<<10)
+	} else {
+		log.Printf("DEBUG: Mapped unshared page %#x for %#x", page, page<<10)
 	}
 }
 

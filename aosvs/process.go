@@ -99,7 +99,7 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	}
 	proc.PID = areq.result.(agAllocatePIDRespT).PID
 	log.Printf("INFO: Obtained PID %d for process\n", proc.PID)
-	log.Printf("INFO: Preparing ring %d process with up to %d tasks and %d blocks of shared pages\n", ring, proc.ust.taskCount, proc.ust.sharedBlockCount)
+	log.Printf("INFO: Preparing ring %d process with up to %d tasks\n", ring, proc.ust.taskCount)
 	log.Printf("----  PR: %s  Args: %v\n", prName, args)
 	if proc.ust.sharedBlockCount != 0 {
 		log.Println("WARNING: Shared pages not yet fully supported")
@@ -109,10 +109,8 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 
 	// map (load) program into RAM
 	// unshared portion
-	log.Println("DEBUG: Mapping unshared pages...")
 	memory.MapSlice(segBase, progWds[8192:proc.ust.sharedStartPageInPR<<10-8], false)
 	// shared portion
-	log.Println("DEBUG: Mapping shared pages...")
 	memory.MapSlice(segBase+dg.PhysAddrT(proc.ust.sharedStartBlock)<<10, progWds[proc.ust.sharedStartPageInPR<<10:], true)
 
 	// set up initial task
@@ -129,11 +127,10 @@ func CreateProcess(args []string, vRoot string, prName string, ring int, con net
 	taskReq.wsfh = dg.PhysAddrT(progWds[sfhInPr])
 	taskReq.wsl = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wslInPr], progWds[wslInPr+1]))
 	taskReq.wsp = dg.PhysAddrT(memory.DwordFromTwoWords(progWds[wspInPr], progWds[wspInPr+1]))
-	log.Printf("DEBUG: Requesting initial task setup from Agent...\n")
+
 	areq = AgentReqT{agentTask, taskReq, nil}
 	agentChan <- areq
 	areq = <-agentChan
-	log.Printf("DEBUG: ... back from Agent task setup\n")
 
 	return nil
 }
