@@ -1,5 +1,5 @@
 # VSemuG Status
-* Last Updated: 2 July 2020
+* Last Updated: 7 Feb 2021
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:
@@ -22,7 +22,7 @@ The NADGUG library provides a good range of freely-available test targets...
 
   |    Game   | Bits |  Problem  |   Notes/Action   |
   |-----------|------|-----------|------------------|
-  | 21        | 32 | Unmapped write in XWSTA                       |  |
+  | 21        | 32 | BOOTER.PR Unmapped write in XWSTA             | **** Unmapped: Check preceeding XLEF 2, 02,AC3 |
   | CB        | 32 | CB.PR - Wants to start in :PER                | ! |
   | CHESS     | 32 | Exits with no error                           | Shortly after ?IFPU |
   | DND       | 32 | Calling ?ERMSG after ?OPENs                   |  |
@@ -31,14 +31,14 @@ The NADGUG library provides a good range of freely-available test targets...
   | FERRET    | 32 | Decimal Type 5 nyi in WSTI                    | |
   | FISH      | 32 | ?GLIST nyi                                    | ?GLIST |
   | FOOBAR    | 32 | Error in Line 205                             |  |
-  | MMM       | 32 | Unmapped read in WCMV                         |  |
+  | MMM       | 32 | Unmapped read in WCMV                         | **** Unmapped |
   | MORTGAGE  | 32 | Syscall ?TASK nyi                             | **** ?TASK |
   | QUEST     | 32 | QUEST_SERVER.PR - Error 21 recreating shared_data_file | ?RECREATE bug |
-  | QUEST     | 32 | QUEST.PR - Unmapped read in WCST              |  |
+  | QUEST     | 32 | QUEST.PR - Unmapped read in WCST              | **** Unmapped |
   | SCRABBLE  | 32 | Calling ?ERMSG after ?OPENing SEED file       | ?OPEN bug?  |
   | WUMPUS    | 32 | Hang/loop after displaying start screen       |  |
   | YAHTZEE   | 32 | Exits with Error Code: 71200                  | Almost immediately after ?MEMI |
-  | ZORK      | 32 | Unmapped read in WCMV (underflow)             | Check last few instrs for math error |
+  | ZORK      | 32 | Unmapped read in WCMV (underflow)             | **** Unmapped: Check last few instrs for math error |
 
   |  Folder  |  Program  | Bits |         Problem         |  Notes/Action  |
   |----------|-----------|------|-------------------------|----------------|
@@ -67,6 +67,8 @@ The NADGUG library provides a good range of freely-available test targets...
  
 
 ## What's Next?
+
+Do all the unmapped read/writes have a common cause?
 
 Possbile issue in EMPIRE2T & DND is with ?OPEN of @CONSOLE
 LCALL...

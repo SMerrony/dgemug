@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+GAMES
 
 # Test binary, built with `go test -c`
 *.test
@@ -17,3 +18,4 @@ vsemug
 
 .*/
 logs/*
+
