@@ -178,18 +178,18 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 	case instrXLDB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
 		//eff := resolve16bitByteAddr(cpu, oneAccMode2Word.mode, oneAccMode2Word.disp16, oneAccMode2Word.bitLow)
-		eff := resolve15bitDisplacement(cpu, ' ', oneAccMode2Word.mode, dg.WordT(oneAccMode2Word.disp16), iPtr.dispOffset)
+		eff := resolveLong15bitDisplacement(cpu, ' ', oneAccMode2Word.mode, dg.WordT(oneAccMode2Word.disp16), iPtr.dispOffset)
 		cpu.ac[oneAccMode2Word.acd] = dg.DwordT(memory.ReadByte(eff, oneAccMode2Word.bitLow)) & 0x00ff
 
 	case instrXLEF:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
-		addr := resolve15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
+		addr := resolveLong15bitDisplacement(cpu, oneAccModeInd2Word.ind, oneAccModeInd2Word.mode, dg.WordT(oneAccModeInd2Word.disp15), iPtr.dispOffset)
 		cpu.ac[oneAccModeInd2Word.acd] = dg.DwordT(addr)
 
 	case instrXLEFB:
 		oneAccMode2Word := iPtr.variant.(oneAccMode2WordT)
 		// new version...
-		addr := resolve15bitDisplacement(cpu, ' ', oneAccMode2Word.mode, dg.WordT(oneAccMode2Word.disp16), iPtr.dispOffset)
+		addr := resolveLong15bitDisplacement(cpu, ' ', oneAccMode2Word.mode, dg.WordT(oneAccMode2Word.disp16), iPtr.dispOffset)
 		addr <<= 1
 		if oneAccMode2Word.bitLow {
 			addr++
