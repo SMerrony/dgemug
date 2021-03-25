@@ -230,51 +230,65 @@ func exportAda() bool {
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+
 package CPU.Instructions is
 
 `)
 
-	fmt.Fprintln(adaWriter, "-- Instruction Types")
-	fmt.Fprintln(adaWriter, "type Instr_Class is (")
+	fmt.Fprintln(adaWriter, "-- Instruction Classes")
+	fmt.Fprintln(adaWriter, "type Instr_Class_T is (")
 	for t := 0; t < numTypes; t++ {
-		fmt.Fprintf(adaWriter, "\t%s,\n", typesList[t])
+		if t > 0 {
+			fmt.Fprintln(adaWriter, ",")
+		}
+		fmt.Fprintf(adaWriter, "\t%s", typesList[t])
 	}
 
-	fmt.Fprintf(adaWriter, ");\n\n-- Instruction Formats\n")
-	fmt.Fprintln(adaWriter, "type Instr_Format is (")
+	fmt.Fprintf(adaWriter, "\n);\n\n-- Instruction Formats\n")
+	fmt.Fprintln(adaWriter, "type Instr_Format_T is (")
+	first := true
 	for f := 0; f < numFormats; f++ {
 		if formatCounts[formatsList[f]] > 0 {
-			fmt.Fprintf(adaWriter, "\t%s,\n", formatsList[f])
+			if first {
+				first = false
+			} else {
+				fmt.Fprintln(adaWriter, ",")
+			}
+			fmt.Fprintf(adaWriter, "\t%s", formatsList[f])
 		}
 	}
 
-	fmt.Fprintf(adaWriter, ");\n\n-- Instruction Mnemonic Consts\n")
-	fmt.Fprintln(adaWriter, "type Instr_Mnemonic is (")
+	fmt.Fprintf(adaWriter, "\n);\n\n-- Instruction Mnemonic Consts\n")
+	fmt.Fprintln(adaWriter, "type Instr_Mnemonic_T is (")
 	for i := 0; i < numInstrs; i++ {
-		fmt.Fprintf(adaWriter, "   I_%s\n", instrsTable[i][0])
+		if i > 0 {
+			fmt.Fprintln(adaWriter, ",")
+		}
+		fmt.Fprintf(adaWriter, "   I_%s", instrsTable[i][0])
 	}
 
-	fmt.Fprintf(adaWriter, ");\n")
+	fmt.Fprintf(adaWriter, "\n);\n")
 	fmt.Fprintf(adaWriter,
 		`
 type Instr_Char_Rec is record
-   Mnemonic : Unbounded_String;
-   Bits     : Unsigned_16;
-   Mask     : Unsigned_16;
-   Instr_Len : Integer;
-   Instr_Fmt : Integer;
-   Instr_Type : Integer;
-   Disp_Offest : Integer;
+   Mnemonic    : Unbounded_String;
+   Bits        : Word_T;
+   Mask        : Word_T;
+   Instr_Len   : Positive;
+   Instr_Fmt   : Instr_Format_T;
+   Instr_Class : Instr_Class_T;
+   Disp_Offset : Natural;
 end record;
 
-type Instructions is array (Instr_Mnemonic range Instr_Mnemonic'Range) of Instr_Char_Rec;
+type Instructions is array (Instr_Mnemonic_T range Instr_Mnemonic_T'Range) of Instr_Char_Rec;
 
 Instruction_Set : constant Instructions :=
 (
 `)
 
 	for i := 0; i < numInstrs; i++ {
-		fmt.Fprintf(adaWriter, "I_%s => (\"%s\", 16#%s#, 16#%s#, %s, %s, %s, %s)",
+		fmt.Fprintf(adaWriter, "I_%s => (To_Unbounded_String(\"%s\"), 16#%s#, 16#%s#, %s, %s, %s, %s)",
 			instrsTable[i][0],
 			instrsTable[i][0],
 			instrsTable[i][1][2:],
