@@ -232,7 +232,7 @@ func exportAda() bool {
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
-package CPU.Instructions is
+package CPU_Instructions is
 
 `)
 
@@ -302,7 +302,7 @@ Instruction_Set : constant Instructions :=
 		}
 	}
 
-	fmt.Fprintf(adaWriter, "\n);\n\nend CPU.Instructions;\n")
+	fmt.Fprintf(adaWriter, "\n);\n\nend CPU_Instructions;\n")
 	adaWriter.Flush()
 	adaFile.Close()
 	fmt.Println("Ada file written")
