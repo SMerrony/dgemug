@@ -232,6 +232,8 @@ func exportAda() bool {
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
+with DG_Types; use DG_Types;
+
 package CPU_Instructions is
 
 `)
