@@ -538,8 +538,8 @@ func InstructionsInit() {
 	instructionSet[instrIORST] = instrChars{"IORST", 0x653f, 0xe73f, 1, ONEACC_1_WORD_FMT, NOVA_IO, 0}
 	instructionSet[instrISZ] = instrChars{"ISZ", 0x1000, 0xf800, 1, NOVA_NOACC_EFF_ADDR_FMT, NOVA_MEMREF, 0}
 	instructionSet[instrISZTS] = instrChars{"ISZTS", 0xc7c9, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_PC, 0}
-	instructionSet[instrJMP] = instrChars{"JMP", 0x0, 0xf800, 1, NOVA_NOACC_EFF_ADDR_FMT, NOVA_PC, 0}
-	instructionSet[instrJSR] = instrChars{"JSR", 0x800, 0xf800, 1, NOVA_NOACC_EFF_ADDR_FMT, NOVA_PC, 0}
+	instructionSet[instrJMP] = instrChars{"JMP", 0x0000, 0xf800, 1, NOVA_NOACC_EFF_ADDR_FMT, NOVA_PC, 0}
+	instructionSet[instrJSR] = instrChars{"JSR", 0x0800, 0xf800, 1, NOVA_NOACC_EFF_ADDR_FMT, NOVA_PC, 0}
 	instructionSet[instrLCALL] = instrChars{"LCALL", 0xa6c9, 0xe7ff, 4, NOACC_MODE_IND_4_WORD_FMT, EAGLE_PC, 1}
 	instructionSet[instrLCPID] = instrChars{"LCPID", 0x8759, 0xffff, 1, UNIQUE_1_WORD_FMT, EAGLE_IO, 0}
 	instructionSet[instrLDA] = instrChars{"LDA", 0x2000, 0xe000, 1, NOVA_ONEACC_EFF_ADDR_FMT, NOVA_MEMREF, 0}

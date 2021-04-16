@@ -23,6 +23,8 @@ package memory
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 
 	"github.com/SMerrony/dgemug/dg"
 )
@@ -99,4 +101,21 @@ func ReadDWord(addr dg.PhysAddrT) dg.DwordT {
 func WriteDWord(wordAddr dg.PhysAddrT, dwd dg.DwordT) {
 	WriteWord(wordAddr, DwordGetUpperWord(dwd))
 	WriteWord(wordAddr+1, DwordGetLowerWord(dwd))
+}
+
+// DumpToFile writes out usefully greppable text representation of memory.
+func DumpToFile(fn string) bool {
+	f, err := os.Create(fn)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	for a := 0; a < int(memSizeWords); a++ {
+		_, err := f.WriteString(fmt.Sprintf("%12o %04X\n", a, ReadWord(dg.PhysAddrT(a))))
+		if err != nil {
+			return false
+		}
+	}
+	return true
 }
