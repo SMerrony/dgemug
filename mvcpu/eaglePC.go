@@ -213,7 +213,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		v := int32(cpu.ac[twoAcc1Word.acs])
 		if twoAcc1Word.acs != twoAcc1Word.acd {
 			l = int32(memory.ReadDWord(dg.PhysAddrT(cpu.ac[twoAcc1Word.acd])))
-			h = int32(memory.ReadDWord(dg.PhysAddrT(cpu.ac[twoAcc1Word.acd+2])))
+			h = int32(memory.ReadDWord(dg.PhysAddrT(cpu.ac[twoAcc1Word.acd] + 2)))
 			if v >= l && v <= h {
 				cpu.pc += 2
 			} else {
