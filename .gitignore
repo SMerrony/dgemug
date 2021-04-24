@@ -18,3 +18,4 @@
 
 cmd/dginstr/dginstr
 *~
+cmd/dginstr/test.ada

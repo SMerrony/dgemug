@@ -63,7 +63,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		}
 
 	case instrLCALL: // FIXME - LCALL only handling trivial case, no checking
-		cpu.ac[3] = dg.DwordT(cpu.pc) + 4
+		pc_plus_4 := dg.DwordT(cpu.pc) + 4
 		var dwd dg.DwordT
 		if iPtr.argCount >= 0 {
 			dwd = dg.DwordT(iPtr.argCount)
@@ -80,6 +80,7 @@ func eaglePC(cpu *CPUT, iPtr *decodedInstrT) bool {
 		wsPush(cpu, dwd)
 		cpu.SetOVR(false)
 		cpu.pc = resolve31bitDisplacement(cpu, iPtr.ind, iPtr.mode, iPtr.disp31, iPtr.dispOffset)
+		cpu.ac[3] = pc_plus_4
 
 	case instrLDSP:
 		oneAccModeInd3Word := iPtr.variant.(oneAccModeInd3WordT)

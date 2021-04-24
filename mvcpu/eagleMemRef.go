@@ -243,7 +243,7 @@ func eagleMemRef(cpu *CPUT, iPtr *decodedInstrT) bool {
 			cpu.carry = true
 			cpu.SetOVR(true)
 		}
-		cpu.ac[oneAccModeInd2Word.acd] = memory.SexWordToDword(dg.WordT(i16mem))
+		cpu.ac[oneAccModeInd2Word.acd] = memory.SexWordToDword(dg.WordT(i16ac))
 
 	case instrXNLDA:
 		oneAccModeInd2Word := iPtr.variant.(oneAccModeInd2WordT)
