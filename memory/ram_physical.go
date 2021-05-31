@@ -24,7 +24,9 @@
 package memory
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -142,4 +144,21 @@ func ReadDwordTrap(wordAddr dg.PhysAddrT) (dg.DwordT, bool) {
 	loWd = ram[wordAddr+1]
 	ramMu.RUnlock()
 	return DwordFromTwoWords(hiWd, loWd), true
+}
+
+// DumpToFile writes out usefully greppable text representation of memory.
+func DumpToFile(fn string) bool {
+	f, err := os.Create(fn)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	for a := 0; a < int(memSizeWords); a++ {
+		_, err := f.WriteString(fmt.Sprintf("%12o %04X\n", a, ReadWord(dg.PhysAddrT(a))))
+		if err != nil {
+			return false
+		}
+	}
+	return true
 }

@@ -1,3 +1,5 @@
+_Work has stopped on this project. It continues in https://github.com/SMerrony/dgemua_
+
 # dgemug
 Go (Golang) packages of routines used in emulating historical Data General minicomputers
 

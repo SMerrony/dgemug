@@ -1,5 +1,6 @@
 # VSemuG Status
-* Last Updated: 7 Feb 2021
+_Work has stopped on this project. It continues in https://github.com/SMerrony/dgemua_
+* Last Updated: 31 May 2021
 * Last Significant Progress: 6 May 2020 (some byte-addressing issues resolved, some remain...)
   
 ## What Works? :+1:

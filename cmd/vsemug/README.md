@@ -1,4 +1,7 @@
 # vsemug
+
+_Work has stopped on this project. It continues in https://github.com/SMerrony/dgemua_
+
 User-level AOS/VS Emulator
 
 Only if you are ***developing and changing instructions*** you will need to precede the build with: `go generate`
